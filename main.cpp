@@ -1,7 +1,4 @@
-
-
-// #include "opencv2/core.hpp"
-#include "opencv2/highgui.hpp"
+#include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/video.hpp"
 #include "opencv2/videoio.hpp"
@@ -9,9 +6,16 @@
 #include "opencv2/imgproc/imgproc.hpp" // bounding boxes
 
 #include <cassert>
+#include <ctime>
+#include <fstream>
 #include <iostream>
 #include <list>
-// #include <set>
+#include <sstream>
+#include <string>
+#include <unistd.h>
+
+// #define TIMELAPSE_INTERVAL 1200 // secondes
+#define TIMELAPSE_INTERVAL 30 // secondes
 
 using namespace cv;
 
@@ -21,14 +25,11 @@ typedef struct s_capture {
 	Mat img;
 	Mat mask;
 	std::vector<Point> contour;
-	// Point pos;
 	Rect rect;
 	int density;
 } Capture;
 
 typedef struct s_object {
-	//   public:
-	//   private:
 	double dist;
 	Point2f pos;
 	int density;
@@ -36,7 +37,6 @@ typedef struct s_object {
 	Scalar color;
 	int id;
 	Capture bestCapture;
-	// Point2f firstPos;
 } Object;
 
 typedef struct s_line {
@@ -50,414 +50,437 @@ typedef struct s_deadObj {
 	Scalar color;
 } DeadObj;
 
-int main(int, char **) {
-	// VideoCapture cap("1car.avi");
-	VideoCapture cap("3car3person.avi");
-	// VideoCapture cap(2);
-	if (!cap.isOpened()) {
-		std::cout << "file not found";
-		return 1;
+std::string gpioDir = "/tmp/gpio/";
+// std::string gpioDir = "/sys/class/gpio/";
+
+void initGpio(int gpio) {
+	std::string gpioExportDir = gpioDir + "export";
+	std::ofstream exportGpio(gpioExportDir.c_str());
+	if (!exportGpio.is_open()) {
+		std::cout << "unable to export gpio" << std::endl;
+		perror(gpioExportDir.c_str());
+		exit(1);
 	}
+	exportGpio << gpio;
+	exportGpio.close();
+
+	std::string gpioNumDir = gpioDir + "gpio" + std::to_string(gpio) + "/";
+	std::string gpioNumDirectionDir = gpioNumDir + "direction";
+	std::ofstream directionGpio(gpioNumDirectionDir.c_str());
+	if (!directionGpio.is_open()) {
+		std::cout << "unable to set direction gpio" << std::endl;
+		perror(gpioNumDirectionDir.c_str());
+		exit(2);
+	}
+	directionGpio << "in";
+	directionGpio.close();
+}
+
+int gpioGetValue(int gpio) {
+	std::string gpioValueFile =
+		gpioDir + "gpio" + std::to_string(gpio) + "/value";
+	std::ifstream getValueGpio(gpioValueFile.c_str());
+	if (!getValueGpio.is_open()) {
+		std::cout << "unable to get value gpio" << std::endl;
+		perror(gpioValueFile.c_str());
+		exit(3);
+	}
+
+	int val;
+	getValueGpio >> val;
+	getValueGpio.close();
+
+	return val;
+}
+
+std::string getHostname() {
+	std::string file = "/etc/hostname";
+	std::ifstream getFile(file.c_str());
+	if (!getFile.is_open()) {
+		std::cout << "unable to open /etc/hostname" << std::endl;
+		perror(file.c_str());
+		exit(4);
+	}
+
+	std::string ret;
+	getFile >> ret;
+	getFile.close();
+
+	return ret;
+}
+
+std::string getCurTime() {
+	time_t t = time(0);
+	tm *now = localtime(&t);
+	return std::to_string(now->tm_hour) + ':' + std::to_string(now->tm_min) +
+		   ':' + std::to_string(now->tm_sec);
+}
+
+// ------------------------------- MAIN ---------------------------------------
+int main(int argc, char **argv) {
+	// VideoCapture cap("1car.avi");
+	// VideoCapture cap("3car3person.avi");
+	// if (!cap.isOpened()) {
+	// 	std::cout << "file not found";
+	// 	return 1;
+	// }
+	CommandLineParser parser(
+		argc, argv,
+		"{help h        |               | help message}"
+		"{@sensor       |               | gpio number of IR senror}"
+		"{d device      | 0             | device camera, /dev/video0 by "
+		"default}"
+		"{r repository  |               | save motion to specific repository}"
+		"{p port        | -1            | remote port repository}");
+
+	if (parser.has("help")) {
+		parser.printMessage();
+		return 0;
+	}
+	int sensorGpioNum = parser.get<int>("@sensor");
+	int device = parser.get<int>("device");
+	std::string remoteDir = parser.get<std::string>("repository");
+	int port = parser.get<int>("port");
+	if (!parser.check()) {
+		parser.printMessage();
+		parser.printErrors();
+		return 0;
+	}
+
+	bool hasRemoteDir = !remoteDir.empty();
+	using ObjList = std::list<Object>;
+	std::string motionDir = "/tmp/motion/";
+	std::string hostname = getHostname();
+
 	auto model = createBackgroundSubtractorKNN();
+	VideoCapture vCap;
 	// auto model = createBackgroundSubtractorMOG2();
 
-	// std::vector<Object> objects;
-	using ObjList = std::list<Object>;
-	// std::list<Object> objects;
+	std::string timelapseDir =
+		motionDir + hostname + "_" + std::to_string(device);
+	std::string cmd = "mkdir -p " + timelapseDir;
+	system(cmd.c_str());
+
 	ObjList objects;
 	std::vector<Line> lines;
 	std::vector<DeadObj> tombs;
-	Mat inputFrame, frame, mask, drawing;
-	int iNewObj = 0;
-	for (int cpt = 0;; ++cpt) {
-		int nbObjects = objects.size();
-		// std::cout << "cpt = " << cpt << std::endl;
 
-		cap >> inputFrame;
-		if (inputFrame.empty()) {
-			std::cout << "Finished reading" << std::endl;
-			break;
-		}
+	Mat inputFrame, mask, drawing;
+	int iNewObj;
+	size_t tickCapture;
+	size_t cur;
+	int iSec;
+	int iCap;
+	size_t tickTimeLapse = clock() + CLOCKS_PER_SEC; // take picture immediately
+    // std::cout << "first tick TimeLapse " << tickTimeLapse << std::endl;
 
-		// std::cout << "image = " << inputFrame.size;
-		// const Size scaledSize(640, 640 * inputFrame.rows / inputFrame.cols);
-		// resize(inputFrame, frame, scaledSize, 0, 0, INTER_LINEAR);
-		model->apply(inputFrame, mask);
-		if (cpt < 20) {
-			continue;
-		}
+	initGpio(sensorGpioNum);
+	gpioGetValue(sensorGpioNum);
 
-		const int size = 15;
-		medianBlur(mask, mask, size);
-		blur(mask, mask, Size(size, size));
-		// medianBlur(mask, mask, size);
-		// threshold(mask, mask, 0, 255, THRESH_BINARY);
-		// blur(mask, mask, Size(size, size));
-		// threshold(mask, mask, 0, 255, THRESH_BINARY);
-		// blur(mask, mask, Size(size, size));
-		// blur(mask, mask, Size(size, size));
-		// medianBlur(mask, mask, size);
-		// blur(mask, mask, Size(size, size));
-		// medianBlur(mask, mask, size);
+    // --------------------------- INFINITE LOOP ------------------------------
+	while (1) {
+		while (gpioGetValue(sensorGpioNum) == 0) {
+			std::cout << "." << std::flush;
+			usleep(1000000);
+            tickTimeLapse -= CLOCKS_PER_SEC;
+            // std::cout << "first tick TimeLapse " << tickTimeLapse << std::endl;
 
-		// GaussianBlur(mask, mask, Size(11, 11), 0, 0);
-		// threshold(mask, mask, 10, 255, THRESH_BINARY);
-		threshold(mask, mask, 0, 255, THRESH_BINARY);
-
-		// bitwise_not(mask, mask);
-		// Canny(mask, mask, 0, 255);
-
-		std::vector<std::vector<Point>> contours;
-		std::vector<Vec4i> hierarchy;
-		findContours(mask, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE,
-					 Point(0, 0));
-		// std::vector<Point2f> center(contours.size());
-
-		int nbMovements = contours.size();
-		std::vector<std::vector<Point>> contours_poly(nbMovements);
-		std::vector<Rect> boundRect(nbMovements);
-		for (int i = 0; i < nbMovements; ++i) {
-			approxPolyDP(Mat(contours[i]), contours_poly[i], 3, true);
-			boundRect[i] = boundingRect(Mat(contours_poly[i]));
-			// minEnclosingCircle
-		}
-
-		std::vector<Moments> mu(nbMovements);
-		// double max = -1;
-		// int iMax = -1;
-		for (int i = 0; i < nbMovements; ++i) {
-			mu[i] = moments(contours[i], true);
-			// 	if (mu[i].m00 > max) {
-			// 		max = mu[i].m00;
-			// 		iMax = i;
-			// 	}
-		}
-
-		drawing = inputFrame;
-		std::vector<Point2f> mc(nbMovements);
-		for (int i = 0; i < nbMovements; ++i) {
-			mc[i] = Point2f(mu[i].m10 / mu[i].m00, mu[i].m01 / mu[i].m00);
-			// Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0, 255),
-			// rng.uniform(0, 255)); putText(drawing, "+", mc[i] -Point2f(10,
-			// 0), FONT_HERSHEY_COMPLEX, 1.0, color, 2);
-		}
-
-		// Mat drawing =Mat::zeros(mask.size(), CV_8UC3);
-
-		// if (max > 100.0) {
-		// 	Rect rect = boundRect[iMax];
-		// 	Mat best = drawing(rect);
-		// 	Mat cropMask = mask(rect);
-
-		// 	// std::cout << best.size() << std::endl;
-		// 	// std::cout << cropMask.size() << std::endl;
-
-		// 	for (int row = 0; row < best.rows; ++row) {
-		// 		uchar *pixBest = best.ptr<uchar>(row);
-		// 		uchar *pixMask = cropMask.ptr<uchar>(row);
-		// 		for (int col = 0; col < best.cols; ++col) {
-		// 			int mask = pixMask[col];
-		// 			if (mask == 0) {
-
-		// 				pixBest[3 * col] = 255;
-		// 				pixBest[3 * col + 1] = 255;
-		// 				pixBest[3 * col + 2] = 255;
-		// 			}
-		// 		}
-		// 	}
-		// 	// Mat best = mask(rect);
-		// 	// std::cout << best.channels << std::endl;
-		// 	// std::cout << mask(rect).channels << std::endl;
-		// 	// bitwise_and(best, mask(rect), best);
-
-		// 	imshow("best", best);
-		// }
-
-		std::vector<int> nearestObj(nbMovements);
-		std::vector<double> distNearestObj(nbMovements);
-		std::vector<int> nearestMov(nbObjects);
-		// std::vector<bool> moveIsObject(nbMovements);
-		// for (int i =0; i <nbMovements; ++i) {
-		//     moveIsObject[i] =false;
-		// }
-		for (int i = 0; i < nbObjects; ++i) {
-			nearestMov[i] = -1;
-		}
-
-		const int thresh = 10000;
-		for (int i = 0; i < nbMovements; ++i) {
-			nearestObj[i] = -1;
-			distNearestObj[i] = thresh;
-		}
-
-		// for (int i = 0; i < nbMovements; ++i) {
-		// 	// nearestObj[i] = -1;
-		// 	// int iNearest = -1;
-		// 	// distNearestObj[i] = 999999.0;
-		// 	// auto objPos = objects[i].pos;
-		// 	auto moveCenter = mc[i];
-		// 	// for (int iObj = 0; iObj < nbObjects; ++iObj) {
-		// 	int iObj = 0;
-		// 	for (const auto &obj : objects) {
-		// 		// std::cout << "loop 1 : " << moveCenter << std::endl;
-		// 		double dist = norm((obj.pos + obj.speedVector) - moveCenter);
-		// 		// double dist = norm(moveCenter - obj.pos);
-		// 		// std::cout << "dist : " << dist << moveCenter << std::endl;
-		// 		if (dist < distNearestObj[i]) {
-
-		// 			distNearestObj[i] = dist;
-		// 			nearestObj[i] = iObj;
-		// 		}
-
-		// 		++iObj;
-		// 	}
-		// }
-		int iObj = 0;
-		for (const auto &obj : objects) {
-
-			int iMovMin = -1;
-			int distMovMin = thresh;
-			for (int i = 0; i < nbMovements; ++i) {
-				double dist =
-					pow(norm((obj.pos + obj.speedVector) - mc[i]), 2) +
-					abs(obj.density - mu[i].m00);
-
-				if (dist < distMovMin) {
-					distMovMin = dist;
-					iMovMin = i;
+			cur = clock();
+			if (cur > tickTimeLapse) {
+				vCap.open(device);
+				if (!vCap.isOpened()) {
+					std::cout << "device not found";
+					return 1;
 				}
+				vCap >> inputFrame;
+				vCap.release();
+
+                std::string saveLapse = timelapseDir + "/" + getCurTime() + ".jpg";
+				imwrite(saveLapse, inputFrame);
+				imwrite(timelapseDir + "/latest.jpg", inputFrame);
+				std::cout << "save lapse '" << saveLapse << "'" << std::endl;
+
+				if (hasRemoteDir) {
+					if (port == -1) {
+						cmd = "rsync -arv " + timelapseDir + " " + remoteDir;
+					} else {
+						cmd = "rsync -arv -e 'ssh -p " + std::to_string(port) +
+							  "' " + timelapseDir + " " + remoteDir;
+					}
+					std::cout << cmd << std::endl;
+					system(cmd.c_str());
+				}
+
+				tickTimeLapse = cur + TIMELAPSE_INTERVAL * CLOCKS_PER_SEC;
+			}
+		}
+		std::cout << std::endl;
+
+		// create new directory in /tmp/motion/
+		std::string startTime = getCurTime();
+		std::string tmpDir = motionDir + startTime + "_" + hostname + "_" +
+							 std::to_string(device);
+		cmd = "mkdir -p " + tmpDir;
+		system(cmd.c_str());
+
+		vCap.open(device);
+		if (!vCap.isOpened()) {
+			std::cout << "device not found";
+			return 1;
+		}
+
+		iNewObj = 0;
+		iSec = 0;
+		iCap = -1;
+		tickCapture = clock() + CLOCKS_PER_SEC;
+		lines.clear();
+		tombs.clear();
+		objects.clear();
+		while (gpioGetValue(sensorGpioNum) == 1) {
+			++iCap;
+			// std::cout << "capture " << ++iCap << std::endl;
+			int nbObjects = objects.size();
+
+			vCap >> inputFrame;
+			if (inputFrame.empty()) {
+				std::cout << "Finished reading" << std::endl;
+				break;
 			}
 
-			if (iMovMin != -1) {
-				if (nearestObj[iMovMin] != -1) {
-					if (distMovMin < distNearestObj[iMovMin]) {
-						nearestMov[nearestObj[iMovMin]] = -1;
+			model->apply(inputFrame, mask);
+			if (iCap < 20) {
+				continue;
+			}
 
+			const int size = 15;
+			medianBlur(mask, mask, size);
+			blur(mask, mask, Size(size, size));
+
+			threshold(mask, mask, 0, 255, THRESH_BINARY);
+
+			std::vector<std::vector<Point>> contours;
+			std::vector<Vec4i> hierarchy;
+			findContours(mask, contours, hierarchy, RETR_TREE,
+						 CHAIN_APPROX_SIMPLE, Point(0, 0));
+
+			int nbMovements = contours.size();
+			std::vector<std::vector<Point>> contours_poly(nbMovements);
+			std::vector<Rect> boundRect(nbMovements);
+			for (int i = 0; i < nbMovements; ++i) {
+				approxPolyDP(Mat(contours[i]), contours_poly[i], 3, true);
+				boundRect[i] = boundingRect(Mat(contours_poly[i]));
+			}
+
+			std::vector<Moments> mu(nbMovements);
+			for (int i = 0; i < nbMovements; ++i) {
+				mu[i] = moments(contours[i], true);
+			}
+
+			drawing = inputFrame.clone();
+			std::vector<Point2f> mc(nbMovements);
+			for (int i = 0; i < nbMovements; ++i) {
+				mc[i] = Point2f(mu[i].m10 / mu[i].m00, mu[i].m01 / mu[i].m00);
+			}
+
+			std::vector<int> nearestObj(nbMovements);
+			std::vector<double> distNearestObj(nbMovements);
+			std::vector<int> nearestMov(nbObjects);
+
+			for (int i = 0; i < nbObjects; ++i) {
+				nearestMov[i] = -1;
+			}
+
+			const int thresh = 10000;
+			for (int i = 0; i < nbMovements; ++i) {
+				nearestObj[i] = -1;
+				distNearestObj[i] = thresh;
+			}
+
+			int iObj = 0;
+			for (const auto &obj : objects) {
+
+				int iMovMin = -1;
+				int distMovMin = thresh;
+				for (int i = 0; i < nbMovements; ++i) {
+					double dist =
+						pow(norm((obj.pos + obj.speedVector) - mc[i]), 2) +
+						abs(obj.density - mu[i].m00);
+
+					if (dist < distMovMin) {
+						distMovMin = dist;
+						iMovMin = i;
+					}
+				}
+
+				if (iMovMin != -1) {
+					if (nearestObj[iMovMin] != -1) {
+						if (distMovMin < distNearestObj[iMovMin]) {
+							nearestMov[nearestObj[iMovMin]] = -1;
+
+							distNearestObj[iMovMin] = distMovMin;
+							nearestObj[iMovMin] = iObj;
+
+							nearestMov[iObj] = iMovMin;
+						}
+					} else {
 						distNearestObj[iMovMin] = distMovMin;
 						nearestObj[iMovMin] = iObj;
 
 						nearestMov[iObj] = iMovMin;
 					}
-				} else {
-					distNearestObj[iMovMin] = distMovMin;
-					nearestObj[iMovMin] = iObj;
+				}
 
-					nearestMov[iObj] = iMovMin;
+				++iObj;
+			}
+
+			// new movement become new object if no previous object near
+			ObjList newObjects;
+			for (int i = 0; i < nbMovements; ++i) {
+
+				int iObj = nearestObj[i];
+				// new object
+				if (iObj == -1) {
+					Scalar color =
+						Scalar(rng.uniform(0, 255), rng.uniform(0, 255),
+							   rng.uniform(0, 255));
+					Capture cap{Mat(inputFrame, boundRect[i]).clone(),
+								Mat(mask, boundRect[i]).clone(), contours[i],
+								boundRect[i], static_cast<int>(mu[i].m00)};
+					Object &&obj{
+						0.0,		 mc[i], static_cast<int>(mu[i].m00),
+						Vec2f(0, 0), color, iNewObj++,
+						cap};
+					newObjects.emplace_back(obj);
 				}
 			}
 
-			++iObj;
-		}
+			iObj = 0;
+			auto it = objects.begin();
+			int nbDeleteObj = 0;
+			while (it != objects.end()) {
+				Object &obj = *it;
+				int iMov = nearestMov[iObj];
 
-		// new movement become new object if no previous object near
-		ObjList newObjects;
-		for (int i = 0; i < nbMovements; ++i) {
+				// delete object if not moving (no event)
+				if (iMov == -1) {
+					// delete passing object event
+					if (obj.dist < 100) {
+						tombs.push_back({obj.pos, obj.color});
 
-			int iObj = nearestObj[i];
-			// new object
-			if (iObj == -1) {
-				Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0, 255),
-									  rng.uniform(0, 255));
-				// Object &&obj{0.0,		  mc[i],
-				// static_cast<int>(mu[i].m00), 			 Vec2f(0, 0), color,
+						objects.erase(it++);
+						++nbDeleteObj;
 
-				// Rect rect {boundRect[i]};
-				Capture cap{Mat(inputFrame, boundRect[i]).clone(),
-							Mat(mask, boundRect[i]).clone(), contours[i],
-							boundRect[i], mu[i].m00};
-				// iNewObj++};
-				Object &&obj{0.0,		  mc[i], static_cast<int>(mu[i].m00),
-							 Vec2f(0, 0), color, iNewObj++,
-							 cap};
-				//  mc[i]};
+					}
+					// save position of motionless object
+					else {
+						putText(drawing, "s", obj.pos + Point2f(-9, 9),
+								FONT_HERSHEY_DUPLEX, 0.8, obj.color, 1);
+						++it;
+					}
 
-				rectangle(drawing, boundRect[i].tl(), boundRect[i].br(),
-						  Scalar(0, 255, 0), 2);
+				}
+				// movement object
+				else {
+					if (mu[iMov].m00 > obj.bestCapture.density) {
+						Capture cap{Mat(inputFrame, boundRect[iMov]).clone(),
+									Mat(mask, boundRect[iMov]).clone(),
+									contours[iMov], boundRect[iMov],
+									static_cast<int>(mu[iMov].m00)};
 
-				// std::cout << "new object" << std::endl;
-				newObjects.emplace_back(obj);
-			}
-			// previous object
-			// else {
-			// 	// int iMov = nearestMov[iObj];
-			// }
-			// drawContours(drawing, contours_poly, i, color, 1, 8,
-			// std::vector<Vec4i>(), 0, Point());
-			// rectangle(drawing, boundRect[i].tl(), boundRect[i].br(), color,
-			// 2,
-			//   8, 0);
-			// putText(drawing,
-			// 		std::to_string(static_cast<int>(std::floor(mu[i].m00))),
-			// 		boundRect[i].tl() - Point2i(0, 10), FONT_HERSHEY_DUPLEX,
-			// 		1.0, Scalar(0, 0, 255));
-		}
+						obj.bestCapture = cap;
+					}
+					obj.speedVector = mc[iMov] - obj.pos;
+					obj.dist += norm(obj.speedVector);
+					lines.push_back({obj.pos, mc[iMov], obj.color});
+					obj.pos = mc[iMov];
+					obj.density = mu[iMov].m00;
 
-		iObj = 0;
-		auto it = objects.begin();
-		int nbDeleteObj = 0;
-		while (it != objects.end()) {
-			// while (iObj < nbObjects) {
-			Object &obj = *it;
-			int iMov = nearestMov[iObj];
-			// int minDist = 99999;
-			// int minMov = -1;
-			// for (int iMov = 0; iMov < nbMovements; ++iMov) {
-			// 	if (nearestObj[iMov] == iObj) {
-			// 		int dist = distNearestObj[iMov];
-			// 		if (minDist > dist) {
-			// 			minDist = dist;
-			// 			minMov = iMov;
-			// 		}
-			// 	}
-			// }
+					rectangle(drawing, boundRect[iMov].tl(),
+							  boundRect[iMov].br(), obj.color, 2);
 
-			// delete object if not moving (no event)
-			if (iMov == -1) {
-				if (obj.dist < 100) {
-					tombs.push_back({obj.pos, obj.color});
+					putText(drawing, std::to_string(obj.id),
+							boundRect[iMov].br() + Point(5, 0),
+							FONT_HERSHEY_DUPLEX, 0.5, obj.color, 1);
+					putText(drawing, std::to_string(static_cast<int>(obj.dist)),
+							boundRect[iMov].br() + Point(5, -20),
+							FONT_HERSHEY_DUPLEX, 0.5, obj.color, 1);
+					putText(drawing, std::to_string(obj.density),
+							boundRect[iMov].br() + Point(5, -40),
+							FONT_HERSHEY_DUPLEX, 0.5, obj.color, 1);
+					line(drawing, obj.pos, obj.pos + obj.speedVector * 10,
+						 Scalar(0, 0, 255), 1, LineTypes::LINE_AA);
 
-					objects.erase(it++);
-					// --iNewObj;
-					++nbDeleteObj;
-					// ++it;
-					// putText(drawing, "d", obj.pos + Point2f(-9, 9),
-					// FONT_HERSHEY_COMPLEX, 0.8, obj.color, 2);
-					// std::cout << "delete object" << std::endl;
-				} else {
-					putText(drawing, "s", obj.pos + Point2f(-9, 9),
-							FONT_HERSHEY_COMPLEX, 0.8, obj.color, 1);
-					// std::cout << "standbye object" << std::endl;
 					++it;
 				}
 
+				++iObj;
 			}
-			// move object
-			else {
-				// Object &obj = objects[iObj];
-				if (mu[iMov].m00 > obj.bestCapture.density) {
-					Capture cap{Mat(inputFrame, boundRect[iMov]).clone(),
-								Mat(mask, boundRect[iMov]).clone(),
-								contours[iMov], boundRect[iMov], mu[iMov].m00};
-					// iNewObj++};
-					// Object &&obj{
-					// 	0.0,		 mc[iMov],  static_cast<int>(mu[iMov].m00),
-					// 	Vec2f(0, 0), obj.color, iNewObj++,
-					// 	cap};
 
-					obj.bestCapture = cap;
+			for (auto &obj : newObjects) {
+				objects.push_back(obj);
+			}
+
+			putText(drawing, "nbObjs : " + std::to_string(nbObjects),
+					Point(0, 30), FONT_HERSHEY_DUPLEX, 0.8, Scalar(0, 0, 255));
+
+			for (size_t i = 0; i < lines.size(); ++i) {
+				line(drawing, lines[i].p, lines[i].p2, lines[i].color, 1);
+			}
+
+			for (DeadObj obj : tombs) {
+				putText(drawing, "x", obj.p + Point(-9, 9), FONT_HERSHEY_DUPLEX,
+						0.8, obj.color, 1);
+			}
+
+			imshow("drawing", drawing);
+			imshow("mask", mask);
+			if (waitKey(1) == 'q')
+				break;
+
+			cur = clock();
+			if (cur > tickCapture) {
+				std::string saveCap =
+					tmpDir + "/cap_" + std::to_string(iSec) + ".jpg";
+
+				if (!imwrite(saveCap, drawing)) {
+					std::cout << "failed to save cap" << std::endl;
+					perror(tmpDir.c_str());
+					return 2;
 				}
-				// assert(0 <= iMov && iMov < mc.size() && iMov < nbMovements);
-				// std::cout << "loop 2 : " << mc[iMov] << obj.pos << std::endl;
-				obj.speedVector = mc[iMov] - obj.pos;
-				obj.dist += norm(obj.speedVector);
-				// line(drawing, obj.pos, mc[i], obj.color);
-				lines.push_back({obj.pos, mc[iMov], obj.color});
-				obj.pos = mc[iMov];
-				obj.density = mu[iMov].m00;
+				std::cout << "save capture '" << saveCap << "'" << std::endl;
 
-				rectangle(drawing, boundRect[iMov].tl(), boundRect[iMov].br(),
-						  obj.color, 2);
-
-				// std::cout << "loop 3 : " << iMov << "/" << nbMovements <<
-				// std::endl; std::cout << "loop 3 : " << boundRect[iMov].tl()
-				putText(drawing, "+", obj.pos + Point2f(-9, 9),
-						FONT_HERSHEY_COMPLEX, 0.8, Scalar(0, 255, 255), 1);
-				// << std::endl;
-				putText(drawing, std::to_string(obj.id),
-						boundRect[iMov].tl() - Point(0, 5),
-						// boundRect[iMov].tl() - Point2i(0, 10),
-						FONT_HERSHEY_DUPLEX, 0.8, obj.color, 1);
-				putText(drawing, std::to_string(obj.dist),
-						boundRect[iMov].tl() - Point(0, 25),
-						// boundRect[iMov].tl() - Point2i(0, 10),
-						FONT_HERSHEY_DUPLEX, 0.8, obj.color, 1);
-				putText(drawing, std::to_string(obj.density),
-						boundRect[iMov].tl() - Point(0, 45),
-						// boundRect[iMov].tl() - Point2i(0, 10),
-						FONT_HERSHEY_DUPLEX, 0.8, obj.color, 1);
-				line(drawing, obj.pos, obj.pos + obj.speedVector * 5,
-					 Scalar(0, 0, 255), 1);
-
-				// std::cout << "move object " << std::endl;
-				++it;
+				tickCapture = cur + CLOCKS_PER_SEC;
+				++iSec;
 			}
-
-			++iObj;
-		}
-		// std::cout << iObj << objects.size() << nbDeleteObj << std::endl;
-		// assert(iObj == objects.size() + nbDeleteObj);
-
-		// objects.emplace_back(newObjects);
-		// objects += newObjects;
-		// objects.push_back(std::move(newObjects));
-		// objects.emplace_back(std::move(newObjects));
-		for (auto &obj : newObjects) {
-			objects.push_back(obj);
 		}
 
-		for (int i = 0; i < nbMovements; ++i) {
-			putText(drawing, "+", mc[i] + Point2f(-9, 9), FONT_HERSHEY_COMPLEX,
-					0.8, Scalar(0, 0, 0), 1);
-			// rectangle(drawing, boundRect[i].tl(), boundRect[i].br(),
-			// 		  Scalar(0, 0, 0), 2);
-		}
-
-		putText(drawing, "nbObjs : " + std::to_string(nbObjects), Point(0, 30),
-				FONT_HERSHEY_DUPLEX, 0.8, Scalar(0, 0, 255));
-
-		putText(drawing, "nbMovs : " + std::to_string(nbMovements),
-				Point(0, 60), FONT_HERSHEY_DUPLEX, 0.8, Scalar(0, 0, 255));
-
-		putText(drawing, "nbDeleteObj : " + std::to_string(nbDeleteObj),
-				Point(0, 90), FONT_HERSHEY_DUPLEX, 0.8, Scalar(0, 0, 255));
-
-		// Mat m;
-		// int i =0;
 		for (Object obj : objects) {
-			// if (i++ != 1)
-			// continue;
-			// drawing(obj.bestCapture.rect) = obj.bestCapture.img;
-			// Mat m = Mat(drawing, obj.bestCapture.rect);
 			Mat m = obj.bestCapture.img;
 
-			// m = obj.bestCapture.img;
-
-			// obj.bestCapture.img.copyTo(m);
-
-			// cvtColor(m, m, COLOR_BGR2GRAY);
-			// bitwise_not(m, m);
-			// Canny(m, m, 0, 255);
-
-			// cvtColor(m, m, COLOR_GRAY2BGR);
 			m.copyTo(Mat(drawing, obj.bestCapture.rect), obj.bestCapture.mask);
-			// m = Scalar(0, 0, 0);
-			// m = obj.bestCapture.img;
-			// rectangle(drawing, obj.bestCapture.rect, obj.color, 2);
-            std::vector<std::vector<Point>> contours {obj.bestCapture.contour};
+			std::vector<std::vector<Point>> contours{obj.bestCapture.contour};
 			drawContours(drawing, contours, 0, obj.color, 2);
-			// Mat m = Mat(drawing, obj.bestCapture.rect);
-			// m = obj.bestCapture.img;
 		}
-		// imshow("m", m);
+		imwrite(tmpDir + "/trace.jpg", drawing);
+		// std::cout << "end capture " << startTime + "_" +
+		// std::to_string(device)
+		// 		  << std::endl;
 
-		for (size_t i = 0; i < lines.size(); ++i) {
-			line(drawing, lines[i].p, lines[i].p2, lines[i].color, 2);
+		if (hasRemoteDir) {
+			if (port == -1) {
+				cmd = "rsync -arv " + tmpDir + " " + remoteDir;
+			} else {
+				cmd = "rsync -arv -e 'ssh -p " + std::to_string(port) + "' " +
+					  tmpDir + " " + remoteDir;
+			}
+			std::cout << cmd << std::endl;
+			system(cmd.c_str());
 		}
 
-		for (DeadObj obj : tombs) {
-			putText(drawing, "d", obj.p + Point(-9, 9), FONT_HERSHEY_COMPLEX,
-					0.8, obj.color, 1);
-		}
+		vCap.release();
+		destroyAllWindows();
 
-		imshow("drawing", drawing);
-		// imshow("image", inputFrame);
-		imshow("mask", mask);
-		if (waitKey(1) == 'q')
-			break;
-	}
-
-    imwrite("result.jpg", drawing);
-	std::cout << "done.\n";
+	} // while (1)
 
 	return 0;
 }

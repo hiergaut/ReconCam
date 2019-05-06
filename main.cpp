@@ -154,10 +154,11 @@ int main(int argc, char **argv) {
 
 	auto model = createBackgroundSubtractorKNN();
 	VideoCapture vCap;
+	// VideoWriter outputVideo;
 	// auto model = createBackgroundSubtractorMOG2();
 
 	std::string timelapseDir =
-		motionDir + hostname + "_" + std::to_string(device);
+		motionDir + "timelapse_" + hostname + "_" + std::to_string(device);
 	std::string cmd = "mkdir -p " + timelapseDir;
 	system(cmd.c_str());
 
@@ -172,18 +173,19 @@ int main(int argc, char **argv) {
 	int iSec;
 	int iCap;
 	size_t tickTimeLapse = clock() + CLOCKS_PER_SEC; // take picture immediately
-    // std::cout << "first tick TimeLapse " << tickTimeLapse << std::endl;
+	// std::cout << "first tick TimeLapse " << tickTimeLapse << std::endl;
 
 	initGpio(sensorGpioNum);
 	gpioGetValue(sensorGpioNum);
 
-    // --------------------------- INFINITE LOOP ------------------------------
+	// --------------------------- INFINITE LOOP ------------------------------
 	while (1) {
 		while (gpioGetValue(sensorGpioNum) == 0) {
 			std::cout << "." << std::flush;
 			usleep(1000000);
-            tickTimeLapse -= CLOCKS_PER_SEC;
-            // std::cout << "first tick TimeLapse " << tickTimeLapse << std::endl;
+			tickTimeLapse -= CLOCKS_PER_SEC;
+			// std::cout << "first tick TimeLapse " << tickTimeLapse <<
+			// std::endl;
 
 			cur = clock();
 			if (cur > tickTimeLapse) {
@@ -195,10 +197,15 @@ int main(int argc, char **argv) {
 				vCap >> inputFrame;
 				vCap.release();
 
-                std::string saveLapse = timelapseDir + "/" + getCurTime() + ".jpg";
+				std::string saveLapse =
+					timelapseDir + "/" + getCurTime() + ".jpg";
 				imwrite(saveLapse, inputFrame);
-				imwrite(timelapseDir + "/latest.jpg", inputFrame);
+				imwrite(timelapseDir + "/latest.jpeg", inputFrame);
 				std::cout << "save lapse '" << saveLapse << "'" << std::endl;
+
+				cmd = "convert " + timelapseDir + "/*.jpg " + timelapseDir +
+					  "/timelapse.gif";
+				system(cmd.c_str());
 
 				if (hasRemoteDir) {
 					if (port == -1) {
@@ -228,6 +235,14 @@ int main(int argc, char **argv) {
 			std::cout << "device not found";
 			return 1;
 		}
+
+		// outputVideo.open(tmpDir + "/clip.avi", VideoWriter::fourcc('M', 'J',
+		// 'P', 'G'), 2, 				 Size(vCap.get(cv::CAP_PROP_FRAME_WIDTH),
+		// 					  vCap.get(CAP_PROP_FRAME_HEIGHT)));
+		// if (!outputVideo.isOpened()) {
+		// 	std::cout << "could not open output video" << std::endl;
+		// 	return 5;
+		// }
 
 		iNewObj = 0;
 		iSec = 0;
@@ -449,6 +464,8 @@ int main(int argc, char **argv) {
 				}
 				std::cout << "save capture '" << saveCap << "'" << std::endl;
 
+				// outputVideo << drawing;
+
 				tickCapture = cur + CLOCKS_PER_SEC;
 				++iSec;
 			}
@@ -461,10 +478,13 @@ int main(int argc, char **argv) {
 			std::vector<std::vector<Point>> contours{obj.bestCapture.contour};
 			drawContours(drawing, contours, 0, obj.color, 2);
 		}
-		imwrite(tmpDir + "/trace.jpg", drawing);
+		imwrite(tmpDir + "/trace.jpeg", drawing);
 		// std::cout << "end capture " << startTime + "_" +
 		// std::to_string(device)
 		// 		  << std::endl;
+
+		cmd = "convert " + tmpDir + "/*.jpg " + tmpDir + "/clip.gif";
+		system(cmd.c_str());
 
 		if (hasRemoteDir) {
 			if (port == -1) {
@@ -478,6 +498,7 @@ int main(int argc, char **argv) {
 		}
 
 		vCap.release();
+		// outputVideo.release();
 		destroyAllWindows();
 
 	} // while (1)

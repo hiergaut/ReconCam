@@ -133,7 +133,7 @@
                 // ";
                 echo "
 		    <a href=\"displayAll.php?dir=$file\" >
-			    <img src=\"$dir/$file/trace.jpeg\" width=320 height=240 />
+			    <img src=\"$dir/$file/trace.jpg\" width=320 height=240 />
 		    </a>
 		    ";
                 // }

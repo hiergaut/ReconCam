@@ -140,7 +140,7 @@ int main(int argc, char **argv) {
 		parser.printMessage();
 		return 0;
 	}
-	int sensorGpioNum = parser.get<int>("@sensor");
+	int sensorGpioNum = parser.get<int>("sensor");
 	int device = parser.get<int>("device");
 	std::string remoteDir = parser.get<std::string>("repository");
 	int port = parser.get<int>("port");

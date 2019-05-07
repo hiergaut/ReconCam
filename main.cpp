@@ -50,7 +50,7 @@ typedef struct s_deadObj {
 	Scalar color;
 } DeadObj;
 
-std::string gpioDir = "/tmp/gpio/";
+std::string gpioDir;
 // std::string gpioDir = "/sys/class/gpio/";
 
 void initGpio(int gpio) {
@@ -151,6 +151,12 @@ int main(int argc, char **argv) {
 		parser.printMessage();
 		parser.printErrors();
 		return 0;
+	}
+
+	if (sensorGpioNum == -1) {
+		gpioDir = "/tmp/gpio/";
+	} else {
+		gpioDir = "/sys/class/gpio/";
 	}
 
 	bool hasRemoteDir = !remoteDir.empty();

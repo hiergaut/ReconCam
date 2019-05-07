@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
 	// }
 	CommandLineParser parser(
 		argc, argv,
-		"{sensor        | -1            | gpio number of IR senror}"
+		"{s sensor      | -1            | gpio number of IR senror}"
 		"{d device      | 0             | device camera, /dev/video0 by "
 		"default}"
 		"{r repository  |               | save motion to specific repository}"
@@ -273,7 +273,7 @@ int main(int argc, char **argv) {
 			}
 
 			model->apply(inputFrame, mask);
-			if (iCap < 20) {
+			if (iCap < 10) {
 				continue;
 			}
 
@@ -490,7 +490,7 @@ int main(int argc, char **argv) {
 			std::vector<std::vector<Point>> contours{obj.bestCapture.contour};
 			drawContours(drawing, contours, 0, obj.color, 2);
 		}
-		imwrite(tmpDir + "/trace.jpeg", drawing);
+		imwrite(tmpDir + "/trace.jpg", drawing);
 		// std::cout << "end capture " << startTime + "_" +
 		// std::to_string(device)
 		// 		  << std::endl;

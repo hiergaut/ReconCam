@@ -132,7 +132,8 @@ int main(int argc, char **argv) {
 		"{s sensor      | -1            | gpio number of IR senror}"
 		"{d device      | 0             | device camera, /dev/video0 by "
 		"default}"
-		"{r repository  |               | save motion to specific repository}"
+		"{r repository  | "
+		"            | save motion to specific repository}"
 		"{p port        | -1            | remote port repository}"
 		"{help h        |               | help message}"
 		//
@@ -154,8 +155,13 @@ int main(int argc, char **argv) {
 
 	bool hasRemoteDir = !remoteDir.empty();
 	using ObjList = std::list<Object>;
-	// std::string motionDir = "/tmp/motion/";
-	std::string motionDir = "motion/";
+	std::string motionDir;
+	if (remoteDir.empty()) {
+		motionDir = "motion/";
+
+	} else {
+		motionDir = "/tmp/motion/";
+	}
 	std::string hostname = getHostname();
 
 	auto model = createBackgroundSubtractorKNN();

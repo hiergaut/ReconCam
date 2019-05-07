@@ -1,7 +1,7 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc.hpp"
-#include "opencv2/video.hpp"
-#include "opencv2/videoio.hpp"
+#include "opencv2/video.hpp" // model
+// #include "opencv2/videoio.hpp"
 
 #include "opencv2/imgproc/imgproc.hpp" // bounding boxes
 
@@ -50,8 +50,8 @@ typedef struct s_deadObj {
 	Scalar color;
 } DeadObj;
 
-std::string gpioDir = "/tmp/gpio/";
-// std::string gpioDir = "/sys/class/gpio/";
+// std::string gpioDir = "/tmp/gpio/";
+std::string gpioDir = "/sys/class/gpio/";
 
 void initGpio(int gpio) {
 	std::string gpioExportDir = gpioDir + "export";
@@ -63,6 +63,7 @@ void initGpio(int gpio) {
 	}
 	exportGpio << gpio;
 	exportGpio.close();
+	usleep(100000);
 
 	std::string gpioNumDir = gpioDir + "gpio" + std::to_string(gpio) + "/";
 	std::string gpioNumDirectionDir = gpioNumDir + "direction";
@@ -74,6 +75,7 @@ void initGpio(int gpio) {
 	}
 	directionGpio << "in";
 	directionGpio.close();
+	usleep(100000);
 }
 
 int gpioGetValue(int gpio) {
@@ -89,6 +91,7 @@ int gpioGetValue(int gpio) {
 	int val;
 	getValueGpio >> val;
 	getValueGpio.close();
+	usleep(100000);
 
 	return val;
 }
@@ -149,7 +152,8 @@ int main(int argc, char **argv) {
 
 	bool hasRemoteDir = !remoteDir.empty();
 	using ObjList = std::list<Object>;
-	std::string motionDir = "/tmp/motion/";
+	// std::string motionDir = "/tmp/motion/";
+	std::string motionDir = "motion/";
 	std::string hostname = getHostname();
 
 	auto model = createBackgroundSubtractorKNN();
@@ -237,7 +241,7 @@ int main(int argc, char **argv) {
 		}
 
 		// outputVideo.open(tmpDir + "/clip.avi", VideoWriter::fourcc('M', 'J',
-		// 'P', 'G'), 2, 				 Size(vCap.get(cv::CAP_PROP_FRAME_WIDTH),
+		// 'P', 'G'), 2, Size(vCap.get(cv::CAP_PROP_FRAME_WIDTH),
 		// 					  vCap.get(CAP_PROP_FRAME_HEIGHT)));
 		// if (!outputVideo.isOpened()) {
 		// 	std::cout << "could not open output video" << std::endl;
@@ -447,8 +451,10 @@ int main(int argc, char **argv) {
 						0.8, obj.color, 1);
 			}
 
+#ifdef DISPLAY
 			imshow("drawing", drawing);
 			imshow("mask", mask);
+#endif
 			if (waitKey(1) == 'q')
 				break;
 
@@ -498,8 +504,10 @@ int main(int argc, char **argv) {
 		}
 
 		vCap.release();
-		// outputVideo.release();
+// outputVideo.release();
+#ifdef DISPLAY
 		destroyAllWindows();
+#endif
 
 	} // while (1)
 

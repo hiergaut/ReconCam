@@ -51,7 +51,7 @@
             //     ";
             // $cur_dir =exec("echo $file | cut -d. -f1");
             echo "
-		    <a href=\"timelapse.php?dir=$file\" >
+		    <a href=\"displayAll.php?dir=$file\" >
 			    <img src=\"$dir/$file/timelapse.gif\" width=320 height=240 />
 		    </a>
 		    ";
@@ -70,7 +70,7 @@
 	    ";
             // $cur_dir =exec("echo $file | cut -d. -f1");
             // echo "
-            // 	    <a href=\"timelapse.php?dir=$cur_dir\" >
+            // 	    <a href=\"displayAll.php?dir=$cur_dir\" >
             // 		    <img src=\"$dir/$file\" width=320 height=240 />
             // 	    </a>
             // 	    ";
@@ -95,7 +95,7 @@
                 }
 
                 // $video =exec("echo $file | cut -d: -f2,3");
-                $video = "$dir/$file/clip.gif";
+                // $video = "$dir/$file/clip.gif";
                 // $video ="$video.mp4";
 
                 #			echo "
@@ -126,13 +126,13 @@
                 // </a>
                 // ";
                 //         } else {
-            //     echo "
-		    // <a href=\"$video\" >
-			//     <img style=\"$style\" src=\"$dir/$file/trace.jpeg\" width=320 height=240 />
-		    // </a>
-		    // ";
-            echo "
-		    <a href=\"timelapse.php?dir=$file\" >
+                //     echo "
+                // <a href=\"$video\" >
+                //     <img style=\"$style\" src=\"$dir/$file/trace.jpeg\" width=320 height=240 />
+                // </a>
+                // ";
+                echo "
+		    <a href=\"displayAll.php?dir=$file\" >
 			    <img src=\"$dir/$file/trace.jpeg\" width=320 height=240 />
 		    </a>
 		    ";

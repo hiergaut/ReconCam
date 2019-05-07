@@ -126,9 +126,14 @@
                 // </a>
                 // ";
                 //         } else {
-                echo "
-		    <a href=\"$video\" >
-			    <img style=\"$style\" src=\"$dir/$file/trace.jpeg\" width=320 height=240 />
+            //     echo "
+		    // <a href=\"$video\" >
+			//     <img style=\"$style\" src=\"$dir/$file/trace.jpeg\" width=320 height=240 />
+		    // </a>
+		    // ";
+            echo "
+		    <a href=\"timelapse.php?dir=$file\" >
+			    <img src=\"$dir/$file/timelapse.gif\" width=320 height=240 />
 		    </a>
 		    ";
                 // }

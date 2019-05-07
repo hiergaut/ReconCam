@@ -50,8 +50,8 @@ typedef struct s_deadObj {
 	Scalar color;
 } DeadObj;
 
-// std::string gpioDir = "/tmp/gpio/";
-std::string gpioDir = "/sys/class/gpio/";
+std::string gpioDir = "/tmp/gpio/";
+// std::string gpioDir = "/sys/class/gpio/";
 
 void initGpio(int gpio) {
 	std::string gpioExportDir = gpioDir + "export";

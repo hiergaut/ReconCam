@@ -14,8 +14,8 @@
 #include <string>
 #include <unistd.h>
 
-// #define TIMELAPSE_INTERVAL 1200 // secondes
-#define TIMELAPSE_INTERVAL 30 // secondes
+#define TIMELAPSE_INTERVAL 600 // secondes
+// #define TIMELAPSE_INTERVAL 30 // secondes
 
 using namespace cv;
 
@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
 	CommandLineParser parser(
 		argc, argv,
 		"{help h        |               | help message}"
-		"{@sensor       |               | gpio number of IR senror}"
+		"{sensor        | -1            | gpio number of IR senror}"
 		"{d device      | 0             | device camera, /dev/video0 by "
 		"default}"
 		"{r repository  |               | save motion to specific repository}"
@@ -179,12 +179,14 @@ int main(int argc, char **argv) {
 	size_t tickTimeLapse = clock() + CLOCKS_PER_SEC; // take picture immediately
 	// std::cout << "first tick TimeLapse " << tickTimeLapse << std::endl;
 
-	initGpio(sensorGpioNum);
-	gpioGetValue(sensorGpioNum);
+	if (sensorGpioNum != -1) {
+		initGpio(sensorGpioNum);
+		gpioGetValue(sensorGpioNum);
+	}
 
 	// --------------------------- INFINITE LOOP ------------------------------
 	while (1) {
-		while (gpioGetValue(sensorGpioNum) == 0) {
+		while (sensorGpioNum == -1 || gpioGetValue(sensorGpioNum) == 0) {
 			std::cout << "." << std::flush;
 			usleep(1000000);
 			tickTimeLapse -= CLOCKS_PER_SEC;
@@ -193,7 +195,7 @@ int main(int argc, char **argv) {
 
 			cur = clock();
 			if (cur > tickTimeLapse) {
-                std::cout << std::endl;
+				std::cout << std::endl;
 				vCap.open(device);
 				if (!vCap.isOpened()) {
 					std::cout << "device not found";
@@ -492,7 +494,7 @@ int main(int argc, char **argv) {
 		// 		  << std::endl;
 
 		// cmd = "convert " + tmpDir + "/*.jpg " + tmpDir + "/clip.gif";
-        // std::cout << cmd << std::endl;
+		// std::cout << cmd << std::endl;
 		// system(cmd.c_str());
 
 		if (hasRemoteDir) {

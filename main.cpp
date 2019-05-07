@@ -129,12 +129,14 @@ int main(int argc, char **argv) {
 	// }
 	CommandLineParser parser(
 		argc, argv,
-		"{help h        |               | help message}"
 		"{sensor        | -1            | gpio number of IR senror}"
 		"{d device      | 0             | device camera, /dev/video0 by "
 		"default}"
 		"{r repository  |               | save motion to specific repository}"
-		"{p port        | -1            | remote port repository}");
+		"{p port        | -1            | remote port repository}"
+		"{help h        |               | help message}"
+		//
+	);
 
 	if (parser.has("help")) {
 		parser.printMessage();

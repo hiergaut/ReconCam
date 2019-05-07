@@ -193,6 +193,7 @@ int main(int argc, char **argv) {
 
 			cur = clock();
 			if (cur > tickTimeLapse) {
+                std::cout << std::endl;
 				vCap.open(device);
 				if (!vCap.isOpened()) {
 					std::cout << "device not found";
@@ -490,9 +491,9 @@ int main(int argc, char **argv) {
 		// std::to_string(device)
 		// 		  << std::endl;
 
-		cmd = "convert " + tmpDir + "/*.jpg " + tmpDir + "/clip.gif";
-        std::cout << cmd << std::endl;
-		system(cmd.c_str());
+		// cmd = "convert " + tmpDir + "/*.jpg " + tmpDir + "/clip.gif";
+        // std::cout << cmd << std::endl;
+		// system(cmd.c_str());
 
 		if (hasRemoteDir) {
 			if (port == -1) {

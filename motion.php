@@ -133,7 +133,7 @@
 		    // ";
             echo "
 		    <a href=\"timelapse.php?dir=$file\" >
-			    <img src=\"$dir/$file/timelapse.gif\" width=320 height=240 />
+			    <img src=\"$dir/$file/clip.gif\" width=320 height=240 />
 		    </a>
 		    ";
                 // }

@@ -209,6 +209,7 @@ int main(int argc, char **argv) {
 
 				cmd = "convert " + timelapseDir + "/*.jpg " + timelapseDir +
 					  "/timelapse.gif";
+				std::cout << cmd << std::endl;
 				system(cmd.c_str());
 
 				if (hasRemoteDir) {
@@ -490,6 +491,7 @@ int main(int argc, char **argv) {
 		// 		  << std::endl;
 
 		cmd = "convert " + tmpDir + "/*.jpg " + tmpDir + "/clip.gif";
+        std::cout << cmd << std::endl;
 		system(cmd.c_str());
 
 		if (hasRemoteDir) {

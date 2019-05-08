@@ -116,7 +116,10 @@ std::string getCurTime() {
 	time_t t = time(0);
 	tm *now = localtime(&t);
     int hour = now->tm_hour;
-    std::string hour_str = (hour < 10) ?("0" + std::to_string(hour)) :(std::to_string(hour));
+    std::string hour_str = std::to_string(hour);
+    if (hour < 10) {
+        hour_str = "0" + hour_str;
+    }
 	return hour_str + ':' + std::to_string(now->tm_min) +
 		   ':' + std::to_string(now->tm_sec);
 }
@@ -455,7 +458,7 @@ int main(int argc, char **argv) {
 					// save position of motionless object
 					else {
 						putText(drawing, "s", obj.pos + Point2f(-9, 9),
-								FONT_HERSHEY_DUPLEX, 0.8, obj.color, 1);
+								FONT_HERSHEY_DUPLEX, 1, obj.color, 1);
 						++it;
 					}
 
@@ -480,7 +483,7 @@ int main(int argc, char **argv) {
 							  boundRect[iMov].br(), obj.color, 2);
 
 					putText(drawing, std::to_string(obj.id),
-							boundRect[iMov].br() + Point(5, 0),
+							boundRect[iMov].tl() + Point(5, 0),
 							FONT_HERSHEY_DUPLEX, 0.5, obj.color, 1);
 					putText(drawing, std::to_string(static_cast<int>(obj.dist)),
 							boundRect[iMov].br() + Point(5, -20),
@@ -488,7 +491,7 @@ int main(int argc, char **argv) {
 					putText(drawing, std::to_string(obj.density),
 							boundRect[iMov].br() + Point(5, -40),
 							FONT_HERSHEY_DUPLEX, 0.5, obj.color, 1);
-					line(drawing, obj.pos, obj.pos + obj.speedVector * 10,
+					line(drawing, obj.pos, obj.pos + obj.speedVector * 2,
 						 Scalar(0, 0, 255), 1, LineTypes::LINE_AA);
 
 					++it;
@@ -505,12 +508,12 @@ int main(int argc, char **argv) {
 					Point(0, 30), FONT_HERSHEY_DUPLEX, 0.8, Scalar(0, 0, 255));
 
 			for (size_t i = 0; i < lines.size(); ++i) {
-				line(drawing, lines[i].p, lines[i].p2, lines[i].color, 1);
+				line(drawing, lines[i].p, lines[i].p2, lines[i].color, 2);
 			}
 
 			for (DeadObj obj : tombs) {
 				putText(drawing, "x", obj.p + Point(-9, 9), FONT_HERSHEY_DUPLEX,
-						0.8, obj.color, 1);
+						1, obj.color, 1);
 			}
 
 #ifdef DISPLAY
@@ -522,8 +525,12 @@ int main(int argc, char **argv) {
 
 			cur = clock();
 			if (cur > tickCapture) {
+                std::string iSec_str = std::to_string(iSec);
+                if (iSec < 10) {
+                    iSec_str = "0" + iSec_str;
+                }
 				std::string saveCap =
-					tmpDir + "/cap_" + std::to_string(iSec) + ".jpg";
+					tmpDir + "/cap_" + iSec_str + ".jpg";
 
 				if (!imwrite(saveCap, drawing)) {
 					std::cout << "failed to save cap" << std::endl;

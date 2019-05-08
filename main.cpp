@@ -115,13 +115,24 @@ std::string getHostname() {
 std::string getCurTime() {
 	time_t t = time(0);
 	tm *now = localtime(&t);
-    int hour = now->tm_hour;
-    std::string hour_str = std::to_string(hour);
-    if (hour < 10) {
-        hour_str = "0" + hour_str;
-    }
-	return hour_str + ':' + std::to_string(now->tm_min) +
-		   ':' + std::to_string(now->tm_sec);
+
+	int hour = now->tm_hour;
+	std::string hour_str = std::to_string(hour);
+	if (hour < 10) {
+		hour_str = "0" + hour_str;
+	}
+
+	int min = now->tm_min;
+	std::string min_str = std::to_string(min);
+	if (min < 10)
+		min_str = "0" + min_str;
+
+	int sec = now->tm_sec;
+	std::string sec_str = std::to_string(sec);
+	if (sec < 10)
+		sec_str = "0" + sec_str;
+
+	return hour_str + ':' + min_str + ':' + sec_str;
 }
 
 int sensorGpioNum;
@@ -525,12 +536,11 @@ int main(int argc, char **argv) {
 
 			cur = clock();
 			if (cur > tickCapture) {
-                std::string iSec_str = std::to_string(iSec);
-                if (iSec < 10) {
-                    iSec_str = "0" + iSec_str;
-                }
-				std::string saveCap =
-					tmpDir + "/cap_" + iSec_str + ".jpg";
+				std::string iSec_str = std::to_string(iSec);
+				if (iSec < 10) {
+					iSec_str = "0" + iSec_str;
+				}
+				std::string saveCap = tmpDir + "/cap_" + iSec_str + ".jpg";
 
 				if (!imwrite(saveCap, drawing)) {
 					std::cout << "failed to save cap" << std::endl;

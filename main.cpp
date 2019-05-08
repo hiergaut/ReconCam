@@ -130,9 +130,10 @@ int main(int argc, char **argv) {
 	CommandLineParser parser(
 		argc, argv,
 		"{s sensor      | -1            | gpio number of IR senror}"
-        "{n not         | -1             | sensor disable motion}"
+		"{n not         | -1             | sensor disable motion}"
 		"{d device      | 0             | device camera, /dev/video0 by "
 		"default}"
+		"{f flip        | false         | rotate image 180}"
 		"{r repository  | "
 		"            | save motion to specific repository}"
 		"{p port        | -1            | remote port repository}"
@@ -145,10 +146,11 @@ int main(int argc, char **argv) {
 		return 0;
 	}
 	int sensorGpioNum = parser.get<int>("sensor");
-    int sensorNotMov = parser.get<int>("not");
+	int sensorNotMov = parser.get<int>("not");
 	int device = parser.get<int>("device");
 	std::string remoteDir = parser.get<std::string>("repository");
 	int port = parser.get<int>("port");
+	bool flip180 = parser.get<bool>("flip");
 	if (!parser.check()) {
 		parser.printMessage();
 		parser.printErrors();
@@ -200,13 +202,13 @@ int main(int argc, char **argv) {
 		gpioGetValue(sensorGpioNum);
 	}
 
-    if (sensorNotMov != -1) {
-        initGpio(sensorNotMov);
-        gpioGetValue(sensorNotMov);
-    }
+	if (sensorNotMov != -1) {
+		initGpio(sensorNotMov);
+		gpioGetValue(sensorNotMov);
+	}
 
 	// --------------------------- INFINITE LOOP ------------------------------
-    bool isNotMov = false;
+	bool isNotMov = false;
 	while (1) {
 		while (sensorGpioNum == -1 || gpioGetValue(sensorGpioNum) == 0) {
 			std::cout << "." << std::flush;
@@ -224,6 +226,9 @@ int main(int argc, char **argv) {
 					return 1;
 				}
 				vCap >> inputFrame;
+				if (flip180) {
+					flip(inputFrame, inputFrame, -1);
+				}
 				vCap.release();
 
 				std::string saveLapse =
@@ -282,8 +287,8 @@ int main(int argc, char **argv) {
 		lines.clear();
 		tombs.clear();
 		objects.clear();
-        isNotMov = gpioGetValue(sensorNotMov) == 1;
-		while (! isNotMov && gpioGetValue(sensorGpioNum) == 1) {
+		isNotMov = gpioGetValue(sensorNotMov) == 1;
+		while (!isNotMov && gpioGetValue(sensorGpioNum) == 1) {
 			++iCap;
 			// std::cout << "capture " << ++iCap << std::endl;
 			int nbObjects = objects.size();

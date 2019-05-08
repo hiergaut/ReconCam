@@ -287,7 +287,11 @@ int main(int argc, char **argv) {
 		lines.clear();
 		tombs.clear();
 		objects.clear();
-		isNotMov = gpioGetValue(sensorNotMov) == 1;
+
+		if (sensorNotMov != -1) {
+			isNotMov = gpioGetValue(sensorNotMov) == 1;
+		}
+
 		while (!isNotMov && gpioGetValue(sensorGpioNum) == 1) {
 			++iCap;
 			// std::cout << "capture " << ++iCap << std::endl;

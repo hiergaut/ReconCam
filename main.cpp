@@ -115,7 +115,9 @@ std::string getHostname() {
 std::string getCurTime() {
 	time_t t = time(0);
 	tm *now = localtime(&t);
-	return std::to_string(now->tm_hour) + ':' + std::to_string(now->tm_min) +
+    int hour = now->tm_hour;
+    std::string hour_str = (hour < 10) ?("0" + std::to_string(hour)) :(std::to_string(hour));
+	return hour_str + ':' + std::to_string(now->tm_min) +
 		   ':' + std::to_string(now->tm_sec);
 }
 

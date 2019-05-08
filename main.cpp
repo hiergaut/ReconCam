@@ -91,7 +91,7 @@ int gpioGetValue(int gpio) {
 	int val;
 	getValueGpio >> val;
 	getValueGpio.close();
-	usleep(100000);
+	// usleep(100000);
 
 	return val;
 }
@@ -119,6 +119,19 @@ std::string getCurTime() {
 		   ':' + std::to_string(now->tm_sec);
 }
 
+int sensorGpioNum;
+int sensorAdditional;
+
+bool hasMovement() {
+	bool ret = gpioGetValue(sensorGpioNum);
+
+	if (sensorAdditional != -1) {
+		ret = ret && gpioGetValue(sensorAdditional);
+	}
+
+	return ret;
+}
+
 // ------------------------------- MAIN ---------------------------------------
 int main(int argc, char **argv) {
 	// VideoCapture cap("1car.avi");
@@ -130,7 +143,8 @@ int main(int argc, char **argv) {
 	CommandLineParser parser(
 		argc, argv,
 		"{s sensor      | -1            | gpio number of IR senror}"
-		"{n not         | -1             | sensor disable motion}"
+		"{a and         | -1            | add detect sensor, and logic}"
+		// "{n not         | -1             | sensor disable motion}"
 		"{d device      | 0             | device camera, /dev/video0 by "
 		"default}"
 		"{f flip        | false         | rotate image 180}"
@@ -145,8 +159,9 @@ int main(int argc, char **argv) {
 		parser.printMessage();
 		return 0;
 	}
-	int sensorGpioNum = parser.get<int>("sensor");
-	int sensorNotMov = parser.get<int>("not");
+	sensorGpioNum = parser.get<int>("sensor");
+	// int sensorNotMov = parser.get<int>("not");
+	sensorAdditional = parser.get<int>("and");
 	int device = parser.get<int>("device");
 	std::string remoteDir = parser.get<std::string>("repository");
 	int port = parser.get<int>("port");
@@ -200,21 +215,26 @@ int main(int argc, char **argv) {
 	if (sensorGpioNum != -1) {
 		initGpio(sensorGpioNum);
 		gpioGetValue(sensorGpioNum);
+
+		if (sensorAdditional != -1) {
+			initGpio(sensorAdditional);
+			gpioGetValue(sensorAdditional);
+		}
 	}
 
-	if (sensorNotMov != -1) {
-		initGpio(sensorNotMov);
-		gpioGetValue(sensorNotMov);
-	}
+	// if (sensorNotMov != -1) {
+	// 	initGpio(sensorNotMov);
+	// 	gpioGetValue(sensorNotMov);
+	// }
 
 	// --------------------------- INFINITE LOOP ------------------------------
-	bool isNotMov = false;
-	if (sensorNotMov != -1) {
-		isNotMov = gpioGetValue(sensorNotMov) == 1;
-	}
+	// bool isNotMov = false;
+	// if (sensorNotMov != -1) {
+	// 	isNotMov = gpioGetValue(sensorNotMov) == 1;
+	// }
 	while (1) {
-		while (sensorGpioNum == -1 || isNotMov ||
-			   gpioGetValue(sensorGpioNum) == 0) {
+		while (sensorGpioNum == -1 || ! hasMovement()) {
+
 			std::cout << "." << std::flush;
 			usleep(1000000);
 			tickTimeLapse -= CLOCKS_PER_SEC;
@@ -259,9 +279,9 @@ int main(int argc, char **argv) {
 
 				tickTimeLapse = cur + TIMELAPSE_INTERVAL * CLOCKS_PER_SEC;
 			}
-			if (sensorNotMov != -1) {
-				isNotMov = gpioGetValue(sensorNotMov) == 1;
-			}
+			// if (sensorNotMov != -1) {
+			// 	isNotMov = gpioGetValue(sensorNotMov) == 1;
+			// }
 		}
 		std::cout << std::endl;
 
@@ -295,7 +315,7 @@ int main(int argc, char **argv) {
 		tombs.clear();
 		objects.clear();
 
-		while (!isNotMov && gpioGetValue(sensorGpioNum) == 1) {
+		while (hasMovement()) {
 			++iCap;
 			// std::cout << "capture " << ++iCap << std::endl;
 			int nbObjects = objects.size();
@@ -516,12 +536,12 @@ int main(int argc, char **argv) {
 				++iSec;
 			}
 
-			if (sensorNotMov != -1) {
-				isNotMov = gpioGetValue(sensorNotMov) == 1;
-			}
+			// if (sensorNotMov != -1) {
+			// 	isNotMov = gpioGetValue(sensorNotMov) == 1;
+			// }
 		}
 
-		if (!isNotMov && objects.size() > 0) {
+		if (objects.size() > 0) {
 
 			for (Object obj : objects) {
 				Mat m = obj.bestCapture.img;

@@ -269,7 +269,8 @@ int main(int argc, char **argv) {
 		iNewObj = 0;
 		iSec = 0;
 		iCap = -1;
-		tickCapture = clock() + CLOCKS_PER_SEC;
+		// tickCapture = clock() + CLOCKS_PER_SEC;
+		tickCapture = clock(); // take immediate capture
 		lines.clear();
 		tombs.clear();
 		objects.clear();
@@ -502,7 +503,10 @@ int main(int argc, char **argv) {
 			std::vector<std::vector<Point>> contours{obj.bestCapture.contour};
 			drawContours(drawing, contours, 0, obj.color, 2);
 		}
-		imwrite(tmpDir + "/trace.jpg", drawing);
+
+		if (objects.size() > 0) {
+			imwrite(tmpDir + "/trace.jpg", drawing);
+		}
 		// std::cout << "end capture " << startTime + "_" +
 		// std::to_string(device)
 		// 		  << std::endl;

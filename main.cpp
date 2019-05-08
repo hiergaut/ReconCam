@@ -233,7 +233,7 @@ int main(int argc, char **argv) {
 	// 	isNotMov = gpioGetValue(sensorNotMov) == 1;
 	// }
 	while (1) {
-		while (sensorGpioNum == -1 || ! hasMovement()) {
+		while (sensorGpioNum == -1 || !hasMovement()) {
 
 			std::cout << "." << std::flush;
 			usleep(1000000);
@@ -541,18 +541,22 @@ int main(int argc, char **argv) {
 			// }
 		}
 
-		if (objects.size() > 0) {
+		int nbRealObjects = 0;
+		// if (objects.size() > 0) {
 
-			for (Object obj : objects) {
-				Mat m = obj.bestCapture.img;
+		for (Object obj : objects) {
+			Mat m = obj.bestCapture.img;
 
-				m.copyTo(Mat(drawing, obj.bestCapture.rect),
-						 obj.bestCapture.mask);
-				std::vector<std::vector<Point>> contours{
-					obj.bestCapture.contour};
-				drawContours(drawing, contours, 0, obj.color, 2);
+			m.copyTo(Mat(drawing, obj.bestCapture.rect), obj.bestCapture.mask);
+			std::vector<std::vector<Point>> contours{obj.bestCapture.contour};
+			drawContours(drawing, contours, 0, obj.color, 2);
+
+			if (obj.dist > 100) {
+				++nbRealObjects;
 			}
+		}
 
+		if (nbRealObjects > 0) {
 			imwrite(tmpDir + "/trace.jpg", drawing);
 			// std::cout << "end capture " << startTime + "_" +
 			// std::to_string(device)

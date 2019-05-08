@@ -130,6 +130,7 @@ int main(int argc, char **argv) {
 	CommandLineParser parser(
 		argc, argv,
 		"{s sensor      | -1            | gpio number of IR senror}"
+        "{n not         | -1             | sensor disable motion}"
 		"{d device      | 0             | device camera, /dev/video0 by "
 		"default}"
 		"{r repository  | "
@@ -144,6 +145,7 @@ int main(int argc, char **argv) {
 		return 0;
 	}
 	int sensorGpioNum = parser.get<int>("sensor");
+    int sensorNotMov = parser.get<int>("not");
 	int device = parser.get<int>("device");
 	std::string remoteDir = parser.get<std::string>("repository");
 	int port = parser.get<int>("port");
@@ -198,7 +200,13 @@ int main(int argc, char **argv) {
 		gpioGetValue(sensorGpioNum);
 	}
 
+    if (sensorNotMov != -1) {
+        initGpio(sensorNotMov);
+        gpioGetValue(sensorNotMov);
+    }
+
 	// --------------------------- INFINITE LOOP ------------------------------
+    bool isNotMov = false;
 	while (1) {
 		while (sensorGpioNum == -1 || gpioGetValue(sensorGpioNum) == 0) {
 			std::cout << "." << std::flush;
@@ -274,7 +282,8 @@ int main(int argc, char **argv) {
 		lines.clear();
 		tombs.clear();
 		objects.clear();
-		while (gpioGetValue(sensorGpioNum) == 1) {
+        isNotMov = gpioGetValue(sensorNotMov) == 1;
+		while (! isNotMov && gpioGetValue(sensorGpioNum) == 1) {
 			++iCap;
 			// std::cout << "capture " << ++iCap << std::endl;
 			int nbObjects = objects.size();
@@ -286,7 +295,7 @@ int main(int argc, char **argv) {
 			}
 
 			model->apply(inputFrame, mask);
-			if (iCap < 10) {
+			if (iCap < 20) {
 				continue;
 			}
 
@@ -504,7 +513,7 @@ int main(int argc, char **argv) {
 			drawContours(drawing, contours, 0, obj.color, 2);
 		}
 
-		if (objects.size() > 0) {
+		if (!isNotMov && objects.size() > 0) {
 			imwrite(tmpDir + "/trace.jpg", drawing);
 		}
 		// std::cout << "end capture " << startTime + "_" +

@@ -107,12 +107,12 @@
                 #			";
 
 
-                $style = "";
-                $nbPhoto = exec("ls $dir/$file/cap_* | wc -l");
-                // echo "$nbPhoto";
-                if ($nbPhoto <= 4) {
-                    $style = "$style border-bottom:2px solid blue;";
-                }
+                // $style = "";
+                // $nbPhoto = exec("ls $dir/$file/cap_* | wc -l");
+                // // echo "$nbPhoto";
+                // if ($nbPhoto <= 4) {
+                //     $style = "$style border-bottom:2px solid blue;";
+                // }
 
                 // if (file_exists("$dir/$file/nand.var")) {
                 //     $style = "$style border-right:2px solid red;";
@@ -131,11 +131,13 @@
                 //     <img style=\"$style\" src=\"$dir/$file/trace.jpeg\" width=320 height=240 />
                 // </a>
                 // ";
-                echo "
-		    <a href=\"displayAll.php?dir=$file\" >
-			    <img src=\"$dir/$file/trace.jpg\" width=320 height=240 />
-		    </a>
-		    ";
+                if (file_exists("$dir/$file/trace.jpg")) {
+                    echo "
+                        <a href=\"displayAll.php?dir=$file\" >
+                            <img src=\"$dir/$file/trace.jpg\" width=320 height=240 />
+                        </a>
+                        ";
+                }
                 // }
                 //         } else {
                 //             echo "

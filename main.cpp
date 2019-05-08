@@ -140,8 +140,8 @@ std::string getDay() {
 	time_t t = time(0);
 	tm *now = localtime(&t);
 
-	int year = now->tm_year +1900;
-	int month = now->tm_mon +1;
+	int year = now->tm_year + 1900;
+	int month = now->tm_mon + 1;
 	int day = now->tm_mday;
 
 	return std::to_string(year) + ":" + std::to_string(month) + ":" +
@@ -213,11 +213,13 @@ int main(int argc, char **argv) {
 	bool hasRemoteDir = !remoteDir.empty();
 	using ObjList = std::list<Object>;
 	std::string motionDir;
-	if (remoteDir.empty()) {
-		motionDir = "motion/";
+	if (hasRemoteDir) {
+		motionDir = "/tmp/motion/";
+		// trainDir = "/tmp/learning/";
 
 	} else {
-		motionDir = "/tmp/motion/";
+		motionDir = "motion/";
+		// trainDir = "learning/";
 	}
 	std::string hostname = getHostname();
 
@@ -303,6 +305,14 @@ int main(int argc, char **argv) {
 				system(cmd.c_str());
 
 				if (hasRemoteDir) {
+					if (port == -1) {
+						cmd = "rsync -arv " + timelapseDir + " " + remoteDir;
+					} else {
+						cmd = "rsync -arv -e 'ssh -p " + std::to_string(port) +
+							  "' " + timelapseDir + " " + remoteDir;
+					}
+					std::cout << cmd << std::endl;
+					system(cmd.c_str());
 					if (port == -1) {
 						cmd = "rsync -arv " + timelapseDir + " " + remoteDir;
 					} else {
@@ -602,7 +612,8 @@ int main(int argc, char **argv) {
 				m.copyTo(a, obj.bestCapture.mask);
 				imwrite(trainDir + newTrainingFile + ".jpg", a);
 
-				std::cout << "save training file '" << trainDir + newTrainingFile << "'" << std::endl;
+				std::cout << "save training file '"
+						  << trainDir + newTrainingFile << "'" << std::endl;
 			}
 		}
 

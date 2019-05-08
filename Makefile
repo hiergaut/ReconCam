@@ -30,4 +30,4 @@ $(EXEC): $(OBJ)
 -include $(DEP)
 
 $(OBJDIR)/%.o: %.cpp Makefile
-	$(CXX) $(WARNING) $(CXXFLAGS) -MMD -MP -c $< -o $@
+	$(CXX) $(WARNING) $(CXXFLAGS) $(CFLAGS) -MMD -MP -c $< -o $@

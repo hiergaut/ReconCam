@@ -37,7 +37,7 @@ typedef struct s_object {
 	Scalar color;
 	int id;
 	Capture bestCapture;
-    Point2f firstPos;
+	Point2f firstPos;
 } Object;
 
 typedef struct s_line {
@@ -136,6 +136,18 @@ std::string getCurTime() {
 	return hour_str + ':' + min_str + ':' + sec_str;
 }
 
+std::string getDay() {
+	time_t t = time(0);
+	tm *now = localtime(&t);
+
+	int year = now->tm_year +1900;
+	int month = now->tm_mon +1;
+	int day = now->tm_mday;
+
+	return std::to_string(year) + ":" + std::to_string(month) + ":" +
+		   std::to_string(day);
+}
+
 int sensorGpioNum;
 int sensorAdditional;
 
@@ -189,11 +201,14 @@ int main(int argc, char **argv) {
 		return 0;
 	}
 
-	if (sensorGpioNum == -1) {
-		gpioDir = "/tmp/gpio/";
-	} else {
-		gpioDir = "/sys/class/gpio/";
-	}
+	// if (sensorGpioNum == -1) {
+#ifdef PC
+	gpioDir = "/tmp/gpio/";
+#else
+	// } else {
+	gpioDir = "/sys/class/gpio/";
+#endif
+	// }
 
 	bool hasRemoteDir = !remoteDir.empty();
 	using ObjList = std::list<Object>;
@@ -214,6 +229,10 @@ int main(int argc, char **argv) {
 	std::string timelapseDir =
 		motionDir + "timelapse_" + hostname + "_" + std::to_string(device);
 	std::string cmd = "mkdir -p " + timelapseDir;
+	system(cmd.c_str());
+
+	std::string trainDir = "learning/";
+	cmd = "mkdir -p " + trainDir;
 	system(cmd.c_str());
 
 	ObjList objects;
@@ -445,7 +464,7 @@ int main(int argc, char **argv) {
 					Object &&obj{
 						0.0,		 mc[i], static_cast<int>(mu[i].m00),
 						Vec2f(0, 0), color, iNewObj++,
-						cap, mc[i]};
+						cap,		 mc[i]};
 					newObjects.emplace_back(obj);
 				}
 			}
@@ -487,7 +506,8 @@ int main(int argc, char **argv) {
 					}
 					obj.speedVector = mc[iMov] - obj.pos;
 					obj.dist += norm(obj.speedVector);
-                    obj.dist = std::max(obj.dist, norm(mc[iMov] -obj.firstPos));
+					obj.dist =
+						std::max(obj.dist, norm(mc[iMov] - obj.firstPos));
 					lines.push_back({obj.pos, mc[iMov], obj.color});
 					obj.pos = mc[iMov];
 					obj.density = mu[iMov].m00;
@@ -574,6 +594,15 @@ int main(int argc, char **argv) {
 
 			if (obj.dist > 100) {
 				++nbRealObjects;
+
+				std::string newTrainingFile = getHostname() + "_" + getDay() +
+											  "_" + getCurTime() + "_" +
+											  std::to_string(obj.id);
+				Mat a;
+				m.copyTo(a, obj.bestCapture.mask);
+				imwrite(trainDir + newTrainingFile + ".jpg", a);
+
+				std::cout << "save training file '" << trainDir + newTrainingFile << "'" << std::endl;
 			}
 		}
 

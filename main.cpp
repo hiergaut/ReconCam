@@ -37,6 +37,7 @@ typedef struct s_object {
 	Scalar color;
 	int id;
 	Capture bestCapture;
+    Point2f firstPos;
 } Object;
 
 typedef struct s_line {
@@ -444,7 +445,7 @@ int main(int argc, char **argv) {
 					Object &&obj{
 						0.0,		 mc[i], static_cast<int>(mu[i].m00),
 						Vec2f(0, 0), color, iNewObj++,
-						cap};
+						cap, mc[i]};
 					newObjects.emplace_back(obj);
 				}
 			}
@@ -486,6 +487,7 @@ int main(int argc, char **argv) {
 					}
 					obj.speedVector = mc[iMov] - obj.pos;
 					obj.dist += norm(obj.speedVector);
+                    obj.dist = std::max(obj.dist, norm(mc[iMov] -obj.firstPos));
 					lines.push_back({obj.pos, mc[iMov], obj.color});
 					obj.pos = mc[iMov];
 					obj.density = mu[iMov].m00;

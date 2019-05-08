@@ -123,10 +123,10 @@ int sensorGpioNum;
 int sensorAdditional;
 
 bool hasMovement() {
-	bool ret = gpioGetValue(sensorGpioNum);
+	bool ret = gpioGetValue(sensorGpioNum) == 1;
 
 	if (sensorAdditional != -1) {
-		ret = ret && gpioGetValue(sensorAdditional);
+		ret = ret && gpioGetValue(sensorAdditional) == 1;
 	}
 
 	return ret;

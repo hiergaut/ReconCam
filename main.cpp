@@ -209,8 +209,12 @@ int main(int argc, char **argv) {
 
 	// --------------------------- INFINITE LOOP ------------------------------
 	bool isNotMov = false;
+	if (sensorNotMov != -1) {
+		isNotMov = gpioGetValue(sensorNotMov) == 1;
+	}
 	while (1) {
-		while (sensorGpioNum == -1 || gpioGetValue(sensorGpioNum) == 0) {
+		while (sensorGpioNum == -1 || isNotMov ||
+			   gpioGetValue(sensorGpioNum) == 0) {
 			std::cout << "." << std::flush;
 			usleep(1000000);
 			tickTimeLapse -= CLOCKS_PER_SEC;
@@ -255,6 +259,9 @@ int main(int argc, char **argv) {
 
 				tickTimeLapse = cur + TIMELAPSE_INTERVAL * CLOCKS_PER_SEC;
 			}
+			if (sensorNotMov != -1) {
+				isNotMov = gpioGetValue(sensorNotMov) == 1;
+			}
 		}
 		std::cout << std::endl;
 
@@ -287,10 +294,6 @@ int main(int argc, char **argv) {
 		lines.clear();
 		tombs.clear();
 		objects.clear();
-
-		if (sensorNotMov != -1) {
-			isNotMov = gpioGetValue(sensorNotMov) == 1;
-		}
 
 		while (!isNotMov && gpioGetValue(sensorGpioNum) == 1) {
 			++iCap;
@@ -512,36 +515,43 @@ int main(int argc, char **argv) {
 				tickCapture = cur + CLOCKS_PER_SEC;
 				++iSec;
 			}
-		}
 
-		for (Object obj : objects) {
-			Mat m = obj.bestCapture.img;
-
-			m.copyTo(Mat(drawing, obj.bestCapture.rect), obj.bestCapture.mask);
-			std::vector<std::vector<Point>> contours{obj.bestCapture.contour};
-			drawContours(drawing, contours, 0, obj.color, 2);
+			if (sensorNotMov != -1) {
+				isNotMov = gpioGetValue(sensorNotMov) == 1;
+			}
 		}
 
 		if (!isNotMov && objects.size() > 0) {
-			imwrite(tmpDir + "/trace.jpg", drawing);
-		}
-		// std::cout << "end capture " << startTime + "_" +
-		// std::to_string(device)
-		// 		  << std::endl;
 
-		// cmd = "convert " + tmpDir + "/*.jpg " + tmpDir + "/clip.gif";
-		// std::cout << cmd << std::endl;
-		// system(cmd.c_str());
+			for (Object obj : objects) {
+				Mat m = obj.bestCapture.img;
 
-		if (hasRemoteDir) {
-			if (port == -1) {
-				cmd = "rsync -arv " + tmpDir + " " + remoteDir;
-			} else {
-				cmd = "rsync -arv -e 'ssh -p " + std::to_string(port) + "' " +
-					  tmpDir + " " + remoteDir;
+				m.copyTo(Mat(drawing, obj.bestCapture.rect),
+						 obj.bestCapture.mask);
+				std::vector<std::vector<Point>> contours{
+					obj.bestCapture.contour};
+				drawContours(drawing, contours, 0, obj.color, 2);
 			}
-			std::cout << cmd << std::endl;
-			system(cmd.c_str());
+
+			imwrite(tmpDir + "/trace.jpg", drawing);
+			// std::cout << "end capture " << startTime + "_" +
+			// std::to_string(device)
+			// 		  << std::endl;
+
+			// cmd = "convert " + tmpDir + "/*.jpg " + tmpDir + "/clip.gif";
+			// std::cout << cmd << std::endl;
+			// system(cmd.c_str());
+
+			if (hasRemoteDir) {
+				if (port == -1) {
+					cmd = "rsync -arv " + tmpDir + " " + remoteDir;
+				} else {
+					cmd = "rsync -arv -e 'ssh -p " + std::to_string(port) +
+						  "' " + tmpDir + " " + remoteDir;
+				}
+				std::cout << cmd << std::endl;
+				system(cmd.c_str());
+			}
 		}
 
 		vCap.release();

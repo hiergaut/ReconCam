@@ -131,13 +131,20 @@
                 //     <img style=\"$style\" src=\"$dir/$file/trace.jpeg\" width=320 height=240 />
                 // </a>
                 // ";
-                if (file_exists("$dir/$file/trace.jpg")) {
-                    echo "
-                        <a href=\"displayAll.php?dir=$file\" >
-                            <img src=\"$dir/$file/trace.jpg\" width=320 height=240 />
-                        </a>
-                        ";
-                }
+                // if (file_exists("$dir/$file/trace.jpg")) {
+
+                // echo "
+                //     <a href=\"displayAll.php?dir=$file\" >
+                //         <img src=\"$dir/$file/trace.jpg\" width=320 height=240 />
+                //     </a>
+                //     ";
+
+                echo "
+                    <a href=\"$dir/$file/video.webm\" >
+                        <img src=\"$dir/$file/trace.jpg\" width=320 height=240 />
+                    </a>
+                    ";
+                // }
                 // }
                 //         } else {
                 //             echo "

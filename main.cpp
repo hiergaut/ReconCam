@@ -257,7 +257,6 @@ int main(int argc, char **argv) {
 
 	auto model = createBackgroundSubtractorKNN();
 	VideoCapture vCap;
-	// VideoWriter outputVideo;
 	// auto model = createBackgroundSubtractorMOG2();
 
 	std::string timelapseDir =
@@ -281,14 +280,18 @@ int main(int argc, char **argv) {
 	int iCap;
 	size_t tickTimeLapse = clock() + CLOCKS_PER_SEC; // take picture immediately
 
-    vCap.open(device);
-    if (!vCap.isOpened()) {
-        std::cout << "device not found";
-        return 1;
-    }
-	Mat notGreen = Mat::zeros(Size(vCap.get(CAP_PROP_FRAME_WIDTH), vCap.get(CAP_PROP_FRAME_HEIGHT)), CV_8UC3);
+	vCap.open(device);
+	if (!vCap.isOpened()) {
+		std::cout << "device not found";
+		return 1;
+	}
+	int width = vCap.get(CAP_PROP_FRAME_WIDTH);
+	int height = vCap.get(CAP_PROP_FRAME_HEIGHT);
+	Size sizeScreen(width, height);
+	vCap.release();
+
+	Mat notGreen = Mat::zeros(Size(width, height), CV_8UC3);
 	notGreen = Scalar(255, 0, 255);
-    vCap.release();
 	// std::cout << "first tick TimeLapse " << tickTimeLapse << std::endl;
 
 	if (sensorGpioNum != -1) {
@@ -394,6 +397,14 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 
+		VideoWriter outputVideo(tmpDir + "/video.avi",
+								cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), 10,
+								sizeScreen, true);
+		if (!outputVideo.isOpened()) {
+			std::cout << "failed to write video" << std::endl;
+			return 6;
+		}
+
 		// outputVideo.open(tmpDir + "/clip.avi", VideoWriter::fourcc('M', 'J',
 		// 'P', 'G'), 2, Size(vCap.get(cv::CAP_PROP_FRAME_WIDTH),
 		// 					  vCap.get(CAP_PROP_FRAME_HEIGHT)));
@@ -422,18 +433,17 @@ int main(int argc, char **argv) {
 				break;
 			}
 
-            Mat grey;
+			Mat grey;
 			if (hasVegetation) {
-                Mat inputWithoutGreen;
+				Mat inputWithoutGreen;
 				bitwise_and(inputFrame, notGreen, inputWithoutGreen);
-                cvtColor(inputWithoutGreen, grey, COLOR_BGR2GRAY);
-                // imshow("notGreen", inputWithoutGreen);
+				cvtColor(inputWithoutGreen, grey, COLOR_BGR2GRAY);
+				// imshow("notGreen", inputWithoutGreen);
+			} else {
+				cvtColor(inputFrame, grey, COLOR_BGR2GRAY);
 			}
-            else {
-                cvtColor(inputFrame, grey, COLOR_BGR2GRAY);
-            }
-            equalizeHist(grey, grey);
-            model->apply(grey, mask);
+			equalizeHist(grey, grey);
+			model->apply(grey, mask);
 
 			if (iCap < 20) {
 				continue;
@@ -624,7 +634,7 @@ int main(int argc, char **argv) {
 #ifdef PC
 			imshow("drawing", drawing);
 			imshow("mask", mask);
-            imshow("grey", grey);
+			imshow("grey", grey);
 #endif
 			if (waitKey(1) == 'q')
 				break;
@@ -650,10 +660,14 @@ int main(int argc, char **argv) {
 				++iSec;
 			}
 
+			outputVideo << drawing;
 			// if (sensorNotMov != -1) {
 			// 	isNotMov = gpioGetValue(sensorNotMov) == 1;
 			// }
-		}
+
+		} // while (hasMovement())
+		vCap.release();
+		outputVideo.release();
 
 		int nbRealObjects = 0;
 		// if (objects.size() > 0) {
@@ -703,7 +717,6 @@ int main(int argc, char **argv) {
 			}
 		}
 
-		vCap.release();
 // outputVideo.release();
 #ifdef PC
 		destroyAllWindows();

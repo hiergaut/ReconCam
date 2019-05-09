@@ -15,6 +15,7 @@
 #include <unistd.h>
 
 #define TIMELAPSE_INTERVAL 600 // secondes
+#define THRESH_MOV_IS_OBJECT 50
 // #define TIMELAPSE_INTERVAL 30 // secondes
 
 using namespace cv;
@@ -573,7 +574,7 @@ int main(int argc, char **argv) {
 				// delete object if not moving (no event)
 				if (iMov == -1) {
 					// delete passing object event
-					if (obj.dist < 100) {
+					if (obj.dist < THRESH_MOV_IS_OBJECT) {
 						tombs.push_back({obj.pos, obj.color});
 
 						objects.erase(it++);
@@ -693,7 +694,7 @@ int main(int argc, char **argv) {
 			std::vector<std::vector<Point>> contours{obj.bestCapture.contour};
 			drawContours(drawing, contours, 0, obj.color, 2);
 
-			if (obj.dist > 100) {
+			if (obj.dist > THRESH_MOV_IS_OBJECT) {
 				++nbRealObjects;
 
 				std::string newTrainingFile = getHostname() + "_" + getDay() +

@@ -186,7 +186,7 @@ bool isNight() {
 
 	int hour = now->tm_hour;
 
-    return 19 < hour && hour < 23;
+	return 19 < hour && hour < 23;
 }
 
 // ------------------------------- MAIN ---------------------------------------
@@ -210,6 +210,7 @@ int main(int argc, char **argv) {
 		"            | save motion to specific repository}"
 		"{p port        | -1            | remote port repository}"
 		"{help h        |               | help message}"
+		"{vegetation v  | false         | outside camera}"
 		//
 	);
 
@@ -225,6 +226,7 @@ int main(int argc, char **argv) {
 	int port = parser.get<int>("port");
 	bool flip180 = parser.get<bool>("flip");
 	int lightGpio = parser.get<int>("light");
+	bool hasVegetation = parser.get<bool>("vegetation");
 	if (!parser.check()) {
 		parser.printMessage();
 		parser.printErrors();
@@ -278,6 +280,15 @@ int main(int argc, char **argv) {
 	int iSec;
 	int iCap;
 	size_t tickTimeLapse = clock() + CLOCKS_PER_SEC; // take picture immediately
+
+    vCap.open(device);
+    if (!vCap.isOpened()) {
+        std::cout << "device not found";
+        return 1;
+    }
+	Mat notGreen = Mat::zeros(Size(vCap.get(CAP_PROP_FRAME_WIDTH), vCap.get(CAP_PROP_FRAME_HEIGHT)), CV_8UC3);
+	notGreen = Scalar(255, 0, 255);
+    vCap.release();
 	// std::cout << "first tick TimeLapse " << tickTimeLapse << std::endl;
 
 	if (sensorGpioNum != -1) {
@@ -411,7 +422,19 @@ int main(int argc, char **argv) {
 				break;
 			}
 
-			model->apply(inputFrame, mask);
+            Mat grey;
+			if (hasVegetation) {
+                Mat inputWithoutGreen;
+				bitwise_and(inputFrame, notGreen, inputWithoutGreen);
+                cvtColor(inputWithoutGreen, grey, COLOR_BGR2GRAY);
+                // imshow("notGreen", inputWithoutGreen);
+			}
+            else {
+                cvtColor(inputFrame, grey, COLOR_BGR2GRAY);
+            }
+            equalizeHist(grey, grey);
+            model->apply(grey, mask);
+
 			if (iCap < 20) {
 				continue;
 			}
@@ -598,9 +621,10 @@ int main(int argc, char **argv) {
 						1, obj.color, 1);
 			}
 
-#ifdef DISPLAY
+#ifdef PC
 			imshow("drawing", drawing);
 			imshow("mask", mask);
+            imshow("grey", grey);
 #endif
 			if (waitKey(1) == 'q')
 				break;
@@ -680,7 +704,7 @@ int main(int argc, char **argv) {
 
 		vCap.release();
 // outputVideo.release();
-#ifdef DISPLAY
+#ifdef PC
 		destroyAllWindows();
 #endif
 

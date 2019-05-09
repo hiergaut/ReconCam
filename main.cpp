@@ -54,7 +54,7 @@ typedef struct s_deadObj {
 std::string gpioDir;
 // std::string gpioDir = "/sys/class/gpio/";
 
-void initGpio(int gpio) {
+void initGpio(int gpio, std::string direction) {
 	std::string gpioExportDir = gpioDir + "export";
 	std::ofstream exportGpio(gpioExportDir.c_str());
 	if (!exportGpio.is_open()) {
@@ -74,7 +74,7 @@ void initGpio(int gpio) {
 		perror(gpioNumDirectionDir.c_str());
 		exit(2);
 	}
-	directionGpio << "in";
+	directionGpio << direction;
 	directionGpio.close();
 	usleep(100000);
 }
@@ -95,6 +95,21 @@ int gpioGetValue(int gpio) {
 	// usleep(100000);
 
 	return val;
+}
+
+void gpioSetValue(int gpio, int value) {
+	std::string gpioValueFile =
+		gpioDir + "gpio" + std::to_string(gpio) + "/value";
+	std::ofstream setValueGpio(gpioValueFile.c_str());
+	if (!setValueGpio.is_open()) {
+		std::cout << "unable to set value gpio" << std::endl;
+		perror(gpioValueFile.c_str());
+		exit(4);
+	}
+
+	setValueGpio << value;
+	setValueGpio.close();
+	// usleep(100000);
 }
 
 std::string getHostname() {
@@ -155,7 +170,7 @@ bool hasMovement() {
 	bool ret = false;
 
 	if (sensorGpioNum != -1) {
-        ret = gpioGetValue(sensorGpioNum) == 1;
+		ret = gpioGetValue(sensorGpioNum) == 1;
 
 		if (sensorAdditional != -1) {
 			ret = ret && gpioGetValue(sensorAdditional) == 1;
@@ -163,6 +178,15 @@ bool hasMovement() {
 	}
 
 	return ret;
+}
+
+bool isNight() {
+	time_t t = time(0);
+	tm *now = localtime(&t);
+
+	int hour = now->tm_hour;
+
+    return hour > 20;
 }
 
 // ------------------------------- MAIN ---------------------------------------
@@ -177,6 +201,7 @@ int main(int argc, char **argv) {
 		argc, argv,
 		"{s sensor      | -1            | gpio number of IR senror}"
 		"{a and         | -1            | add detect sensor, and logic}"
+		"{l light       | -1            | light up on movment}"
 		// "{n not         | -1             | sensor disable motion}"
 		"{d device      | 0             | device camera, /dev/video0 by "
 		"default}"
@@ -199,6 +224,7 @@ int main(int argc, char **argv) {
 	std::string remoteDir = parser.get<std::string>("repository");
 	int port = parser.get<int>("port");
 	bool flip180 = parser.get<bool>("flip");
+	int lightGpio = parser.get<int>("light");
 	if (!parser.check()) {
 		parser.printMessage();
 		parser.printErrors();
@@ -255,12 +281,17 @@ int main(int argc, char **argv) {
 	// std::cout << "first tick TimeLapse " << tickTimeLapse << std::endl;
 
 	if (sensorGpioNum != -1) {
-		initGpio(sensorGpioNum);
+		initGpio(sensorGpioNum, "in");
 		gpioGetValue(sensorGpioNum);
 
 		if (sensorAdditional != -1) {
-			initGpio(sensorAdditional);
+			initGpio(sensorAdditional, "in");
 			gpioGetValue(sensorAdditional);
+		}
+
+		if (lightGpio != -1) {
+			initGpio(lightGpio, "out");
+			gpioSetValue(lightGpio, 0);
 		}
 	}
 
@@ -334,6 +365,10 @@ int main(int argc, char **argv) {
 			// }
 		}
 		std::cout << std::endl;
+
+		if (lightGpio != -1 && isNight()) {
+			gpioSetValue(lightGpio, 1);
+		}
 
 		// create new directory in /tmp/motion/
 		std::string startTime = getCurTime();
@@ -648,6 +683,10 @@ int main(int argc, char **argv) {
 #ifdef DISPLAY
 		destroyAllWindows();
 #endif
+
+		if (lightGpio != -1) {
+			gpioSetValue(lightGpio, 0);
+		}
 
 	} // while (1)
 

@@ -275,7 +275,7 @@ int main(int argc, char **argv) {
 	// 	isNotMov = gpioGetValue(sensorNotMov) == 1;
 	// }
 	while (1) {
-		while (sensorGpioNum == -1 || !hasMovement()) {
+		while (!hasMovement()) {
 
 			std::cout << "." << std::flush;
 			usleep(1000000);

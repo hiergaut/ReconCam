@@ -680,7 +680,8 @@ int main(int argc, char **argv) {
 			}
 		}
 
-		if (nbRealObjects > 0) {
+		// if (nbRealObjects > 0) {
+		if (iSec > 2) {
 			imwrite(tmpDir + "/trace.jpg", drawing);
 			// std::cout << "end capture " << startTime + "_" +
 			// std::to_string(device)

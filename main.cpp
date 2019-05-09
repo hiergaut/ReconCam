@@ -397,8 +397,11 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 
-		VideoWriter outputVideo(tmpDir + "/video.avi",
-								cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), 10,
+		// VideoWriter outputVideo(tmpDir + "/video.avi",
+		// 						cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), 10,
+		// 						sizeScreen, true);
+		VideoWriter outputVideo(tmpDir + "/video.webm",
+								cv::VideoWriter::fourcc('V', 'P', '8', '0'), 10,
 								sizeScreen, true);
 		if (!outputVideo.isOpened()) {
 			std::cout << "failed to write video" << std::endl;

@@ -637,10 +637,10 @@ int main(int argc, char **argv) {
 			}
 
 			putText(drawing, "nbObjs : " + std::to_string(nbObjects),
-					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 255, 0));
+					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 255, 255));
 
 			putText(drawing, "frame : " + std::to_string(iCap),
-					Point(0, 50), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 255, 0));
+					Point(0, 60), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 255, 255));
 
 			for (size_t i = 0; i < lines.size(); ++i) {
 				line(drawing, lines[i].p, lines[i].p2, lines[i].color, 2);

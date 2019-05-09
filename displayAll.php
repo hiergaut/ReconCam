@@ -11,10 +11,16 @@
     foreach ($files as $file) {
         if (fnmatch("*.jpg", $file)) {
             echo "
-	    <a href=\"$dir/$file\" >
-		<img src=\"$dir/$file\" width=320 height=240 />
-	    </a>
-	    ";
+                <a href=\"$dir/$file\" >
+                <img src=\"$dir/$file\" width=320 height=240 />
+                </a>
+                ";
+        }
+
+        if (fnmatch("*.ogv", $file)) {
+            echo "
+                    <source src=\"$dir/$file\" type=video/ogg>
+                ";
         }
     }
 

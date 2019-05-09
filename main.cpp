@@ -235,7 +235,7 @@ int main(int argc, char **argv) {
 
 	// if (sensorGpioNum == -1) {
 #ifdef PC
-	gpioDir = "/tmp/gpio/";
+	gpioDir = "gpio/";
 #else
 	// } else {
 	gpioDir = "/sys/class/gpio/";
@@ -336,7 +336,9 @@ int main(int argc, char **argv) {
 					std::cout << "device not found";
 					return 1;
 				}
-				vCap >> inputFrame;
+                for (int i =0; i <20; ++i)
+                    vCap >> inputFrame;
+
 				if (flip180) {
 					flip(inputFrame, inputFrame, -1);
 				}
@@ -378,8 +380,8 @@ int main(int argc, char **argv) {
 
 		// create new directory in /tmp/motion/
 		std::string startTime = getCurTime();
-		std::string newMotionDir = motionDir + startTime + "_" + hostname + "_" +
-							 std::to_string(device);
+		std::string newMotionDir = motionDir + startTime + "_" + hostname +
+								   "_" + std::to_string(device);
 		cmd = "mkdir -p " + newMotionDir;
 		system(cmd.c_str());
 
@@ -392,7 +394,8 @@ int main(int argc, char **argv) {
 		// VideoWriter outputVideo(newMotionDir + "/video.avi",
 		// 						cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), 10,
 		// 						sizeScreen, true);
-		VideoWriter outputVideo(newMotionDir + "/video.webm",
+		std::string outputVideoFile = newMotionDir + "/video.webm";
+		VideoWriter outputVideo(outputVideoFile,
 								cv::VideoWriter::fourcc('V', 'P', '8', '0'), 3,
 								sizeScreen, true);
 		// VideoWriter outputVideo(newMotionDir + "/video.ogv",
@@ -403,18 +406,17 @@ int main(int argc, char **argv) {
 			return 6;
 		}
 
-        vCap >> inputFrame;
+		vCap >> inputFrame;
 		// std::string saveCap = newMotionDir + "/cap_00.jpg";
-		// std::cout << "save immediate capture '" << saveCap << "'" << std::endl;
-		// if (!imwrite(saveCap, inputFrame)) {
-		// 	std::cout << "failed to save immediate cap" << std::endl;
-		// 	perror(newMotionDir.c_str());
+		// std::cout << "save immediate capture '" << saveCap << "'" <<
+		// std::endl; if (!imwrite(saveCap, inputFrame)) { 	std::cout << "failed
+		// to save immediate cap" << std::endl; perror(newMotionDir.c_str());
 		// 	return 2;
 		// }
-        outputVideo << inputFrame;
+		outputVideo << inputFrame;
 
-		// outputVideo.open(newMotionDir + "/clip.avi", VideoWriter::fourcc('M', 'J',
-		// 'P', 'G'), 2, Size(vCap.get(cv::CAP_PROP_FRAME_WIDTH),
+		// outputVideo.open(newMotionDir + "/clip.avi", VideoWriter::fourcc('M',
+		// 'J', 'P', 'G'), 2, Size(vCap.get(cv::CAP_PROP_FRAME_WIDTH),
 		// 					  vCap.get(CAP_PROP_FRAME_HEIGHT)));
 		// if (!outputVideo.isOpened()) {
 		// 	std::cout << "could not open output video" << std::endl;
@@ -441,7 +443,7 @@ int main(int argc, char **argv) {
 				break;
 			}
 
-            // ------------------- TRAINING MODEL -----------------------------
+			// ------------------- TRAINING MODEL -----------------------------
 			Mat grey;
 			if (hasVegetation) {
 				Mat inputWithoutGreen;
@@ -458,7 +460,7 @@ int main(int argc, char **argv) {
 				continue;
 			}
 
-            // ------------------- BOUNDING MOVMENT ---------------------------
+			// ------------------- BOUNDING MOVMENT ---------------------------
 			const int size = 15;
 			medianBlur(mask, mask, size);
 			blur(mask, mask, Size(size, size));
@@ -632,8 +634,8 @@ int main(int argc, char **argv) {
 			putText(drawing, "nbObjs : " + std::to_string(nbObjects),
 					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 255, 0));
 
-			putText(drawing, "frame : " + std::to_string(iCap),
-					Point(0, 60), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 255, 0));
+			putText(drawing, "frame : " + std::to_string(iCap), Point(0, 60),
+					FONT_HERSHEY_DUPLEX, 1, Scalar(0, 255, 0));
 
 			for (size_t i = 0; i < lines.size(); ++i) {
 				line(drawing, lines[i].p, lines[i].p2, lines[i].color, 2);
@@ -646,27 +648,26 @@ int main(int argc, char **argv) {
 
 #ifdef PC
 			imshow("drawing", drawing);
-			imshow("mask", mask);
-			imshow("grey", grey);
+			// imshow("mask", mask);
+			// imshow("grey", grey);
 			if (waitKey(1) == 'q')
 				break;
 #endif
 
 			// cur = clock();
 			// if (cur > tickCapture) {
-            //     ++iSec;
+			//     ++iSec;
 
 			// 	std::string iSec_str = std::to_string(iSec);
 			// 	if (iSec < 10) {
 			// 		iSec_str = "0" + iSec_str;
 			// 	}
 
-			// 	std::string saveCap = newMotionDir + "/cap_" + iSec_str + ".jpg";
-			// 	std::cout << "save capture '" << saveCap << "'" << std::endl;
-			// 	if (!imwrite(saveCap, drawing)) {
-			// 		std::cout << "failed to save cap" << std::endl;
-			// 		perror(newMotionDir.c_str());
-			// 		return 2;
+			// 	std::string saveCap = newMotionDir + "/cap_" + iSec_str +
+			// ".jpg"; 	std::cout << "save capture '" << saveCap << "'" <<
+			// std::endl; 	if (!imwrite(saveCap, drawing)) { 		std::cout <<
+			// "failed to save cap" << std::endl;
+			// perror(newMotionDir.c_str()); 		return 2;
 			// 	}
 
 			// 	// outputVideo << drawing;
@@ -681,7 +682,6 @@ int main(int argc, char **argv) {
 
 		} // while (hasMovement())
 		vCap.release();
-		outputVideo.release();
 
 		int nbRealObjects = 0;
 		// if (objects.size() > 0) {
@@ -708,16 +708,21 @@ int main(int argc, char **argv) {
 			}
 		}
 
+		outputVideo << drawing;
+		outputVideo.release();
+		std::cout << "save video '" << outputVideoFile << "'" << std::endl;
+
 		if (nbRealObjects > 0) {
-		// if (iSec > 3) {
+			// if (iSec > 3) {
 			imwrite(newMotionDir + "/trace.jpg", drawing);
+			std::cout << "save trace file '" << newMotionDir + "/trace.jpg'"
+					  << std::endl;
 			// std::cout << "end capture " << startTime + "_" +
 			// std::to_string(device)
 			// 		  << std::endl;
 
-			// cmd = "convert " + newMotionDir + "/*.jpg " + newMotionDir + "/clip.gif";
-			// std::cout << cmd << std::endl;
-			// system(cmd.c_str());
+			// cmd = "convert " + newMotionDir + "/*.jpg " + newMotionDir +
+			// "/clip.gif"; std::cout << cmd << std::endl; system(cmd.c_str());
 
 			if (hasRemoteDir) {
 				if (port == -1) {

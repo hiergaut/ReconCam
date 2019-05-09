@@ -52,7 +52,7 @@
             // ";
             // $cur_dir =exec("echo $file | cut -d. -f1");
             echo "
-                <a href=\"displayAll.php?dir=$cur_dir\" >
+                <a href=\"displayAll.php?dir=$file\" >
                     <img src=\"$dir/$file/latest.jpeg\" width=320 height=240 />
                 </a>
                 ";

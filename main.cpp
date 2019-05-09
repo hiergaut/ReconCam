@@ -400,13 +400,27 @@ int main(int argc, char **argv) {
 		// VideoWriter outputVideo(tmpDir + "/video.avi",
 		// 						cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), 10,
 		// 						sizeScreen, true);
-		VideoWriter outputVideo(tmpDir + "/video.webm",
-								cv::VideoWriter::fourcc('V', 'P', '8', '0'), 10,
+		// VideoWriter outputVideo(tmpDir + "/video.webm",
+		// 						cv::VideoWriter::fourcc('V', 'P', '8', '0'), 2,
+		// 						sizeScreen, true);
+		VideoWriter outputVideo(tmpDir + "/video.ogv",
+								cv::VideoWriter::fourcc('T', 'H', 'E', 'O'), 2,
 								sizeScreen, true);
+
 		if (!outputVideo.isOpened()) {
 			std::cout << "failed to write video" << std::endl;
 			return 6;
 		}
+
+        vCap >> inputFrame;
+		std::string saveCap = tmpDir + "/cap_00.jpg";
+		std::cout << "save immediate capture '" << saveCap << "'" << std::endl;
+		if (!imwrite(saveCap, inputFrame)) {
+			std::cout << "failed to save immediate cap" << std::endl;
+			perror(tmpDir.c_str());
+			return 2;
+		}
+        outputVideo << inputFrame;
 
 		// outputVideo.open(tmpDir + "/clip.avi", VideoWriter::fourcc('M', 'J',
 		// 'P', 'G'), 2, Size(vCap.get(cv::CAP_PROP_FRAME_WIDTH),
@@ -420,7 +434,7 @@ int main(int argc, char **argv) {
 		iSec = 0;
 		iCap = -1;
 		// tickCapture = clock() + CLOCKS_PER_SEC;
-		tickCapture = clock(); // take immediate capture
+		tickCapture = clock() + CLOCKS_PER_SEC; // take immediate capture
 		lines.clear();
 		tombs.clear();
 		objects.clear();
@@ -623,7 +637,10 @@ int main(int argc, char **argv) {
 			}
 
 			putText(drawing, "nbObjs : " + std::to_string(nbObjects),
-					Point(0, 30), FONT_HERSHEY_DUPLEX, 0.8, Scalar(0, 0, 255));
+					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 255, 0));
+
+			putText(drawing, "frame : " + std::to_string(iCap),
+					Point(0, 50), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 255, 0));
 
 			for (size_t i = 0; i < lines.size(); ++i) {
 				line(drawing, lines[i].p, lines[i].p2, lines[i].color, 2);
@@ -638,29 +655,30 @@ int main(int argc, char **argv) {
 			imshow("drawing", drawing);
 			imshow("mask", mask);
 			imshow("grey", grey);
-#endif
 			if (waitKey(1) == 'q')
 				break;
+#endif
 
 			cur = clock();
 			if (cur > tickCapture) {
+                ++iSec;
+
 				std::string iSec_str = std::to_string(iSec);
 				if (iSec < 10) {
 					iSec_str = "0" + iSec_str;
 				}
-				std::string saveCap = tmpDir + "/cap_" + iSec_str + ".jpg";
 
+				std::string saveCap = tmpDir + "/cap_" + iSec_str + ".jpg";
+				std::cout << "save capture '" << saveCap << "'" << std::endl;
 				if (!imwrite(saveCap, drawing)) {
 					std::cout << "failed to save cap" << std::endl;
 					perror(tmpDir.c_str());
 					return 2;
 				}
-				std::cout << "save capture '" << saveCap << "'" << std::endl;
 
 				// outputVideo << drawing;
 
 				tickCapture = cur + CLOCKS_PER_SEC;
-				++iSec;
 			}
 
 			outputVideo << drawing;
@@ -698,7 +716,7 @@ int main(int argc, char **argv) {
 		}
 
 		// if (nbRealObjects > 0) {
-		if (iSec > 2) {
+		if (iSec > 3) {
 			imwrite(tmpDir + "/trace.jpg", drawing);
 			// std::cout << "end capture " << startTime + "_" +
 			// std::to_string(device)

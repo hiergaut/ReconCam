@@ -17,13 +17,13 @@
                 ";
         }
 
-        if (fnmatch("*.ogv", $file)) {
-            echo "
-                <video controls>
-                    <source src=\"$dir/$file\" type=video/ogg>
-                </video>
-                ";
-        }
+        // if (fnmatch("*.ogv", $file)) {
+        //     echo "
+        //         <video controls>
+        //             <source src=\"$dir/$file\" type=video/ogg>
+        //         </video>
+        //         ";
+        // }
     }
 
     ?>

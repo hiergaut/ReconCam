@@ -256,8 +256,8 @@ int main(int argc, char **argv) {
 	std::string hostname = getHostname();
 
 	auto model = createBackgroundSubtractorKNN();
-	VideoCapture vCap;
 	// auto model = createBackgroundSubtractorMOG2();
+	VideoCapture vCap;
 
 	std::string timelapseDir =
 		motionDir + "timelapse_" + hostname + "_" + std::to_string(device);
@@ -274,9 +274,9 @@ int main(int argc, char **argv) {
 
 	Mat inputFrame, mask, drawing;
 	int iNewObj;
-	size_t tickCapture;
+	// size_t tickCapture;
 	size_t cur;
-	int iSec;
+	// int iSec;
 	int iCap;
 	size_t tickTimeLapse = clock() + CLOCKS_PER_SEC; // take picture immediately
 
@@ -362,14 +362,6 @@ int main(int argc, char **argv) {
 					}
 					std::cout << cmd << std::endl;
 					system(cmd.c_str());
-					if (port == -1) {
-						cmd = "rsync -arv " + timelapseDir + " " + remoteDir;
-					} else {
-						cmd = "rsync -arv -e 'ssh -p " + std::to_string(port) +
-							  "' " + timelapseDir + " " + remoteDir;
-					}
-					std::cout << cmd << std::endl;
-					system(cmd.c_str());
 				}
 
 				tickTimeLapse = cur + TIMELAPSE_INTERVAL * CLOCKS_PER_SEC;
@@ -386,9 +378,9 @@ int main(int argc, char **argv) {
 
 		// create new directory in /tmp/motion/
 		std::string startTime = getCurTime();
-		std::string tmpDir = motionDir + startTime + "_" + hostname + "_" +
+		std::string newMotionDir = motionDir + startTime + "_" + hostname + "_" +
 							 std::to_string(device);
-		cmd = "mkdir -p " + tmpDir;
+		cmd = "mkdir -p " + newMotionDir;
 		system(cmd.c_str());
 
 		vCap.open(device);
@@ -397,32 +389,31 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 
-		// VideoWriter outputVideo(tmpDir + "/video.avi",
+		// VideoWriter outputVideo(newMotionDir + "/video.avi",
 		// 						cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), 10,
 		// 						sizeScreen, true);
-		VideoWriter outputVideo(tmpDir + "/video.webm",
+		VideoWriter outputVideo(newMotionDir + "/video.webm",
 								cv::VideoWriter::fourcc('V', 'P', '8', '0'), 3,
 								sizeScreen, true);
-		// VideoWriter outputVideo(tmpDir + "/video.ogv",
+		// VideoWriter outputVideo(newMotionDir + "/video.ogv",
 		// 						cv::VideoWriter::fourcc('T', 'H', 'E', 'O'), 2,
 		// 						sizeScreen, true);
-
 		if (!outputVideo.isOpened()) {
 			std::cout << "failed to write video" << std::endl;
 			return 6;
 		}
 
         vCap >> inputFrame;
-		std::string saveCap = tmpDir + "/cap_00.jpg";
-		std::cout << "save immediate capture '" << saveCap << "'" << std::endl;
-		if (!imwrite(saveCap, inputFrame)) {
-			std::cout << "failed to save immediate cap" << std::endl;
-			perror(tmpDir.c_str());
-			return 2;
-		}
+		// std::string saveCap = newMotionDir + "/cap_00.jpg";
+		// std::cout << "save immediate capture '" << saveCap << "'" << std::endl;
+		// if (!imwrite(saveCap, inputFrame)) {
+		// 	std::cout << "failed to save immediate cap" << std::endl;
+		// 	perror(newMotionDir.c_str());
+		// 	return 2;
+		// }
         outputVideo << inputFrame;
 
-		// outputVideo.open(tmpDir + "/clip.avi", VideoWriter::fourcc('M', 'J',
+		// outputVideo.open(newMotionDir + "/clip.avi", VideoWriter::fourcc('M', 'J',
 		// 'P', 'G'), 2, Size(vCap.get(cv::CAP_PROP_FRAME_WIDTH),
 		// 					  vCap.get(CAP_PROP_FRAME_HEIGHT)));
 		// if (!outputVideo.isOpened()) {
@@ -431,10 +422,10 @@ int main(int argc, char **argv) {
 		// }
 
 		iNewObj = 0;
-		iSec = 0;
+		// iSec = 0;
 		iCap = -1;
 		// tickCapture = clock() + CLOCKS_PER_SEC;
-		tickCapture = clock() + CLOCKS_PER_SEC; // take immediate capture
+		// tickCapture = clock() + CLOCKS_PER_SEC; // take immediate capture
 		lines.clear();
 		tombs.clear();
 		objects.clear();
@@ -450,6 +441,7 @@ int main(int argc, char **argv) {
 				break;
 			}
 
+            // ------------------- TRAINING MODEL -----------------------------
 			Mat grey;
 			if (hasVegetation) {
 				Mat inputWithoutGreen;
@@ -466,6 +458,7 @@ int main(int argc, char **argv) {
 				continue;
 			}
 
+            // ------------------- BOUNDING MOVMENT ---------------------------
 			const int size = 15;
 			medianBlur(mask, mask, size);
 			blur(mask, mask, Size(size, size));
@@ -637,10 +630,10 @@ int main(int argc, char **argv) {
 			}
 
 			putText(drawing, "nbObjs : " + std::to_string(nbObjects),
-					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 255, 255));
+					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 255, 0));
 
 			putText(drawing, "frame : " + std::to_string(iCap),
-					Point(0, 60), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 255, 255));
+					Point(0, 60), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 255, 0));
 
 			for (size_t i = 0; i < lines.size(); ++i) {
 				line(drawing, lines[i].p, lines[i].p2, lines[i].color, 2);
@@ -659,27 +652,27 @@ int main(int argc, char **argv) {
 				break;
 #endif
 
-			cur = clock();
-			if (cur > tickCapture) {
-                ++iSec;
+			// cur = clock();
+			// if (cur > tickCapture) {
+            //     ++iSec;
 
-				std::string iSec_str = std::to_string(iSec);
-				if (iSec < 10) {
-					iSec_str = "0" + iSec_str;
-				}
+			// 	std::string iSec_str = std::to_string(iSec);
+			// 	if (iSec < 10) {
+			// 		iSec_str = "0" + iSec_str;
+			// 	}
 
-				std::string saveCap = tmpDir + "/cap_" + iSec_str + ".jpg";
-				std::cout << "save capture '" << saveCap << "'" << std::endl;
-				if (!imwrite(saveCap, drawing)) {
-					std::cout << "failed to save cap" << std::endl;
-					perror(tmpDir.c_str());
-					return 2;
-				}
+			// 	std::string saveCap = newMotionDir + "/cap_" + iSec_str + ".jpg";
+			// 	std::cout << "save capture '" << saveCap << "'" << std::endl;
+			// 	if (!imwrite(saveCap, drawing)) {
+			// 		std::cout << "failed to save cap" << std::endl;
+			// 		perror(newMotionDir.c_str());
+			// 		return 2;
+			// 	}
 
-				// outputVideo << drawing;
+			// 	// outputVideo << drawing;
 
-				tickCapture = cur + CLOCKS_PER_SEC;
-			}
+			// 	tickCapture = cur + CLOCKS_PER_SEC;
+			// }
 
 			outputVideo << drawing;
 			// if (sensorNotMov != -1) {
@@ -715,23 +708,23 @@ int main(int argc, char **argv) {
 			}
 		}
 
-		// if (nbRealObjects > 0) {
-		if (iSec > 3) {
-			imwrite(tmpDir + "/trace.jpg", drawing);
+		if (nbRealObjects > 0) {
+		// if (iSec > 3) {
+			imwrite(newMotionDir + "/trace.jpg", drawing);
 			// std::cout << "end capture " << startTime + "_" +
 			// std::to_string(device)
 			// 		  << std::endl;
 
-			// cmd = "convert " + tmpDir + "/*.jpg " + tmpDir + "/clip.gif";
+			// cmd = "convert " + newMotionDir + "/*.jpg " + newMotionDir + "/clip.gif";
 			// std::cout << cmd << std::endl;
 			// system(cmd.c_str());
 
 			if (hasRemoteDir) {
 				if (port == -1) {
-					cmd = "rsync -arv " + tmpDir + " " + remoteDir;
+					cmd = "rsync -arv " + newMotionDir + " " + remoteDir;
 				} else {
 					cmd = "rsync -arv -e 'ssh -p " + std::to_string(port) +
-						  "' " + tmpDir + " " + remoteDir;
+						  "' " + newMotionDir + " " + remoteDir;
 				}
 				std::cout << cmd << std::endl;
 				system(cmd.c_str());

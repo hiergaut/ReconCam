@@ -45,17 +45,17 @@
     foreach ($files as $file) {
         if (fnmatch("timelapse_*", $file)) {
             // if (fnmatch("*.gif", $file)) {
-            echo "
-	    <a href=\"$dir/$file/latest.jpeg\" >
-		<img src=\"$dir/$file/latest.jpeg\" width=320 height=240 />
-	    </a>
-	    ";
+            //     echo "
+            // <a href=\"$dir/$file/latest.jpeg\" >
+            // <img src=\"$dir/$file/latest.jpeg\" width=320 height=240 />
+            // </a>
+            // ";
             // $cur_dir =exec("echo $file | cut -d. -f1");
-            // echo "
-            // 	    <a href=\"displayAll.php?dir=$cur_dir\" >
-            // 		    <img src=\"$dir/$file\" width=320 height=240 />
-            // 	    </a>
-            // 	    ";
+            echo "
+                <a href=\"displayAll.php?dir=$cur_dir\" >
+                    <img src=\"$dir/$file/latest.jpeg\" width=320 height=240 />
+                </a>
+                ";
         }
     }
 
@@ -113,13 +113,18 @@
                 //     <img style=\"$style\" src=\"$dir/$file/trace.jpeg\" width=320 height=240 />
                 // </a>
                 // ";
-                if (file_exists("$dir/$file/trace.jpg")) {
-                    echo "
-                        <a href=\"displayAll.php?dir=$file\" >
-                            <img src=\"$dir/$file/trace.jpg\" width=320 height=240 />
-                        </a>
-                        ";
-                }
+                // if (file_exists("$dir/$file/trace.jpg")) {
+                //     echo "
+                //         <a href=\"displayAll.php?dir=$file\" >
+                //             <img src=\"$dir/$file/trace.jpg\" width=320 height=240 />
+                //         </a>
+                //         ";
+                // }
+                echo "
+                    <a href=\"$dir/$file/video.webm\" >
+                        <img src=\"$dir/$file/trace.jpg\" width=320 height=240 />
+                    </a>
+                    ";
                 // }
                 //         } else {
                 //             echo "

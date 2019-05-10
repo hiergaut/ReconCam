@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html>
 
+<script>
+    function refreshPage() {
+        window.location.reload();
+    }
+</script>
+
 <body>
 
     <?php
@@ -42,22 +48,6 @@
     $previousHeure = 00;
 
 
-    foreach ($files as $file) {
-        if (fnmatch("timelapse_*", $file)) {
-            // if (fnmatch("*.gif", $file)) {
-            //     echo "
-            // <a href=\"$dir/$file/latest.jpeg\" >
-            // <img src=\"$dir/$file/latest.jpeg\" width=320 height=240 />
-            // </a>
-            // ";
-            // $cur_dir =exec("echo $file | cut -d. -f1");
-            echo "
-                <a href=\"displayAll.php?dir=$file\" >
-                    <img src=\"$dir/$file/latest.jpeg\" width=320 height=240 />
-                </a>
-                ";
-        }
-    }
 
 
     foreach ($files as $file) {
@@ -135,18 +125,35 @@
             }
         }
     }
+
+    echo "
+    <hr>
+    <button type=\"submit\"  onClick=\"refreshPage()\" style=\"width: 100%;\"><img src=\"refresh.png\" width=\"50\" height=\"50\" style=\"background-color:light-gray;\" /></button>
+    <hr>
+    ";
     // }
+    foreach ($files as $file) {
+        if (fnmatch("timelapse_*", $file)) {
+            // if (fnmatch("*.gif", $file)) {
+            //     echo "
+            // <a href=\"$dir/$file/latest.jpeg\" >
+            // <img src=\"$dir/$file/latest.jpeg\" width=320 height=240 />
+            // </a>
+            // ";
+            // $cur_dir =exec("echo $file | cut -d. -f1");
+            echo "
+                <a href=\"displayAll.php?dir=$file\" >
+                    <img src=\"$dir/$file/latest.jpeg\" width=320 height=240 />
+                </a>
+                ";
+        }
+    }
     ?>
 
-    <script>
-        function refreshPage() {
-            window.location.reload();
-        }
-    </script>
     <!-- <button type="submit" onClick="refreshPage()">Refresh</button> -->
     <br>
     <hr>
-    <button type="submit"  onClick="refreshPage()" style="width: 100%;"><img src="refresh.png" width="50" height="50" style="background-color:light-gray;" /></button>
+    <button type="submit" onClick="refreshPage()" style="width: 100%;"><img src="refresh.png" width="50" height="50" style="background-color:light-gray;" /></button>
 
 </body>
 

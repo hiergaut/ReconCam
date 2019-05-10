@@ -38,8 +38,6 @@
     $dir = "motion";
 
     $files = scandir("$dir");
-    $heure = 00;
-    $previousHeure = 00;
 
     foreach ($files as $file) {
         // if (fnmatch("*.jpg", $file)) {
@@ -77,7 +75,8 @@
         }
     }
 
-
+    $heure = 00;
+    $previousHeure = 00;
     foreach ($files as $file) {
         if ($file != '.' && $file != '..') {
             if (!fnmatch("timelapse_*", $file)) {
@@ -157,6 +156,14 @@
     }
     // }
     ?>
+
+    <script>
+        function refreshPage() {
+            window.location.reload();
+        }
+    </script>
+    <button type="submit" onClick="refreshPage()">Refresh</button>
+
 
 </body>
 

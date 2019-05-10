@@ -14,7 +14,7 @@
 #include <string>
 #include <unistd.h>
 
-#define TIMELAPSE_INTERVAL 600 // secondes
+#define TIMELAPSE_INTERVAL 1200 // secondes
 #define THRESH_MOV_IS_OBJECT 50
 // #define TIMELAPSE_INTERVAL 30 // secondes
 

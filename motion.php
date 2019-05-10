@@ -127,9 +127,8 @@
     </script>
     <!-- <button type="submit" onClick="refreshPage()">Refresh</button> -->
     <br>
-    <hr>
+    <!-- <hr> -->
     <button type="submit"  onClick="refreshPage()" style="width: 100%;"><img src="refresh.png" width="50" height="50" style="background-color:light-gray;" /></button>
-    <hr>
 
 
     <?php

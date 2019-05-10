@@ -310,6 +310,8 @@ int main(int argc, char **argv) {
 		}
 	}
 
+	bool firstLapse = true;
+
 	// if (sensorNotMov != -1) {
 	// 	initGpio(sensorNotMov);
 	// 	gpioGetValue(sensorNotMov);
@@ -337,8 +339,8 @@ int main(int argc, char **argv) {
 					std::cout << "device not found";
 					return 1;
 				}
-                for (int i =0; i <20; ++i)
-                    vCap >> inputFrame;
+				for (int i = 0; i < 20; ++i)
+					vCap >> inputFrame;
 
 				if (flip180) {
 					flip(inputFrame, inputFrame, -1);
@@ -351,8 +353,17 @@ int main(int argc, char **argv) {
 				imwrite(timelapseDir + "/latest.jpeg", inputFrame);
 				std::cout << "save lapse '" << saveLapse << "'" << std::endl;
 
-				cmd = "convert " + timelapseDir + "/*.jpg " + timelapseDir +
-					  "/timelapse.gif";
+				std::string gifFile = timelapseDir + "/timelapse.gif";
+				if (firstLapse) {
+					// cmd = "convert " + timelapseDir + "/*.jpg " +
+					// timelapseDir +
+					//   "/timelapse.gif";
+					cmd = "convert " + saveLapse + " " + gifFile;
+					firstLapse = false;
+				} else {
+					cmd =
+						"convert " + gifFile + " " + saveLapse + " " + gifFile;
+				}
 				std::cout << cmd << std::endl;
 				system(cmd.c_str());
 

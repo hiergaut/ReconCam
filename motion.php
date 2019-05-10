@@ -163,7 +163,7 @@
         }
     </script>
     <!-- <button type="submit" onClick="refreshPage()">Refresh</button> -->
-    <button type="submit"  onClick="refreshPage()" style="border-radius: 10%"><img src="refresh.png" width="100" height="100" style="background-color:light-gray;" /></button>
+    <button type="submit"  onClick="refreshPage()" style="width: 100%;"><img src="refresh.png" width="100" height="100" style="background-color:light-gray;" /></button>
 
 
 </body>

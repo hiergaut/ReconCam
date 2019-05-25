@@ -712,7 +712,7 @@ int main(int argc, char **argv) {
 			if (obj.dist > THRESH_MOV_IS_OBJECT) {
 				++nbRealObjects;
 
-				std::string newTrainingFile = getHostname() + "_" + getDay() +
+				std::string newTrainingFile = getHostname() + "_" + std::to_string(device) + "_" + getDay() +
 											  "_" + getCurTime() + "_" +
 											  std::to_string(obj.id);
 				Mat a;

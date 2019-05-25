@@ -45,9 +45,48 @@
     $dir = "motion";
     $files = scandir("$dir");
 
-    $heure = 00;
-    $previousHeure = 00;
+
+    // --------------------------- TIMELAPSE
     foreach ($files as $file) {
+        // if (fnmatch("*.jpg", $file)) {
+        if (fnmatch("timelapse_*", $file)) {
+            // echo "
+            //     <a href=\"$dir/$file\" >
+            // 	<img src=\"$dir/$file\" width=320 height=240 />
+            //     </a>
+            //     ";
+            // $cur_dir =exec("echo $file | cut -d. -f1");
+            echo "
+		    <a href=\"displayAll.php?dir=$file\" >
+			    <img src=\"$dir/$file/timelapse.gif\" width=320 height=240 />
+		    </a>
+		    ";
+        }
+    }
+
+    echo "<hr>";
+
+    foreach ($files as $file) {
+        if (fnmatch("timelapse_*", $file)) {
+            // if (fnmatch("*.gif", $file)) {
+            echo "
+            <a href=\"$dir/$file/latest.jpeg\" >
+            <img src=\"$dir/$file/latest.jpeg\" width=320 height=240 />
+            </a>
+            ";
+                // $cur_dir =exec("echo $file | cut -d. -f1");
+            // echo "
+            // 	    <a href=\"displayAll.php?dir=$cur_dir\" >
+            // 		    <img src=\"$dir/$file\" width=320 height=240 />
+            // 	    </a>
+            // 	    ";
+        }
+    }
+
+    // --------------------------- MOVEMENTS
+    $heure = 24;
+    $previousHeure = 24;
+    foreach (array_reverse($files) as $file) {
         if ($file != '.' && $file != '..') {
             if (!fnmatch("timelapse_*", $file)) {
                 // echo "$file";
@@ -126,48 +165,13 @@
     }
     // }
 
-    echo "
-    <hr>
-    <button type=\"submit\"  onClick=\"refreshPage()\" style=\"width: 100%;\"><img src=\"refresh.png\" width=\"50\" height=\"50\" style=\"background-color:light-gray;\" /></button>
-    <hr>
-    ";
+    // echo "
+    // <hr>
+    // <button type=\"submit\"  onClick=\"refreshPage()\" style=\"width: 100%;\"><img src=\"refresh.png\" width=\"50\" height=\"50\" style=\"background-color:light-gray;\" /></button>
+    // <hr>
+    // ";
 
 
-    foreach ($files as $file) {
-        // if (fnmatch("*.jpg", $file)) {
-        if (fnmatch("timelapse_*", $file)) {
-            // echo "
-            //     <a href=\"$dir/$file\" >
-            // 	<img src=\"$dir/$file\" width=320 height=240 />
-            //     </a>
-            //     ";
-            // $cur_dir =exec("echo $file | cut -d. -f1");
-            echo "
-		    <a href=\"displayAll.php?dir=$file\" >
-			    <img src=\"$dir/$file/timelapse.gif\" width=320 height=240 />
-		    </a>
-		    ";
-        }
-    }
-
-    echo "<hr>";
-
-    foreach ($files as $file) {
-        if (fnmatch("timelapse_*", $file)) {
-            // if (fnmatch("*.gif", $file)) {
-            echo "
-	    <a href=\"$dir/$file/latest.jpeg\" >
-		<img src=\"$dir/$file/latest.jpeg\" width=320 height=240 />
-	    </a>
-	    ";
-            // $cur_dir =exec("echo $file | cut -d. -f1");
-            // echo "
-            // 	    <a href=\"displayAll.php?dir=$cur_dir\" >
-            // 		    <img src=\"$dir/$file\" width=320 height=240 />
-            // 	    </a>
-            // 	    ";
-        }
-    }
     ?>
 
 

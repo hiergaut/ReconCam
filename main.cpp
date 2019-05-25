@@ -17,7 +17,7 @@
 #ifdef PC
 #define TIMELAPSE_INTERVAL 20 // secondes
 #else
-#define TIMELAPSE_INTERVAL 1200 // secondes
+#define TIMELAPSE_INTERVAL 1800 // secondes
 #endif
 
 #define THRESH_MOV_IS_OBJECT 50
@@ -315,7 +315,7 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	bool firstLapse = true;
+	// bool firstLapse = true;
 
 	// if (sensorNotMov != -1) {
 	// 	initGpio(sensorNotMov);
@@ -358,17 +358,16 @@ int main(int argc, char **argv) {
 				imwrite(timelapseDir + "/latest.jpeg", inputFrame);
 				std::cout << "save lapse '" << saveLapse << "'" << std::endl;
 
-				std::string gifFile = timelapseDir + "/timelapse.gif";
-				if (firstLapse) {
-					// cmd = "convert " + timelapseDir + "/*.jpg " +
-					// timelapseDir +
-					//   "/timelapse.gif";
-					cmd = "convert " + saveLapse + " " + gifFile;
-					firstLapse = false;
-				} else {
-					cmd =
-						"convert " + gifFile + " " + saveLapse + " " + gifFile;
-				}
+				// std::string gifFile = timelapseDir + "/timelapse.gif";
+				// if (firstLapse) {
+				cmd = "convert " + timelapseDir + "/*.jpg " + timelapseDir +
+					  "/timelapse.gif";
+				// cmd = "convert " + saveLapse + " " + gifFile;
+				// firstLapse = false;
+				// } else {
+				// cmd =
+				// "convert " + gifFile + " " + saveLapse + " " + gifFile;
+				// }
 				std::cout << cmd << std::endl;
 				system(cmd.c_str());
 

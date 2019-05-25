@@ -14,7 +14,12 @@
 #include <string>
 #include <unistd.h>
 
+#ifdef PC
+#define TIMELAPSE_INTERVAL 20 // secondes
+#else
 #define TIMELAPSE_INTERVAL 1200 // secondes
+#endif
+
 #define THRESH_MOV_IS_OBJECT 50
 // #define TIMELAPSE_INTERVAL 30 // secondes
 
@@ -326,7 +331,7 @@ int main(int argc, char **argv) {
 		while (!hasMovement()) {
 
 			std::cout << "." << std::flush;
-			usleep(1000000);
+			usleep(CLOCKS_PER_SEC);
 			tickTimeLapse -= CLOCKS_PER_SEC;
 			// std::cout << "first tick TimeLapse " << tickTimeLapse <<
 			// std::endl;

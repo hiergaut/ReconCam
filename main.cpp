@@ -728,7 +728,8 @@ int main(int argc, char **argv) {
 		outputVideo.release();
 		std::cout << "save video '" << outputVideoFile << "'" << std::endl;
 
-		if (nbRealObjects > 0) {
+		// if (nbRealObjects > 0) {
+        if (true) {
 			// if (iSec > 3) {
 			imwrite(newMotionDir + "/trace.jpg", drawing);
 			std::cout << "save trace file '" << newMotionDir + "/trace.jpg'"

@@ -261,8 +261,8 @@ int main(int argc, char **argv) {
 	}
 	std::string hostname = getHostname();
 
-	auto model = createBackgroundSubtractorKNN();
-	// auto model = createBackgroundSubtractorMOG2();
+	// auto model = createBackgroundSubtractorKNN();
+	auto model = createBackgroundSubtractorMOG2();
 	VideoCapture vCap;
 
 	std::string timelapseDir =

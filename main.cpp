@@ -21,6 +21,7 @@
 #endif
 
 #define THRESH_MOV_IS_OBJECT 50
+#define NB_CAP_LEARNING_FIRST 10
 // #define TIMELAPSE_INTERVAL 30 // secondes
 
 using namespace cv;
@@ -261,8 +262,8 @@ int main(int argc, char **argv) {
 	}
 	std::string hostname = getHostname();
 
-	// auto model = createBackgroundSubtractorKNN();
-	auto model = createBackgroundSubtractorMOG2();
+	auto model = createBackgroundSubtractorKNN();
+	// auto model = createBackgroundSubtractorMOG2();
 	VideoCapture vCap;
 
 	std::string timelapseDir =
@@ -472,7 +473,7 @@ int main(int argc, char **argv) {
 			equalizeHist(grey, grey);
 			model->apply(grey, mask);
 
-			if (iCap < 20) {
+			if (iCap < NB_CAP_LEARNING_FIRST) {
 				continue;
 			}
 
@@ -729,7 +730,8 @@ int main(int argc, char **argv) {
 		std::cout << "save video '" << outputVideoFile << "'" << std::endl;
 
 		// if (nbRealObjects > 0) {
-        if (true) {
+        if (iCap > NB_CAP_LEARNING_FIRST + 5) {
+        // if (true) {
 			// if (iSec > 3) {
 			imwrite(newMotionDir + "/trace.jpg", drawing);
 			std::cout << "save trace file '" << newMotionDir + "/trace.jpg'"

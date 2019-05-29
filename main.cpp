@@ -329,6 +329,7 @@ int main(int argc, char **argv) {
 	// 	isNotMov = gpioGetValue(sensorNotMov) == 1;
 	// }
 	while (1) {
+        std::cout << "while (1) loop" << std::endl;
 		while (!hasMovement()) {
 
 			std::cout << "." << std::flush;
@@ -384,6 +385,7 @@ int main(int argc, char **argv) {
 				}
 
 				tickTimeLapse = cur + TIMELAPSE_INTERVAL * CLOCKS_PER_SEC;
+                std::cout << "tickTimeLapse = " << tickTimeLapse << std::endl;
 			}
 			// if (sensorNotMov != -1) {
 			// 	isNotMov = gpioGetValue(sensorNotMov) == 1;

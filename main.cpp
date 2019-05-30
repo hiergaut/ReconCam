@@ -15,13 +15,14 @@
 #include <unistd.h>
 
 #ifdef PC
-#define TIMELAPSE_INTERVAL 20 // secondes
+#define TIMELAPSE_INTERVAL 600 // 10 min
 #else
-#define TIMELAPSE_INTERVAL 1800 // secondes
+#define TIMELAPSE_INTERVAL 1800 // 30 min
 #endif
 
 #define THRESH_MOV_IS_OBJECT 50
-#define NB_CAP_LEARNING_FIRST 10
+#define NB_CAP_LEARNING_MODEL_FIRST 10
+#define NB_CAP_FOCUS_BRIGHTNESS 10
 // #define TIMELAPSE_INTERVAL 30 // secondes
 
 using namespace cv;
@@ -196,6 +197,10 @@ bool isNight() {
 	return 19 < hour && hour < 23;
 }
 
+// void openCap(VideoCapture & cap) {
+
+// }
+
 // ------------------------------- MAIN ---------------------------------------
 int main(int argc, char **argv) {
 	// VideoCapture cap("1car.avi");
@@ -218,6 +223,8 @@ int main(int argc, char **argv) {
 		"{p port        | -1            | remote port repository}"
 		"{help h        |               | help message}"
 		"{vegetation v  | false         | outside camera}"
+		"{training take | false         | save movement capture for post "
+		"learning}"
 		//
 	);
 
@@ -234,6 +241,7 @@ int main(int argc, char **argv) {
 	bool flip180 = parser.get<bool>("flip");
 	int lightGpio = parser.get<int>("light");
 	bool hasVegetation = parser.get<bool>("vegetation");
+	bool training = parser.get<bool>("training");
 	if (!parser.check()) {
 		parser.printMessage();
 		parser.printErrors();
@@ -264,6 +272,7 @@ int main(int argc, char **argv) {
 
 	auto model = createBackgroundSubtractorKNN();
 	// auto model = createBackgroundSubtractorMOG2();
+
 	VideoCapture vCap;
 
 	std::string timelapseDir =
@@ -329,7 +338,7 @@ int main(int argc, char **argv) {
 	// 	isNotMov = gpioGetValue(sensorNotMov) == 1;
 	// }
 	while (1) {
-        std::cout << "while (1) loop" << std::endl;
+		std::cout << "wait new motion, future lapse at " << tickTimeLapse << std::endl;
 		while (!hasMovement()) {
 
 			std::cout << "." << std::flush;
@@ -342,11 +351,12 @@ int main(int argc, char **argv) {
 			if (cur > tickTimeLapse) {
 				std::cout << std::endl;
 				vCap.open(device);
+                // openCap(vCap);
 				if (!vCap.isOpened()) {
 					std::cout << "device not found";
 					return 1;
 				}
-				for (int i = 0; i < 20; ++i)
+				for (int i = 0; i < NB_CAP_FOCUS_BRIGHTNESS; ++i)
 					vCap >> inputFrame;
 
 				if (flip180) {
@@ -384,8 +394,8 @@ int main(int argc, char **argv) {
 					system(cmd.c_str());
 				}
 
-				tickTimeLapse = cur + TIMELAPSE_INTERVAL * CLOCKS_PER_SEC;
-                std::cout << "tickTimeLapse = " << tickTimeLapse << std::endl;
+				tickTimeLapse = clock() + TIMELAPSE_INTERVAL * CLOCKS_PER_SEC;
+				std::cout << "tickTimeLapse = " << tickTimeLapse << std::endl;
 			}
 			// if (sensorNotMov != -1) {
 			// 	isNotMov = gpioGetValue(sensorNotMov) == 1;
@@ -475,7 +485,7 @@ int main(int argc, char **argv) {
 			equalizeHist(grey, grey);
 			model->apply(grey, mask);
 
-			if (iCap < NB_CAP_LEARNING_FIRST) {
+			if (iCap < NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST) {
 				continue;
 			}
 
@@ -715,15 +725,18 @@ int main(int argc, char **argv) {
 			if (obj.dist > THRESH_MOV_IS_OBJECT) {
 				++nbRealObjects;
 
-				std::string newTrainingFile = getHostname() + "_" + std::to_string(device) + "_" + getDay() +
-											  "_" + getCurTime() + "_" +
-											  std::to_string(obj.id);
-				Mat a;
-				m.copyTo(a, obj.bestCapture.mask);
-				imwrite(trainDir + newTrainingFile + ".jpg", a);
+				if (training) {
+					std::string newTrainingFile =
+						getHostname() + "_" + std::to_string(device) + "_" +
+						getDay() + "_" + getCurTime() + "_" +
+						std::to_string(obj.id);
+					Mat a;
+					m.copyTo(a, obj.bestCapture.mask);
+					imwrite(trainDir + newTrainingFile + ".jpg", a);
 
-				std::cout << "save training file '"
-						  << trainDir + newTrainingFile << "'" << std::endl;
+					std::cout << "save training file '"
+							  << trainDir + newTrainingFile << "'" << std::endl;
+				}
 			}
 		}
 
@@ -732,8 +745,8 @@ int main(int argc, char **argv) {
 		std::cout << "save video '" << outputVideoFile << "'" << std::endl;
 
 		// if (nbRealObjects > 0) {
-        if (iCap > NB_CAP_LEARNING_FIRST + 5) {
-        // if (true) {
+		if (iCap > NB_CAP_LEARNING_MODEL_FIRST + 5) {
+			// if (true) {
 			// if (iSec > 3) {
 			imwrite(newMotionDir + "/trace.jpg", drawing);
 			std::cout << "save trace file '" << newMotionDir + "/trace.jpg'"

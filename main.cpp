@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 #ifdef PC
-#define TIMELAPSE_INTERVAL 600 // 10 min
+#define TIMELAPSE_INTERVAL 60 // 1 min
 #else
 #define TIMELAPSE_INTERVAL 1800 // 30 min
 #endif
@@ -197,10 +197,6 @@ bool isNight() {
 	return 19 < hour && hour < 23;
 }
 
-// void openCap(VideoCapture & cap) {
-
-// }
-
 // ------------------------------- MAIN ---------------------------------------
 int main(int argc, char **argv) {
 	// VideoCapture cap("1car.avi");
@@ -223,6 +219,7 @@ int main(int argc, char **argv) {
 		"{p port        | -1            | remote port repository}"
 		"{help h        |               | help message}"
 		"{vegetation v  | false         | outside camera}"
+        "{inVideo       |               | video in}"
 		"{training take | false         | save movement capture for post "
 		"learning}"
 		//
@@ -242,6 +239,8 @@ int main(int argc, char **argv) {
 	int lightGpio = parser.get<int>("light");
 	bool hasVegetation = parser.get<bool>("vegetation");
 	bool training = parser.get<bool>("training");
+    // std::string inVideo = parser.get<std::string>("inVideo");
+    // std::cout << "inVideo = " << inVideo << std::endl;
 	if (!parser.check()) {
 		parser.printMessage();
 		parser.printErrors();
@@ -257,6 +256,7 @@ int main(int argc, char **argv) {
 #endif
 	// }
 
+    // bool hasVideo = ! inVideo.empty();
 	bool hasRemoteDir = !remoteDir.empty();
 	using ObjList = std::list<Object>;
 	std::string motionDir;
@@ -280,9 +280,12 @@ int main(int argc, char **argv) {
 	std::string cmd = "mkdir -p " + timelapseDir;
 	system(cmd.c_str());
 
-	std::string trainDir = "learning/";
-	cmd = "mkdir -p " + trainDir;
-	system(cmd.c_str());
+	std::string trainDir = "";
+	if (training) {
+		trainDir = "learning/";
+		cmd = "mkdir -p " + trainDir;
+		system(cmd.c_str());
+	}
 
 	ObjList objects;
 	std::vector<Line> lines;
@@ -338,7 +341,8 @@ int main(int argc, char **argv) {
 	// 	isNotMov = gpioGetValue(sensorNotMov) == 1;
 	// }
 	while (1) {
-		std::cout << "wait new motion, future lapse at " << tickTimeLapse << std::endl;
+		std::cout << "wait new motion, future lapse at " << tickTimeLapse
+				  << std::endl;
 		while (!hasMovement()) {
 
 			std::cout << "." << std::flush;
@@ -351,7 +355,7 @@ int main(int argc, char **argv) {
 			if (cur > tickTimeLapse) {
 				std::cout << std::endl;
 				vCap.open(device);
-                // openCap(vCap);
+				// openCap(vCap);
 				if (!vCap.isOpened()) {
 					std::cout << "device not found";
 					return 1;
@@ -395,7 +399,7 @@ int main(int argc, char **argv) {
 				}
 
 				tickTimeLapse = clock() + TIMELAPSE_INTERVAL * CLOCKS_PER_SEC;
-				std::cout << "tickTimeLapse = " << tickTimeLapse << std::endl;
+				std::cout << "tickTimeLapse = " << tickTimeLapse  << ", clock = " << clock() << std::endl;
 			}
 			// if (sensorNotMov != -1) {
 			// 	isNotMov = gpioGetValue(sensorNotMov) == 1;
@@ -628,7 +632,7 @@ int main(int argc, char **argv) {
 						obj.bestCapture = cap;
 					}
 					obj.speedVector = mc[iMov] - obj.pos;
-					obj.dist += norm(obj.speedVector);
+					// obj.dist += norm(obj.speedVector);
 					obj.dist =
 						std::max(obj.dist, norm(mc[iMov] - obj.firstPos));
 					lines.push_back({obj.pos, mc[iMov], obj.color});

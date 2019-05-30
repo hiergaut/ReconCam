@@ -745,7 +745,7 @@ int main(int argc, char **argv) {
 		std::cout << "save video '" << outputVideoFile << "'" << std::endl;
 
 		// if (nbRealObjects > 0) {
-		if (iCap > NB_CAP_LEARNING_MODEL_FIRST + 5) {
+		if (iCap > NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST + 1) {
 			// if (true) {
 			// if (iSec > 3) {
 			imwrite(newMotionDir + "/trace.jpg", drawing);

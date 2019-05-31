@@ -23,6 +23,7 @@
 #define THRESH_MOV_IS_OBJECT 50
 #define NB_CAP_LEARNING_MODEL_FIRST 10
 #define NB_CAP_FOCUS_BRIGHTNESS 10
+#define NB_CAP_MIN_FOR_REAL_MOTION 1
 // #define TIMELAPSE_INTERVAL 30 // secondes
 
 using namespace cv;
@@ -749,7 +750,7 @@ int main(int argc, char **argv) {
 		std::cout << "save video '" << outputVideoFile << "'" << std::endl;
 
 		// if (nbRealObjects > 0) {
-		if (iCap > NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST + 1) {
+		if (iCap >= NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST + NB_CAP_MIN_FOR_REAL_MOTION) {
 			// if (true) {
 			// if (iSec > 3) {
 			imwrite(newMotionDir + "/trace.jpg", drawing);

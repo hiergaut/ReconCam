@@ -40,3 +40,4 @@ motion/
 *.zip
 yesterdayMotion/
 # gpio/
+build*

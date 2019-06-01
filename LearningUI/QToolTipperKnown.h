@@ -25,11 +25,11 @@ public:
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override
     {
-        switch (event->type()) {
-        case QEvent::ToolTip:
-        case QEvent::MouseButtonPress:
-            break;
-        }
+//        switch (event->type()) {
+//        case QEvent::ToolTip:
+//        case QEvent::MouseButtonPress:
+//            break;
+//        }
         if (event->type() == QEvent::ToolTip) {
             //            QAbstractItemView* view = qobject_cast<QAbstractItemView*>(watched->parent());
             //            QAbstractItemView * view = static_cast<QAbstractItemView*>(parent());

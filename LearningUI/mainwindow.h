@@ -5,6 +5,7 @@
 
 #include <QFileSystemModel>
 #include <QStandardItemModel>
+#include "QFileSystemModelDatum.h"
 
 namespace Ui {
 class MainWindow;
@@ -17,11 +18,18 @@ public:
     explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
+private slots:
+    void on_pushButton_up_clicked();
+
+    void on_pushButton_down_clicked();
+
 private:
     Ui::MainWindow* ui;
 
-    QFileSystemModel* model_newEvent;
-    QFileSystemModel* model_known;
+//    QFileSystemModel* model_newEvent;
+//    QFileSystemModel* model_known;
+    QFileSystemModel* _model;
+
 
 //    QString str_learningRootDir { QDir::currentPath() + "/../learningFile/" };
 //    QString str_newEventDir { str_learningRootDir + "newEvent/" };

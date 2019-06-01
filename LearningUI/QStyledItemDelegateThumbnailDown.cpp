@@ -1,28 +1,28 @@
-#include "QStyledItemDelegateThumbnail.h"
+#include "QStyledItemDelegateThumbnailDown.h"
 
 #include "global.h"
 #include <QDebug>
 #include <QEvent>
 #include <QPainter>
 
-QStyledItemDelegateThumbnail::QStyledItemDelegateThumbnail(QAbstractItemModel* model, QObject* parent)
+QStyledItemDelegateThumbnailDown::QStyledItemDelegateThumbnailDown(QAbstractItemModel* model, QListView *view, QObject* parent)
     : QStyledItemDelegate(parent)
     , _model(model)
-//    , _view{view}
+    , _view{view}
 {
 }
 
-void QStyledItemDelegateThumbnail::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
+void QStyledItemDelegateThumbnailDown::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
     QRect rect = option.rect;
     //    qDebug() << _model->data(index).toString();
     //    QFileInfo image(_rootPath + _model->data(index).toString());
     //    QPixmap pix;
     //    return;
-    //    qDebug() << "fuck" << _model->data(index).toString();
+//    qDebug() << "fuck" << _model->data(index).toString();
 
-    //    QModelIndex rootIndex = _view->rootIndex();
-    QString filename = str_newEventDir + _model->data(index).toString();
+    QModelIndex rootIndex = _view->rootIndex();
+    QString filename = str_knownDir  + _model->data(rootIndex).toString() + "/" + _model->data(index).toString();
     QFile img(filename);
     if (!img.exists()) {
         qDebug() << "file not exist : " << img;
@@ -30,9 +30,9 @@ void QStyledItemDelegateThumbnail::paint(QPainter* painter, const QStyleOptionVi
 //    qDebug() << img;
     QPixmap color(filename);
 
-    //    qDebug() << "color = " << color;
+//    qDebug() << "color = " << color;
     if (option.state & QStyle::State_Selected) {
-        qDebug() << "paint selected";
+                qDebug() << "paint selected";
         //        painter->setBrush(QBrush(Qt::white));
         //        painter->drawRect(rect.x(), rect.y(), rect.width(), rect.height());
         //        painter->fillRect(rect, QBrush(Qt::green));
@@ -58,7 +58,7 @@ void QStyledItemDelegateThumbnail::paint(QPainter* painter, const QStyleOptionVi
     //    painter->drawRect(rect.x(), rect.y(), rect.width(), rect.height());
 }
 
-QSize QStyledItemDelegateThumbnail::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const
+QSize QStyledItemDelegateThumbnailDown::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
     //    _model->setData(index, "fuck", Qt::ToolTip);
     if (option.state & QStyle::State_Selected) {

@@ -283,7 +283,7 @@ int main(int argc, char **argv) {
 
 	std::string trainDir = "";
 	if (training) {
-		trainDir = "learningFile/newEvent/";
+		trainDir = "learningFile/{newEvent, known}";
 		cmd = "mkdir -p " + trainDir;
 		system(cmd.c_str());
 	}

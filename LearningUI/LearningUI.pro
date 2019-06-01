@@ -25,11 +25,20 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++11
 
 SOURCES += \
+        QStyledItemDelegateThumbnail.cpp \
         main.cpp \
-        mainwindow.cpp
+        mainwindow.cpp \
+        qfilesystemmodelnewevent.cpp \
+        qlistviewnewevent.cpp
 
 HEADERS += \
-        mainwindow.h
+        QStyledItemDelegateThumbnail.h \
+        QToolTipper.h \
+        QToolTipperKnown.h \
+        global.h \
+        mainwindow.h \
+        qfilesystemmodelnewevent.h \
+        qlistviewnewevent.h
 
 FORMS += \
         mainwindow.ui

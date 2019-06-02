@@ -23,8 +23,8 @@ MainWindow::MainWindow(QWidget* parent)
     _model->setRootPath(str_learningRootDir);
     QStringList filter;
     filter << "*.jpg";
-    //    _model->setNameFilterDisables(0);
-    //    _model->setNameFilters(filter);
+    _model->setNameFilterDisables(0);
+    _model->setNameFilters(filter);
 
     // --------------------------- NEW EVENT
     ui->listView_newEvent->setViewMode(QListView::IconMode);
@@ -101,7 +101,7 @@ void MainWindow::on_pushButton_up_clicked()
         QString filename = _model->data(index).toString();
         QFile known(str_knownDir + knownEventDir + filename);
         Q_ASSERT(known.exists());
-        qDebug() << known;
+        //        qDebug() << known;
         if (!known.rename(str_newEventDir + filename)) {
             qDebug() << "file already exist, can't move " << filename;
         }
@@ -131,6 +131,8 @@ void MainWindow::on_pushButton_down_clicked()
             if (!dir.exists()) {
                 dir.mkpath(".");
             }
+            ui->listView_knownEvent->setRootIndex(_model->index(str_knownDir + knownEventDir));
+//            ui->listView_knownEvent->update();
         } else {
             return;
         }
@@ -153,7 +155,7 @@ void MainWindow::on_pushButton_down_clicked()
         if (cur.width() + cur.height() > best.width() + best.height()) {
             best = cur;
         }
-        qDebug() << newEvent;
+//        qDebug() << newEvent;
         //        Q_ASSERT(newEvent.rename(str_knownDir + knownEventDir + filename));
         //        QString newName = str_knownDir + knownEventDir + filename;
         //        newEvent.open(QIODevice::NewOnly);

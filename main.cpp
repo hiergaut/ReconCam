@@ -283,9 +283,12 @@ int main(int argc, char **argv) {
 
 	std::string trainDir = "";
 	if (training) {
-		trainDir = "learningFile/{newEvent, known}";
+		trainDir = "learningFile/newEvent/";
 		cmd = "mkdir -p " + trainDir;
 		system(cmd.c_str());
+
+        cmd = "mkdir -p learningFile/known/";
+        system(cmd.c_str());
 	}
 
 	ObjList objects;
@@ -342,7 +345,7 @@ int main(int argc, char **argv) {
 	// 	isNotMov = gpioGetValue(sensorNotMov) == 1;
 	// }
 	while (1) {
-		std::cout << "wait new motion, future lapse at " << tickTimeLapse
+		std::cout << "wait new motion, future lapse at " << tickTimeLapse << "clock = " << clock()
 				  << std::endl;
 		while (!hasMovement()) {
 
@@ -355,6 +358,7 @@ int main(int argc, char **argv) {
 			cur = clock();
 			if (cur > tickTimeLapse) {
 				std::cout << std::endl;
+                std::cout << "TIMELAPSE: cur > tickTimelapse : take new lapse";
 				vCap.open(device);
 				// openCap(vCap);
 				if (!vCap.isOpened()) {
@@ -373,7 +377,7 @@ int main(int argc, char **argv) {
 					timelapseDir + "/" + getCurTime() + ".jpg";
 				imwrite(saveLapse, inputFrame);
 				imwrite(timelapseDir + "/latest.jpeg", inputFrame);
-				std::cout << "save lapse '" << saveLapse << "'" << std::endl;
+				std::cout << "TIMELAPSE: save lapse '" << saveLapse << "'" << std::endl;
 
 				// std::string gifFile = timelapseDir + "/timelapse.gif";
 				// if (firstLapse) {
@@ -385,7 +389,7 @@ int main(int argc, char **argv) {
 				// cmd =
 				// "convert " + gifFile + " " + saveLapse + " " + gifFile;
 				// }
-				std::cout << cmd << std::endl;
+				std::cout << "TIMELAPSE:" << cmd << std::endl;
 				system(cmd.c_str());
 
 				if (hasRemoteDir) {
@@ -395,12 +399,12 @@ int main(int argc, char **argv) {
 						cmd = "rsync -arv -e 'ssh -p " + std::to_string(port) +
 							  "' " + timelapseDir + " " + remoteDir;
 					}
-					std::cout << cmd << std::endl;
+					std::cout << "TIMELAPSE: " << cmd << std::endl;
 					system(cmd.c_str());
 				}
 
 				tickTimeLapse = clock() + TIMELAPSE_INTERVAL * CLOCKS_PER_SEC;
-				std::cout << "tickTimeLapse = " << tickTimeLapse  << ", clock = " << clock() << std::endl;
+				std::cout << "TIMELAPSE: tickTimeLapse = " << tickTimeLapse  << ", clock = " << clock() << std::endl;
 			}
 			// if (sensorNotMov != -1) {
 			// 	isNotMov = gpioGetValue(sensorNotMov) == 1;

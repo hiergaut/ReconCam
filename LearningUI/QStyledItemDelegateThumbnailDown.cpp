@@ -32,7 +32,7 @@ void QStyledItemDelegateThumbnailDown::paint(QPainter* painter, const QStyleOpti
 
 //    qDebug() << "color = " << color;
     if (option.state & QStyle::State_Selected) {
-                qDebug() << "paint selected";
+//                qDebug() << "paint selected";
         //        painter->setBrush(QBrush(Qt::white));
         //        painter->drawRect(rect.x(), rect.y(), rect.width(), rect.height());
         //        painter->fillRect(rect, QBrush(Qt::green));

@@ -15,9 +15,9 @@
 #include <unistd.h>
 
 #ifdef PC
-#define TIMELAPSE_INTERVAL 60 // 1 min
+#define TIMELAPSE_INTERVAL 30 // 30 sec
 #else
-#define TIMELAPSE_INTERVAL 1800 // 30 min
+#define TIMELAPSE_INTERVAL 1800 // 20 min
 #endif
 
 #define THRESH_MOV_IS_OBJECT 50
@@ -220,7 +220,7 @@ int main(int argc, char **argv) {
 		"{p port        | -1            | remote port repository}"
 		"{help h        |               | help message}"
 		"{vegetation v  | false         | outside camera}"
-        "{inVideo       |               | video in}"
+		"{inVideo       |               | video in}"
 		"{training take | false         | save movement capture for post "
 		"learning}"
 		//
@@ -240,8 +240,8 @@ int main(int argc, char **argv) {
 	int lightGpio = parser.get<int>("light");
 	bool hasVegetation = parser.get<bool>("vegetation");
 	bool training = parser.get<bool>("training");
-    // std::string inVideo = parser.get<std::string>("inVideo");
-    // std::cout << "inVideo = " << inVideo << std::endl;
+	// std::string inVideo = parser.get<std::string>("inVideo");
+	// std::cout << "inVideo = " << inVideo << std::endl;
 	if (!parser.check()) {
 		parser.printMessage();
 		parser.printErrors();
@@ -257,7 +257,7 @@ int main(int argc, char **argv) {
 #endif
 	// }
 
-    // bool hasVideo = ! inVideo.empty();
+	// bool hasVideo = ! inVideo.empty();
 	bool hasRemoteDir = !remoteDir.empty();
 	using ObjList = std::list<Object>;
 	std::string motionDir;
@@ -287,8 +287,8 @@ int main(int argc, char **argv) {
 		cmd = "mkdir -p " + trainDir;
 		system(cmd.c_str());
 
-        cmd = "mkdir -p learningFile/known/";
-        system(cmd.c_str());
+		cmd = "mkdir -p learningFile/known/";
+		system(cmd.c_str());
 	}
 
 	ObjList objects;
@@ -298,10 +298,13 @@ int main(int argc, char **argv) {
 	Mat inputFrame, mask, drawing;
 	int iNewObj;
 	// size_t tickCapture;
-	size_t cur;
+	// size_t cur;
 	// int iSec;
 	int iCap;
-	size_t tickTimeLapse = clock() + CLOCKS_PER_SEC; // take picture immediately
+	// size_t tickTimeLapse = clock() + CLOCKS_PER_SEC; // take picture
+	// immediately
+
+	int tickTimeLapse = 1; // take picture immediately
 
 	vCap.open(device);
 	if (!vCap.isOpened()) {
@@ -345,20 +348,25 @@ int main(int argc, char **argv) {
 	// 	isNotMov = gpioGetValue(sensorNotMov) == 1;
 	// }
 	while (1) {
-		std::cout << "wait new motion, future lapse at " << tickTimeLapse << "clock = " << clock()
-				  << std::endl;
+		// std::cout << "wait new motion, future lapse at " << tickTimeLapse <<
+		// "clock = " << clock()
+		std::cout << "[TIMELAPSE] wait new motion, future lapse at "
+				  << tickTimeLapse << " sec " << std::endl;
 		while (!hasMovement()) {
 
 			std::cout << "." << std::flush;
 			usleep(CLOCKS_PER_SEC);
-			tickTimeLapse -= CLOCKS_PER_SEC;
+			// tickTimeLapse -= CLOCKS_PER_SEC;
+			--tickTimeLapse;
 			// std::cout << "first tick TimeLapse " << tickTimeLapse <<
 			// std::endl;
 
-			cur = clock();
-			if (cur > tickTimeLapse) {
+			// cur = clock();
+			// if (cur > tickTimeLapse) {
+			if (tickTimeLapse == 0) {
 				std::cout << std::endl;
-                std::cout << "TIMELAPSE: cur > tickTimelapse : take new lapse";
+				// std::cout << "[TIMELAPSE] cur > tickTimelapse : take new
+				// lapse" << std::endl;
 				vCap.open(device);
 				// openCap(vCap);
 				if (!vCap.isOpened()) {
@@ -377,7 +385,8 @@ int main(int argc, char **argv) {
 					timelapseDir + "/" + getCurTime() + ".jpg";
 				imwrite(saveLapse, inputFrame);
 				imwrite(timelapseDir + "/latest.jpeg", inputFrame);
-				std::cout << "TIMELAPSE: save lapse '" << saveLapse << "'" << std::endl;
+				std::cout << "[TIMELAPSE] save lapse '" << saveLapse << "'"
+						  << std::endl;
 
 				// std::string gifFile = timelapseDir + "/timelapse.gif";
 				// if (firstLapse) {
@@ -389,7 +398,7 @@ int main(int argc, char **argv) {
 				// cmd =
 				// "convert " + gifFile + " " + saveLapse + " " + gifFile;
 				// }
-				std::cout << "TIMELAPSE:" << cmd << std::endl;
+				std::cout << "[TIMELAPSE] " << cmd << std::endl;
 				system(cmd.c_str());
 
 				if (hasRemoteDir) {
@@ -399,12 +408,17 @@ int main(int argc, char **argv) {
 						cmd = "rsync -arv -e 'ssh -p " + std::to_string(port) +
 							  "' " + timelapseDir + " " + remoteDir;
 					}
-					std::cout << "TIMELAPSE: " << cmd << std::endl;
+					std::cout << "[TIMELAPSE] " << cmd << std::endl;
 					system(cmd.c_str());
 				}
 
-				tickTimeLapse = clock() + TIMELAPSE_INTERVAL * CLOCKS_PER_SEC;
-				std::cout << "TIMELAPSE: tickTimeLapse = " << tickTimeLapse  << ", clock = " << clock() << std::endl;
+				// tickTimeLapse = clock() + TIMELAPSE_INTERVAL *
+				// CLOCKS_PER_SEC;
+				tickTimeLapse = TIMELAPSE_INTERVAL;
+				std::cout << "[TIMELAPSE] future lapse at " << tickTimeLapse
+						  << " sec " << std::endl;
+				// std::cout << "TIMELAPSE: tickTimeLapse = " << tickTimeLapse
+				// << ", clock = " << clock() << std::endl;
 			}
 			// if (sensorNotMov != -1) {
 			// 	isNotMov = gpioGetValue(sensorNotMov) == 1;
@@ -754,7 +768,8 @@ int main(int argc, char **argv) {
 		std::cout << "save video '" << outputVideoFile << "'" << std::endl;
 
 		// if (nbRealObjects > 0) {
-		if (iCap >= NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST + NB_CAP_MIN_FOR_REAL_MOTION) {
+		if (iCap >= NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST +
+						NB_CAP_MIN_FOR_REAL_MOTION) {
 			// if (true) {
 			// if (iSec > 3) {
 			imwrite(newMotionDir + "/trace.jpg", drawing);

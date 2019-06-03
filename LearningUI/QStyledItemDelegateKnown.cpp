@@ -23,11 +23,11 @@ void QStyledItemDelegateKnown::paint(QPainter* painter, const QStyleOptionViewIt
         //        painter->setBrush(QBrush(Qt::white));
         //        painter->drawRect(rect.x(), rect.y(), rect.width(), rect.height());
         painter->fillRect(rect, QBrush(Qt::green));
-        if (_listView_knownEvent->rootIndex() != _model->index(dir)) {
-            _listView_knownEvent->setRootIndex(_model->index(dir));
-//            qDebug() << "set root knownEvent : " << _model->index(dir);
-            qDebug() << "new known path : " << _model->data(index).toString();
-        }
+//        if (_listView_knownEvent->rootIndex() != _model->index(dir)) {
+//            _listView_knownEvent->setRootIndex(_model->index(dir));
+////            qDebug() << "set root knownEvent : " << _model->index(dir);
+//            qDebug() << "new known path : " << _model->data(index).toString();
+//        }
     }
     //    else {
     //        painter->setBrush(QBrush(Qt::black));

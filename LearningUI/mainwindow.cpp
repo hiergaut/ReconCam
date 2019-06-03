@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include "QListViewKnown.h"
+#include "QListViewKnownEvent.h"
 #include "QStyledItemDelegateKnown.h"
 #include "QStyledItemDelegateThumbnail.h"
 #include "QStyledItemDelegateThumbnailDown.h"
@@ -8,6 +10,7 @@
 #include "QToolTipperKnown.h"
 #include "global.h"
 #include <QInputDialog>
+#include <QListViewNewEvent.h>
 #include <QModelIndex>
 #include <QStandardItem>
 #include <QtDebug>
@@ -24,17 +27,21 @@ MainWindow::MainWindow(QWidget* parent)
     QStringList filter;
     filter << "*.jpg";
     _model->setNameFilterDisables(0);
+    _model->setFilter(QDir::AllDirs | QDir::NoDotAndDotDot | QDir::AllEntries);
     _model->setNameFilters(filter);
 
     // --------------------------- NEW EVENT
-    ui->listView_newEvent->setViewMode(QListView::IconMode);
-    ui->listView_newEvent->setMovement(QListView::Static);
+    //    ui->listView_newEvent->setViewMode(QListView::IconMode);
+    //    ui->listView_newEvent->setMovement(QListView::Static);
     ui->listView_newEvent->setModel(_model);
     ui->listView_newEvent->setRootIndex(_model->index(str_newEventDir));
     ui->listView_newEvent->setItemDelegate(new QStyledItemDelegateThumbnail(_model, ui->listView_newEvent));
+    //    ui->listView_newEvent->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    connect(ui->listView_newEvent, &QListViewNewEvent::enterPressed, this, &MainWindow::on_moveNewEventSelectedToKnown);
+    connect(ui->listView_newEvent, &QListViewNewEvent::deletePressed, this, &MainWindow::on_deleteNewEventSelected);
+
     //    ui->listView_newEvent->setDragDropMode()
     //    ui->listView_newEvent->selectAll();
-    ui->listView_newEvent->setSelectionMode(QAbstractItemView::ExtendedSelection);
     //    ui->listView_newEvent->setDragEnabled(true);
     //    ui->listView_newEvent->setAcceptDrops(true);
     //    ui->listView_newEvent->viewport()->setAcceptDrops(true);
@@ -52,23 +59,31 @@ MainWindow::MainWindow(QWidget* parent)
 
     //    qDebug() << _model->rowCount() << _model->columnCount();
 
-    ui->listView_known->setViewMode(QListView::IconMode);
-    ui->listView_known->setMovement(QListView::Static);
+    //    ui->listView_known->setViewMode(QListView::IconMode);
+    //    ui->listView_known->setMovement(QListView::Static);
     ui->listView_known->setModel(_model);
     ui->listView_known->setRootIndex(_model->index(str_knownDir));
     ui->listView_known->setItemDelegate(new QStyledItemDelegateKnown(_model, ui->listView_knownEvent, ui->listView_known));
+
+    connect(ui->listView_known, &QListViewKnown::deletePressed, this, &MainWindow::on_deleteKnownSelected);
+    connect(ui->listView_known->selectionModel(), SIGNAL(selectionChanged(QItemSelection, QItemSelection)), this, SLOT(on_changeKnownSelected(QItemSelection)));
+
     //    ui->listView_known->viewport()->installEventFilter(new QToolTipperKnown(ui->listView_known, ui->listView_knownEvent, _model));
 
     //    ui->listView_known->viewport()->setBackgroundRole(QPalette::Dark);
 
     // --------------------------- KNOWN EVENT
-    ui->listView_knownEvent->setViewMode(QListView::IconMode);
-    ui->listView_knownEvent->setMovement(QListView::Static);
+    //    ui->listView_knownEvent->setViewMode(QListView::IconMode);
+    //    ui->listView_knownEvent->setMovement(QListView::Static);
     ui->listView_knownEvent->setModel(_model);
     ui->listView_knownEvent->setItemDelegate(new QStyledItemDelegateThumbnailDown(_model, ui->listView_knownEvent, ui->listView_knownEvent));
+
+    connect(ui->listView_knownEvent, &QListViewKnownEvent::spacePressed, this, &MainWindow::on_moveKnownEventSelectedToNewEvent);
+    connect(ui->listView_knownEvent, &QListViewKnownEvent::deletePressed, this, &MainWindow::on_deleteKnownEventSelected);
+
     //    ui->listView_knownEvent->setRootIndex(_model->index(str_knownDir + "gauthier/"));
 
-    ui->listView_knownEvent->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    //    ui->listView_knownEvent->setSelectionMode(QAbstractItemView::ExtendedSelection);
     //    ui->listView_knownEvent->setDragEnabled(true);
     //    ui->listView_knownEvent->setAcceptDrops(true);
     //    ui->listView_knownEvent->viewport()->setAcceptDrops(true);
@@ -86,6 +101,123 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::on_pushButton_up_clicked()
+{
+    on_moveKnownEventSelectedToNewEvent();
+}
+
+void MainWindow::on_pushButton_down_clicked()
+{
+    on_moveNewEventSelectedToKnown();
+}
+
+void MainWindow::on_moveNewEventSelectedToKnown()
+{
+    QModelIndexList newEventSelected = ui->listView_newEvent->selectionModel()->selectedIndexes();
+    if (newEventSelected.size() == 0) {
+        qDebug() << "no selected event";
+        return;
+    }
+
+    const QModelIndexList& indexKnownDir = ui->listView_known->selectionModel()->selectedIndexes();
+    //    Q_ASSERT(indexKnownDir.size() == 1);
+    QString knownEventDir;
+    if (indexKnownDir.size() == 0) {
+        bool ok;
+        knownEventDir = QInputDialog::getText(this, "new recon", "New object name :", QLineEdit::Normal, "", &ok);
+
+        //        qDebug() << "knownEventDir = " << knownEventDir;
+
+        if (ok && !knownEventDir.isEmpty()) {
+            knownEventDir += "/";
+            QDir dir(str_knownDir + knownEventDir);
+            if (!dir.exists()) {
+                dir.mkpath(".");
+            }
+            //            ui->listView_knownEvent->setRootIndex(_model->index(str_knownDir + knownEventDir));
+            //            ui->listView_knownEvent->update();
+        } else {
+            return;
+        }
+    } else {
+        knownEventDir = _model->data(indexKnownDir.first()).toString() + "/";
+    }
+
+    QPixmap best;
+    QString path_best = str_knownDir + knownEventDir + "best.jpeg";
+    if (QFile::exists(path_best)) {
+        best.load(path_best);
+    } else {
+        best.load(str_newEventDir + _model->data(newEventSelected.first()).toString());
+    }
+    for (const auto& index : newEventSelected) {
+        QString filename = _model->data(index).toString();
+        QFile newEvent(str_newEventDir + filename);
+        Q_ASSERT(newEvent.exists());
+        QPixmap cur(str_newEventDir + filename);
+        if (cur.width() + cur.height() > best.width() + best.height()) {
+            best = cur;
+        }
+        //        qDebug() << newEvent;
+        //        Q_ASSERT(newEvent.rename(str_knownDir + knownEventDir + filename));
+        //        QString newName = str_knownDir + knownEventDir + filename;
+        //        newEvent.open(QIODevice::NewOnly);
+        //        newEvent.open(Q)
+        newEvent.rename(str_knownDir + knownEventDir + filename);
+        //        newEvent.close();
+        //        newEvent.copy(newName);
+        //        newEvent.deleteLater();
+
+        //        _model->fileRenamed(str_learningRootDir, str_newEventDir + filename, str_knownDir + knownEventDir + filename);
+        //        newEvent.remove();
+        //        newEventSelected.append(_model->data(index).toString());
+    }
+
+    best.save(str_knownDir + knownEventDir + "best.jpeg");
+    ui->listView_known->selectionModel()->select(_model->index(str_knownDir + knownEventDir), QItemSelectionModel::Select);
+}
+
+void MainWindow::on_deleteNewEventSelected()
+{
+    QModelIndexList newEventSelected = ui->listView_newEvent->selectionModel()->selectedIndexes();
+    for (const auto& index : newEventSelected) {
+        QString filename = _model->data(index).toString();
+        QFile newEvent(str_newEventDir + filename);
+        Q_ASSERT(newEvent.exists());
+        if (newEvent.remove()) {
+            qDebug() << "cannot remove new event selected file : " << filename;
+        }
+    }
+}
+
+void MainWindow::on_deleteKnownSelected()
+{
+    QModelIndexList newEventSelected = ui->listView_known->selectionModel()->selectedIndexes();
+    Q_ASSERT(newEventSelected.size() == 1);
+
+    QModelIndex index = newEventSelected.first();
+    QString filename = _model->data(index).toString();
+    QDir knownDir(str_knownDir + filename);
+    Q_ASSERT(knownDir.exists());
+    if (!knownDir.removeRecursively()) {
+        qDebug() << "unable to remove dir : " << filename;
+    }
+}
+
+void MainWindow::on_changeKnownSelected(QItemSelection item)
+{
+    QModelIndexList indexes = item.indexes();
+    //    Q_ASSERT(indexes.size() == 1);
+    if (indexes.size() == 0) {
+        qDebug() << "no change selected known dir";
+        ui->listView_knownEvent->setRootIndex(_model->index(str_learningRootDir));
+        return;
+    }
+    QModelIndex index = indexes.first();
+    QString dir = str_knownDir + _model->data(index).toString() + "/";
+    ui->listView_knownEvent->setRootIndex(_model->index(dir));
+}
+
+void MainWindow::on_moveKnownEventSelectedToNewEvent()
 {
     const QModelIndexList& indexKnownDir = ui->listView_known->selectionModel()->selectedIndexes();
     //    Q_ASSERT(indexKnownDir.size() == 1);
@@ -111,64 +243,31 @@ void MainWindow::on_pushButton_up_clicked()
     //    qDebug() << knownSelected;
 }
 
-void MainWindow::on_pushButton_down_clicked()
+void MainWindow::on_deleteKnownEventSelected()
 {
-    QModelIndexList newEventSelected = ui->listView_newEvent->selectionModel()->selectedIndexes();
-    if (newEventSelected.size() == 0) {
-        qDebug() << "no selected event";
+    const QModelIndexList& indexKnownDir = ui->listView_known->selectionModel()->selectedIndexes();
+    if (indexKnownDir.size() == 0) {
+        qDebug() << "no knownDir selected";
         return;
     }
+    QString knownEventDir = _model->data(indexKnownDir.first()).toString() + "/";
 
-    const QModelIndexList& indexKnownDir = ui->listView_known->selectionModel()->selectedIndexes();
-    //    Q_ASSERT(indexKnownDir.size() == 1);
-    QString knownEventDir;
-    if (indexKnownDir.size() == 0) {
-        bool ok;
-        knownEventDir = QInputDialog::getText(this, "new recon", "New object name :", QLineEdit::Normal, "", &ok) + "/";
-
-        if (ok && !knownEventDir.isEmpty()) {
-            QDir dir(str_knownDir + knownEventDir);
-            if (!dir.exists()) {
-                dir.mkpath(".");
-            }
-            ui->listView_knownEvent->setRootIndex(_model->index(str_knownDir + knownEventDir));
-//            ui->listView_knownEvent->update();
-        } else {
-            return;
-        }
-    } else {
-        knownEventDir = _model->data(indexKnownDir.first()).toString() + "/";
-    }
-
-    QPixmap best;
-    QString path_best = str_knownDir + knownEventDir + "best.jpeg";
-    if (QFile::exists(path_best)) {
-        best.load(path_best);
-    } else {
-        best.load(str_newEventDir + _model->data(newEventSelected.first()).toString());
-    }
-    for (const auto& index : newEventSelected) {
+    QModelIndexList knownEventSelected = ui->listView_knownEvent->selectionModel()->selectedIndexes();
+    for (const auto& index : knownEventSelected) {
         QString filename = _model->data(index).toString();
-        QFile newEvent(str_newEventDir + filename);
+        QFile newEvent(str_knownDir + knownEventDir + filename);
         Q_ASSERT(newEvent.exists());
-        QPixmap cur(str_newEventDir + filename);
-        if (cur.width() + cur.height() > best.width() + best.height()) {
-            best = cur;
+        if (newEvent.remove()) {
+            qDebug() << "cannot remove new event selected file : " << filename;
         }
-//        qDebug() << newEvent;
-        //        Q_ASSERT(newEvent.rename(str_knownDir + knownEventDir + filename));
-        //        QString newName = str_knownDir + knownEventDir + filename;
-        //        newEvent.open(QIODevice::NewOnly);
-        //        newEvent.open(Q)
-        newEvent.rename(str_knownDir + knownEventDir + filename);
-        //        newEvent.close();
-        //        newEvent.copy(newName);
-        //        newEvent.deleteLater();
-
-        //        _model->fileRenamed(str_learningRootDir, str_newEventDir + filename, str_knownDir + knownEventDir + filename);
-        //        newEvent.remove();
-        //        newEventSelected.append(_model->data(index).toString());
     }
+}
 
-    best.save(str_knownDir + knownEventDir + "best.jpeg");
+void MainWindow::on_pushButton_deleteAllNewEvent_clicked()
+{
+    QDir newEventDir(str_newEventDir);
+    newEventDir.setFilter(QDir::Files);
+    for (const QString& file : newEventDir.entryList()) {
+        newEventDir.remove(file);
+    }
 }

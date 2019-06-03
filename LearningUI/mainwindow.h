@@ -6,6 +6,7 @@
 #include <QFileSystemModel>
 #include <QStandardItemModel>
 #include "QFileSystemModelDatum.h"
+#include <QItemSelection>
 
 namespace Ui {
 class MainWindow;
@@ -20,8 +21,19 @@ public:
 
 private slots:
     void on_pushButton_up_clicked();
-
     void on_pushButton_down_clicked();
+
+    void on_pushButton_deleteAllNewEvent_clicked();
+
+public slots:
+    void on_moveNewEventSelectedToKnown();
+    void on_deleteNewEventSelected();
+
+    void on_deleteKnownSelected();
+    void on_changeKnownSelected(QItemSelection index);
+
+    void on_moveKnownEventSelectedToNewEvent();
+    void on_deleteKnownEventSelected();
 
 private:
     Ui::MainWindow* ui;

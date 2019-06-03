@@ -23,9 +23,13 @@ void QStyledItemDelegateThumbnailDown::paint(QPainter* painter, const QStyleOpti
 
     QModelIndex rootIndex = _view->rootIndex();
     QString filename = str_knownDir  + _model->data(rootIndex).toString() + "/" + _model->data(index).toString();
-    QFile img(filename);
+    QFileInfo img(filename);
+    if (img.isDir()) {
+        return;
+    }
     if (!img.exists()) {
-        qDebug() << "file not exist : " << img;
+//        qDebug() << "file not exist : " << img;
+        return;
     }
 //    qDebug() << img;
     QPixmap color(filename);

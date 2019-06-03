@@ -23,7 +23,7 @@
 #define THRESH_MOV_IS_OBJECT 50
 #define NB_CAP_LEARNING_MODEL_FIRST 10
 #define NB_CAP_FOCUS_BRIGHTNESS 10
-#define NB_CAP_MIN_FOR_REAL_MOTION 1
+#define NB_CAP_MIN_FOR_REAL_MOTION 2
 // #define TIMELAPSE_INTERVAL 30 // secondes
 
 using namespace cv;

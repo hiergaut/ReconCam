@@ -25,17 +25,26 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++11
 
 SOURCES += \
+        OpenGL/GeometryEngine.cpp \
+        OpenGL/QOpenGLWidgetCluster.cpp \
         QFileSystemModelDatum.cpp \
+        QListViewKnown.cpp \
+        QListViewKnownEvent.cpp \
+        QListViewNewEvent.cpp \
         QStyledItemDelegateKnown.cpp \
         QStyledItemDelegateThumbnail.cpp \
         QStyledItemDelegateThumbnailDown.cpp \
         main.cpp \
         mainwindow.cpp \
-        qfilesystemmodelnewevent.cpp \
-        qlistviewnewevent.cpp
+        qfilesystemmodelnewevent.cpp
 
 HEADERS += \
+        OpenGL/GeometryEngine.h \
+        OpenGL/QOpenGLWidgetCluster.h \
         QFileSystemModelDatum.h \
+        QListViewKnown.h \
+        QListViewKnownEvent.h \
+        QListViewNewEvent.h \
         QStyledItemDelegateKnown.h \
         QStyledItemDelegateThumbnail.h \
         QStyledItemDelegateThumbnailDown.h \
@@ -43,8 +52,7 @@ HEADERS += \
         QToolTipperKnown.h \
         global.h \
         mainwindow.h \
-        qfilesystemmodelnewevent.h \
-        qlistviewnewevent.h
+        qfilesystemmodelnewevent.h
 
 FORMS += \
         mainwindow.ui
@@ -53,3 +61,6 @@ FORMS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+RESOURCES += \
+    OpenGL/Resources.qrc

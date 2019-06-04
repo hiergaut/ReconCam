@@ -1,173 +1,309 @@
 #include "OpenGL/QOpenGLWidgetCluster.h"
 
+#include <QtGlobal>
+
+static const char* vertexshader_source = "#version 330 core\n\
+        layout (location = 0) in vec3 vertex;\n\
+        uniform mat4 model;\n\
+        uniform mat4 view;\n\
+        uniform mat4 projection;\n\
+        void main()\n\
+        {\n\
+//            gl_Position = vec4(vertex, 1.0);\n\
+            gl_Position = projection * view * model * vec4(vertex, 1.0);\n\
+        }\n";
+
+static const char* fragmentshader_source = "#version 330 core\n\
+        out vec4 color;\n\
+        void main()\n\
+        {\n\
+            color = vec4(1.0f, 0.5f, 0.2f, 0.5);\n\
+        }\n";
+
+static const char* fragmentshader_source2 = "#version 330 core\n\
+        out vec4 color;\n\
+        void main()\n\
+        {\n\
+            color = vec4(0, 1.0, 0.0, 1.0);\n\
+        }\n";
+
 QOpenGLWidgetCluster::QOpenGLWidgetCluster(QWidget* parent)
     : QOpenGLWidget(parent)
-    //    m_program(0)
     , m_vbo(QOpenGLBuffer::VertexBuffer)
     , m_ebo(QOpenGLBuffer::IndexBuffer)
+    , m_vbo2(QOpenGLBuffer::VertexBuffer)
 {
 }
 
 QOpenGLWidgetCluster::~QOpenGLWidgetCluster()
 {
-    //    if (m_program == nullptr)
-    //        return;
 
     makeCurrent();
 
     m_vbo.destroy();
     m_ebo.destroy();
-    //    m_vao.destroy();
-    //    delete m_program;
-    //    m_program = 0;
+    m_vbo2.destroy();
 
     doneCurrent();
+
+    glDeleteVertexArrays(2, vao);
+    glDeleteBuffers(2, vbo);
 }
 
 void QOpenGLWidgetCluster::initializeGL()
 {
     initializeOpenGLFunctions();
-    //    glClearColor(0, 0, 0, 0);
 
-    //    m_program = new QOpenGLShaderProgram;
-    //        m_program.bind();
-    if (!m_program.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/vshader.glsl"))
-        close();
-
-    if (!m_program.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/fshader.glsl"))
-        close();
-
-    if (!m_program.link())
-        close();
-
-    if (!m_program.bind())
-        close();
-
-    //    m_program.setUniformValue("model", m_model);
-    //    m_program.setUniformValue("projection", m_projection);
-    //    m_program.setUniformValue("view", m_view);
-    //    m_projection_loc = m_program.uniformLocation("projection");
-    //    m_view_loc = m_program.uniformLocation("view");
-    //    m_model_loc = m_program.uniformLocation("model");
-
-    //    m_view.setToIdentity();
-    //    m_view.translate(0, 0, -1);
-
-    //    qreal aspect = qreal(width()) / qreal(height() ? height() : 1);
-    //    const qreal zNear = 3.0, zFar = 7.0, fov = 45.0;
-    //    m_projection.setToIdentity();
-    //    m_projection.perspective(fov, aspect, zNear, zFar);
-
-    //    m_model.setToIdentity();
-    //    m_program->bindAttributeLocation("vertex", 0);
-    //    if (!m_program.link()) {
-    //        qDebug() << "no link shader";
+    // --------------------------- SHADERS
+    //    int success;
+    //    char infoLog[512];
+    //    vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    //    //    QFile shader(":/vshader.glsl");
+    //    //    QTextStream in(&shader);
+    //    //    const GLchar str = static_cast<const GLchar>(in.readAll().toStdString().c_str());
+    //    //    glShaderSource(vertexShader, 1, (const GLchar*)str.c_str(), NULL);
+    //    glShaderSource(vertexShader, 1, &vertexshader_source, NULL);
+    //    glCompileShader(vertexShader);
+    //    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    //    if (!success) {
+    //        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+    //        qDebug() << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n"
+    //                 << infoLog;
     //    }
 
-    //    m_program.bind();
-    //    m_vao = new QOpenGLVertexArrayObject;
+    //    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    //    glShaderSource(fragmentShader, 1, &fragmentshader_source, NULL);
+    //    glCompileShader(fragmentShader);
+    //    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    //    if (!success) {
+    //        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+    //        qDebug() << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n"
+    //                 << infoLog;
+    //    }
+    //    shaderProgram = glCreateProgram();
+    //    glAttachShader(shaderProgram, vertexShader);
+    //    glAttachShader(shaderProgram, fragmentShader);
+    //    glLinkProgram(shaderProgram);
+
+    //    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    //    if (!success) {
+    //        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+    //        qDebug() << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n"
+    //                 << infoLog;
+    //    }
+    //    //    glUseProgram(shaderProgram);
+    //    glDeleteShader(vertexShader);
+    //    glDeleteShader(fragmentShader);
+
+    //    m_program.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/vshader.glsl");
+    //    m_program.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/fshader.glsl");
+    m_program[0].addShaderFromSourceCode(QOpenGLShader::Vertex, vertexshader_source);
+    m_program[0].addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentshader_source);
+    m_program[0].link();
+    //    m_program[0].bind();
+
+    m_program[1].addShaderFromSourceCode(QOpenGLShader::Vertex, vertexshader_source);
+    m_program[1].addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentshader_source2);
+    m_program[1].link();
+    //    m_program[1].bind();
+
+    glGenVertexArrays(2, vao);
+    glGenBuffers(2, vbo);
+
+    glBindVertexArray(vao[0]);
+
+    //    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(m_box), m_box, GL_STATIC_DRAW);
+
+    glGenBuffers(1, &ebo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(m_boxIndices), m_boxIndices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    //    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    //    glBindVertexArray(0);
+
+    //
+    //    glGenVertexArrays(1, &vao2);
+    glBindVertexArray(vao[1]);
+
+    //    glGenBuffers(1, &vbo2);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(m_vertices), m_vertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    //    //    memcpy(concat, m_box, sizeof(m_box));
+    //    //    memcpy(&concat[24], m_vertices, sizeof(m_vertices));
+
     //    m_vao.create();
-    //    m_vao.bind();
     //    QOpenGLVertexArrayObject::Binder vaoBinder(&m_vao);
 
-    //    float vertices[] = {
-    //        -0.5f, -0.5f, 0.0f,
-    //         0.5f, -0.5f, 0.0f,
-    //         0.0f,  0.5f, 0.0f
-    //    };
-    m_vbo.create();
-    m_vbo.bind();
-    m_vbo.allocate(m_vertices, sizeof(m_vertices));
-    //    m_vbo.allocate(m_vertices, sizeof(m_vertices));
-    //    glEnableVertexAttribArray(0);
-    //    m_program.enableAttributeArray(0);
-    //    glEnableVertexAttribArray(0);
-    //    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(GLfloat), 0);
-    //    m_program.setAttributeBuffer(0, GL_FLOAT, 0, 3, 3 * sizeof(float));
-    glVertexPointer(3, GL_FLOAT, 0, NULL);
-    m_vbo.release();
+    //    m_ebo.create();
+    //    qDebug() << "ebo id : " << m_ebo.bufferId();
+    //    m_ebo.bind();
+    //    m_ebo.allocate(m_boxIndices, sizeof(m_boxIndices));
 
-    //    m_program.release();
-    //    m_program.bind();
-    //    glEnableVertexAttribArray(0);
-    //    m_program.enableAttributeArray(0);
-    //    m_program.setAttributeBuffer(0, GL_FLOAT, 0, 3);
+    ////    glBindBuffer(GL_ARRAY_BUFFER, 2);
+    //    m_model_loc = glGetUniformLocation(m_program[0], "model");
+    m_model.setToIdentity();
+    m_model.rotate(m_xRot, 1.0, 0.0, 0.0);
+    m_model.rotate(m_yRot, 0.0, 1.0, 0.0);
+    m_model.rotate(m_zRot, 0.0, 0.0, 1.0);
+    //    m_model_loc = m_program[0].uniformLocation("model");
+    //    glUniformMatrix4fv(m_model_loc, 1, GL_FALSE, m_model.constData());
 
-    //    quintptr offset =0;
-    //    int vertexLocation = m_program.attributeLocation("vertex");
-    //    m_program.enableAttributeArray(vertexLocation);
-    //    m_program.setAttributeBuffer(vertexLocation, GL_FLOAT, offset, 3, 3 * sizeof(float));
+    m_view.setToIdentity();
+    m_view.translate(0.0, 0.0, m_zCamera);
+    //    m_view_loc = m_program[0].uniformLocation("view");
+    //    m_view_loc = glGetUniformLocation(0, "view");
 
-    //    m_vbo.create();
-    //    m_vbo.bind();
-    //    m_vbo.allocate(vertices, sizeof(vertices));
+    m_projection.perspective(m_fov, 1.0 * width() / height(), 0.1, 100.0);
+    //    m_projection_loc = m_program[0].uniformLocation("projection");
 
-    //    QOpenGLFunctions * f = QOpenGLContext::currentContext()->functions();
-    //    m_program.bind();
-    //    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
+    //    m_program[0].bindAttributeLocation("model", m_model_loc);
+    //    m_program[0].bindAttributeLocation("view", m_view_loc);
+    //    m_program[0].bindAttributeLocation("projection", m_projection_loc);
+
+    //    m_program[1].bindAttributeLocation("model", m_model_loc);
+    m_model_loc[0] = m_program[0].uniformLocation("model");
+    m_view_loc[0] = m_program[0].uniformLocation("view");
+    m_projection_loc[0] = m_program[0].uniformLocation("projection");
+
+    m_model_loc[1] = m_program[1].uniformLocation("model");
+    m_view_loc[1] = m_program[1].uniformLocation("view");
+    m_projection_loc[1] = m_program[1].uniformLocation("projection");
+
+    //    m_program[1].bindAttributeLocation("view", m_view_loc);
+    //    m_program[1].bindAttributeLocation("projection", m_projection_loc);
+
+    //    m_program[0].setUniformValue(m_model_loc[0], m_model);
+    //    m_program[0].setUniformValue(m_view_loc[0], m_view);
+    //    m_program[0].setUniformValue(m_projection_loc[0], m_projection);
+
+    //    m_program[1].setUniformValue(m_model_loc[1], m_model);
+    //    m_program[1].setUniformValue(m_view_loc[1], m_view);
+    //    m_program[1].setUniformValue(m_projection_loc[1], m_projection);
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
-    //    glShadeModel(GL_SMOOTH);
-    //    glEnable(GL_LIGHTING);
-    //    glEnable(GL_LIGHT0);
 
-    //    m_vbo.release();
+    glPointSize(5);
+    glEnable(GL_POINT_SMOOTH);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    //        m_program.release();
+    //    //    glEnable(GL_MULTISAMPLE);
+
+    //    //    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    //    //    glFrontFace(GL_CCW);
+    //    //    glCullFace(GL_BACK);
+    //    glViewport(0, 0, width(), height());
 }
 
 void QOpenGLWidgetCluster::resizeGL(int w, int h)
 {
-    qreal aspect = qreal(w) / qreal(h ? h : 1);
-    const qreal zNear = 3.0, zFar = 7.0, fov = 45.0;
-
-    m_projection.setToIdentity();
-    m_projection.perspective(fov, aspect, zNear, zFar);
+    updateProjection();
 }
 
 void QOpenGLWidgetCluster::paintGL()
 {
-    glClearColor(0, 0, 0, 1);
+    // display objects
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    //        glEnableClientState(GL_VERTEX_ARRAY);
+    //    m_program[0].setUniformValue(m_model_loc, m_model);
 
-    //        m_model.setToIdentity();
+    //    m_program[0].setUniformValue(m_view_loc, m_view);
+    //    m_program[0].setUniformValue(m_projection_loc, m_projection);
+    m_program[0].bind();
+    m_program[0].setUniformValue(m_model_loc[0], m_model);
+    m_program[0].setUniformValue(m_view_loc[0], m_view);
+    m_program[0].setUniformValue(m_projection_loc[0], m_projection);
 
-    //    glVertexPointer(3, GL_FLOAT, 0, m_vertices);
-    //    glDrawArrays(GL_TRIANGLES, 0, 3);
-    //    glDisableClientState(GL_VERTEX_ARRAY);
+    glBindVertexArray(vao[0]);
+    //    glDrawArrays(GL_LINES, 0, 12);
+    glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, (void*)0);
+    //    qDebug() << sizeof(m_boxIndices);
 
-    glEnableClientState(GL_VERTEX_ARRAY);
-    //    m_vbo.bind();
-    //    glVertexPointer(3, GL_FLOAT, 0, NULL);
-    //    m_vbo.release();
+    m_program[1].bind();
+    m_program[1].setUniformValue(m_model_loc[1], m_model);
+    m_program[1].setUniformValue(m_view_loc[1], m_view);
+    m_program[1].setUniformValue(m_projection_loc[1], m_projection);
 
-    //    m_program.bind();
-    //    m_program.setUniformValue(m_projection_loc, m_projection);
-    //    m_program.setUniformValue(m_view_loc, m_view);
-    //    m_program.setUniformValue(m_model_loc, m_model);
-    glDrawArrays(GL_TRIANGLES, 0, 12);
-    //    m_program.release();
+    glBindVertexArray(vao[1]);
+    //    m_program[1].setUniformValue(m_model_loc, m_model);
+    //    m_program[1].setUniformValue(m_view_loc, m_view);
+    //    m_program[1].setUniformValue(m_projection_loc, m_projection);
 
-    glDisableClientState(GL_VERTEX_ARRAY);
+    glDrawArrays(GL_POINTS, 0, 12);
 
-    //    m_program.bind();
-    //    glShadeModel(GL_SMOOTH);
-    //    m_vbo.bind();
+    glBindVertexArray(0);
+    glUseProgram(0);
+}
 
-    //    glEnable(GL_DEPTH_TEST);
-    //    glEnable(GL_CULL_FACE);
+void QOpenGLWidgetCluster::wheelEvent(QWheelEvent* event)
+{
+    int ry = event->delta();
 
-    //    QOpenGLVertexArrayObject::Binder vaoBinder(&m_vao);
-    //    QMatrix4x4 modelView;
-    //    modelView.translate(0.0, 0.0, -5.0);
+    if (ry > 0) {
+        //        m_fov *= 0.7;
+        m_zCamera *= 0.9;
+    } else {
+        //        m_fov = qMin(m_fov * 1.3f, 180.0f);
+        m_zCamera *= 1.1;
+    }
+    m_view.setToIdentity();
+    m_view.translate(0.0, 0.0, m_zCamera);
 
-    //    m_program.bind();
-    //    glDrawArrays(GL_TRIANGLES, 0, 3);
-    //    m_vbo.release();
+    update();
+}
 
-    //    m_program.release();
-    //    m_program.disableAttributeArray(PROGRAM_VERTEX_ATTRIBUTE);
+void QOpenGLWidgetCluster::mousePressEvent(QMouseEvent* event)
+{
+    if (event->button() == Qt::MouseButton::RightButton) {
+        mouseClicked = true;
+        posFirstClicked = event->pos() * 0.5;
+    }
+}
+
+void QOpenGLWidgetCluster::mouseReleaseEvent(QMouseEvent* event)
+{
+    if (event->button() == Qt::MouseButton::RightButton) {
+        mouseClicked = false;
+        QPoint pos = event->pos() * 0.5;
+        m_yRot = m_yRot + pos.x() - posFirstClicked.x();
+        m_xRot = m_xRot + pos.y() - posFirstClicked.y();
+    }
+}
+
+void QOpenGLWidgetCluster::mouseMoveEvent(QMouseEvent* event)
+{
+    if (mouseClicked) {
+        QPoint pos = event->pos() * 0.5;
+
+        m_model.setToIdentity();
+        m_model.rotate(m_xRot + pos.y() - posFirstClicked.y(), 1.0, 0.0, 0.0);
+        m_model.rotate(m_yRot + pos.x() - posFirstClicked.x(), 0.0, 1.0, 0.0);
+        m_model.rotate(m_zRot, 0.0, 0.0, 1.0);
+
+        update();
+    }
+}
+
+void QOpenGLWidgetCluster::updateProjection()
+{
+    qreal aspect = qreal(width()) / qreal(height() ? height() : 1);
+    const qreal zNear = 0.1, zFar = 100.0;
+
+    m_projection.setToIdentity();
+    m_projection.perspective(m_fov, aspect, zNear, zFar);
+
+    update();
 }

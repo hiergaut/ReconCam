@@ -17,13 +17,13 @@
 #ifdef PC
 #define TIMELAPSE_INTERVAL 30 // 30 sec
 #else
-#define TIMELAPSE_INTERVAL 1200 // 20 min
+#define TIMELAPSE_INTERVAL 1800 // 30 min
 #endif
 
 #define THRESH_MOV_IS_OBJECT 50
 #define NB_CAP_LEARNING_MODEL_FIRST 10
 #define NB_CAP_FOCUS_BRIGHTNESS 10
-#define NB_CAP_MIN_FOR_REAL_MOTION 2
+#define NB_CAP_MIN_FOR_REAL_MOTION 5
 // #define TIMELAPSE_INTERVAL 30 // secondes
 
 using namespace cv;

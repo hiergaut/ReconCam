@@ -14,6 +14,28 @@
 #include <QModelIndex>
 #include <QStandardItem>
 #include <QtDebug>
+#include "QStyleditemDelegateOpengl.h"
+
+void expandChildren(const QModelIndex &index, QTreeView *view)
+{
+    if (!index.isValid()) {
+        return;
+    }
+
+    int childCount = view->model()->rowCount(index);
+    qDebug() << "childCount = " << childCount;
+    for (int i = 0; i < childCount; i++) {
+        const QModelIndex &child = index.child(i, 0);
+        // Recursively call the function for each child node.
+        expandChildren(child, view);
+    }
+
+    if (!view->isExpanded(index)) {
+//        view->expand(index);
+        view->setExpanded(index, true);
+        qDebug() << "expand " << view->model()->data(index);
+    }
+}
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -29,6 +51,24 @@ MainWindow::MainWindow(QWidget* parent)
     _model->setNameFilterDisables(0);
     _model->setFilter(QDir::AllDirs | QDir::NoDotAndDotDot | QDir::AllEntries);
     _model->setNameFilters(filter);
+
+
+//    ui->treeView->setItemsExpandable(false);
+//    ui->treeView->expandToDepth(1);
+    ui->treeView->setModel(_model);
+    ui->treeView->setRootIndex(_model->index(str_learningRootDir));
+//    ui->treeView->expandToDepth(0);
+//    ui->treeView->setItemDelegate(new QStyledItemDelegateOpengl(_model, ui->treeView));
+//    expandChildren(_model->index(str_learningRootDir + "known/"), ui->treeView);
+//    ui->treeView->setExpanded(_model->index(str_learningRootDir + "known/"), true);
+//    ui->treeView->setExpanded(_model->index(str_learningRootDir + "newEvent/"), true);
+//    ui->treeView->setRootIsDecorated(true);
+//    ui->treeView->expandAll();
+//    ui->treeView->expandRecursively(_model->index(str_learningRootDir));
+//    ui->treeView->expandAll();
+
+    connect(_model, &QFileSystemModel::layoutChanged, this, &MainWindow::on_modelChanged);
+//    connect(_model, &QFileSystemModel::directoryLoaded, this, &MainWindow::on_modelChanged);
 
     // --------------------------- NEW EVENT
     //    ui->listView_newEvent->setViewMode(QListView::IconMode);
@@ -81,6 +121,7 @@ MainWindow::MainWindow(QWidget* parent)
     connect(ui->listView_knownEvent, &QListViewKnownEvent::spacePressed, this, &MainWindow::on_moveKnownEventSelectedToNewEvent);
     connect(ui->listView_knownEvent, &QListViewKnownEvent::deletePressed, this, &MainWindow::on_deleteKnownEventSelected);
 
+
     //    ui->listView_knownEvent->setRootIndex(_model->index(str_knownDir + "gauthier/"));
 
     //    ui->listView_knownEvent->setSelectionMode(QAbstractItemView::ExtendedSelection);
@@ -108,6 +149,15 @@ void MainWindow::on_pushButton_up_clicked()
 void MainWindow::on_pushButton_down_clicked()
 {
     on_moveNewEventSelectedToKnown();
+}
+
+void MainWindow::on_pushButton_deleteAllNewEvent_clicked()
+{
+    QDir newEventDir(str_newEventDir);
+    newEventDir.setFilter(QDir::Files);
+    for (const QString& file : newEventDir.entryList()) {
+        newEventDir.remove(file);
+    }
 }
 
 void MainWindow::on_moveNewEventSelectedToKnown()
@@ -263,11 +313,17 @@ void MainWindow::on_deleteKnownEventSelected()
     }
 }
 
-void MainWindow::on_pushButton_deleteAllNewEvent_clicked()
+void MainWindow::on_modelChanged()
 {
-    QDir newEventDir(str_newEventDir);
-    newEventDir.setFilter(QDir::Files);
-    for (const QString& file : newEventDir.entryList()) {
-        newEventDir.remove(file);
-    }
+    qDebug() << "model changed " ;
+
+    float triangle [18] = {
+        -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
+        0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f
+    };
+    std::vector<float> points;
+    points.assign(triangle, triangle + sizeof (triangle) / sizeof(float));
+
+    ui->openGLWidget->setPoints(points);
 }

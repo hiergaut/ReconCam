@@ -35,6 +35,8 @@ public slots:
     void on_moveKnownEventSelectedToNewEvent();
     void on_deleteKnownEventSelected();
 
+    void on_modelChanged();
+
 private:
     Ui::MainWindow* ui;
 

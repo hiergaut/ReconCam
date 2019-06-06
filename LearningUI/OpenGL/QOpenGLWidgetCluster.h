@@ -24,6 +24,8 @@ public:
     QOpenGLWidgetCluster(QWidget* parent = nullptr);
     ~QOpenGLWidgetCluster();
 
+    void setPoints(const std::vector<float> points);
+
 protected:
     void initializeGL() override;
     void resizeGL(int w, int h) override;
@@ -58,30 +60,36 @@ private:
     uint vao[2];
 //    uint vao2;
 
-    float triangle [9] = {
-        -0.5f, -0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f,
-        0.0f, 0.5f, 0.0f
+    float triangle [18] = {
+        -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
+        0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f
     };
 
-    float m_vertices[36] {
+//    float m_dots[3 * 1024];
+    std::vector<float> m_dots;
+//    QVector<float> m_dots;
+//    uint m_nbDots;
+//    size_t m_dotsSize;
 
 
-        -0.5f, 0.5f, -5.0f,
-        -0.5f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.0f,
+    float m_vertices[72] {
 
-        0.0f, 0.0f, 0.0f,
-        0.5f, 0.0f, 0.0f,
-        0.5f, 0.5f, 2.0f,
+        -0.5f, 0.5f, -5.0f, 1.0f, 0.0f, 0.0f,
+        -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
 
-        -0.5f, -0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f,
-        0.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.5f, 0.0f, 1.0f, 0.0f,
+        0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+        0.5f, 0.5f, 2.0f, 0.0f, 1.0f, 0.0f,
 
-        0.5f, -0.5f, 0.0f,
-        -0.5f, -0.5f, 0.0f,
-        0.0f, 0.0f, 0.0f,
+        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,
+        0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,
+        0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f,
+
+        0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 1.0f,
+        -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, 1.0f,
+        0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f
     };
 
     float m_box[24] {

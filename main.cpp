@@ -21,9 +21,13 @@
 #endif
 
 #define THRESH_MOV_IS_OBJECT 50
-#define NB_CAP_LEARNING_MODEL_FIRST 10
+#define NB_CAP_LEARNING_MODEL_FIRST 20
 #define NB_CAP_FOCUS_BRIGHTNESS 10
 #define NB_CAP_MIN_FOR_REAL_MOTION 5
+
+#define NEW_OBJECT_MIN_DENSITY 10
+#define MAX_DIST_NEW_POS 100000
+#define MIN_MOV_YEARS_FOR_OBJECT 5
 // #define TIMELAPSE_INTERVAL 30 // secondes
 
 using namespace cv;
@@ -39,14 +43,17 @@ typedef struct s_capture {
 } Capture;
 
 typedef struct s_object {
-	double dist;
+	double distance; // from first pos
 	Point2f pos;
 	int density;
 	Point2f speedVector;
 	Scalar color;
 	int id;
-	Capture bestCapture;
+	// Capture bestCapture;
+	int bestCapture;
+	std::vector<Capture> trace;
 	Point2f firstPos;
+	uint years;
 } Object;
 
 typedef struct s_line {
@@ -423,7 +430,7 @@ int main(int argc, char **argv) {
 			// if (sensorNotMov != -1) {
 			// 	isNotMov = gpioGetValue(sensorNotMov) == 1;
 			// }
-		}
+		} // while (!hasMovement())
 		std::cout << std::endl;
 
 		if (lightGpio != -1 && isNight()) {
@@ -551,12 +558,13 @@ int main(int argc, char **argv) {
 				nearestMov[i] = -1;
 			}
 
-			const int thresh = 10000;
+			const int thresh = MAX_DIST_NEW_POS;
 			for (int i = 0; i < nbMovements; ++i) {
 				nearestObj[i] = -1;
 				distNearestObj[i] = thresh;
 			}
 
+			// find for each object the closest movement
 			int iObj = 0;
 			for (const auto &obj : objects) {
 
@@ -599,18 +607,21 @@ int main(int argc, char **argv) {
 			for (int i = 0; i < nbMovements; ++i) {
 
 				int iObj = nearestObj[i];
+				int density = mu[i].m00;
 				// new object
-				if (iObj == -1) {
+				if (iObj == -1 && density > NEW_OBJECT_MIN_DENSITY) {
 					Scalar color =
 						Scalar(rng.uniform(0, 255), rng.uniform(0, 255),
 							   rng.uniform(0, 255));
+
 					Capture cap{Mat(inputFrame, boundRect[i]).clone(),
 								Mat(mask, boundRect[i]).clone(), contours[i],
-								boundRect[i], static_cast<int>(mu[i].m00)};
-					Object &&obj{
-						0.0,		 mc[i], static_cast<int>(mu[i].m00),
-						Vec2f(0, 0), color, iNewObj++,
-						cap,		 mc[i]};
+								boundRect[i], density};
+					// std::vector<Capture> firstCap {cap};
+
+					Object &&obj{0.0,   mc[i],	 density, Vec2f(0, 0),
+								 color, iNewObj++, 0,		{std::move(cap)},
+								 mc[i], 0};
 					newObjects.emplace_back(obj);
 				}
 			}
@@ -625,7 +636,7 @@ int main(int argc, char **argv) {
 				// delete object if not moving (no event)
 				if (iMov == -1) {
 					// delete passing object event
-					if (obj.dist < THRESH_MOV_IS_OBJECT) {
+					if (obj.distance < THRESH_MOV_IS_OBJECT) {
 						tombs.push_back({obj.pos, obj.color});
 
 						objects.erase(it++);
@@ -642,34 +653,46 @@ int main(int argc, char **argv) {
 				}
 				// movement object
 				else {
-					if (mu[iMov].m00 > obj.bestCapture.density) {
+					Capture cap{Mat(inputFrame, boundRect[iMov]).clone(),
+								Mat(mask, boundRect[iMov]).clone(),
+								contours[iMov], boundRect[iMov],
+								static_cast<int>(mu[iMov].m00)};
+
+					obj.trace.emplace_back(std::move(cap));
+
+					if (mu[iMov].m00 > obj.trace[obj.bestCapture].density) {
 						Capture cap{Mat(inputFrame, boundRect[iMov]).clone(),
 									Mat(mask, boundRect[iMov]).clone(),
 									contours[iMov], boundRect[iMov],
 									static_cast<int>(mu[iMov].m00)};
 
-						obj.bestCapture = cap;
+						obj.bestCapture = obj.trace.size();
 					}
 					obj.speedVector = mc[iMov] - obj.pos;
 					// obj.dist += norm(obj.speedVector);
-					obj.dist =
-						std::max(obj.dist, norm(mc[iMov] - obj.firstPos));
+					obj.distance =
+						std::max(obj.distance, norm(mc[iMov] - obj.firstPos));
 					lines.push_back({obj.pos, mc[iMov], obj.color});
 					obj.pos = mc[iMov];
 					obj.density = mu[iMov].m00;
+					++obj.years;
 
-					rectangle(drawing, boundRect[iMov].tl(),
-							  boundRect[iMov].br(), obj.color, 2);
+					Point2i tl = boundRect[iMov].tl();
+					rectangle(drawing, tl, boundRect[iMov].br(), obj.color, 2);
+
+                    tl += Point2i(boundRect[iMov].width + 5, 10);
 
 					putText(drawing, std::to_string(obj.id),
-							boundRect[iMov].tl() + Point(5, 0),
-							FONT_HERSHEY_DUPLEX, 0.5, obj.color, 1);
-					putText(drawing, std::to_string(static_cast<int>(obj.dist)),
-							boundRect[iMov].br() + Point(5, -20),
-							FONT_HERSHEY_DUPLEX, 0.5, obj.color, 1);
+							tl + Point(0, 0), FONT_HERSHEY_DUPLEX, 0.5,
+							obj.color, 1);
+					putText(drawing,
+								std::to_string(static_cast<int>(obj.distance)),
+							tl + Point(0, 20), FONT_HERSHEY_DUPLEX, 0.5,
+							obj.color, 1);
 					putText(drawing, std::to_string(obj.density),
-							boundRect[iMov].br() + Point(5, -40),
-							FONT_HERSHEY_DUPLEX, 0.5, obj.color, 1);
+							tl + Point(0, 40), FONT_HERSHEY_DUPLEX, 0.5,
+							obj.color, 1);
+
 					line(drawing, obj.pos, obj.pos + obj.speedVector * 2,
 						 Scalar(0, 0, 255), 1, LineTypes::LINE_AA);
 
@@ -684,10 +707,10 @@ int main(int argc, char **argv) {
 			}
 
 			putText(drawing, "nbObjs : " + std::to_string(nbObjects),
-					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 255, 0));
+					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 255));
 
 			putText(drawing, "frame : " + std::to_string(iCap), Point(0, 60),
-					FONT_HERSHEY_DUPLEX, 1, Scalar(0, 255, 0));
+					FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 255));
 
 			for (size_t i = 0; i < lines.size(); ++i) {
 				line(drawing, lines[i].p, lines[i].p2, lines[i].color, 2);
@@ -700,9 +723,9 @@ int main(int argc, char **argv) {
 
 #ifdef PC
 			imshow("drawing", drawing);
-			// imshow("mask", mask);
-			// imshow("grey", grey);
-			if (waitKey(1) == 'q')
+			imshow("mask", mask);
+			imshow("grey", grey);
+			if (waitKey(300) == 'q')
 				break;
 #endif
 
@@ -739,26 +762,38 @@ int main(int argc, char **argv) {
 		// if (objects.size() > 0) {
 
 		for (Object obj : objects) {
-			Mat m = obj.bestCapture.img;
+			Capture &bestCapture = obj.trace[obj.bestCapture];
+			Mat m = bestCapture.img;
 
-			m.copyTo(Mat(drawing, obj.bestCapture.rect), obj.bestCapture.mask);
-			std::vector<std::vector<Point>> contours{obj.bestCapture.contour};
+			m.copyTo(Mat(drawing, bestCapture.rect), bestCapture.mask);
+			std::vector<std::vector<Point>> contours{bestCapture.contour};
 			drawContours(drawing, contours, 0, obj.color, 2);
 
-			if (obj.dist > THRESH_MOV_IS_OBJECT) {
+			if (obj.distance > THRESH_MOV_IS_OBJECT &&
+				obj.years > MIN_MOV_YEARS_FOR_OBJECT) {
 				++nbRealObjects;
 
 				if (training) {
 					std::string newTrainingFile =
 						getHostname() + "_" + std::to_string(device) + "_" +
 						getDay() + "_" + getCurTime() + "_" +
-						std::to_string(obj.id);
-					Mat a;
-					m.copyTo(a, obj.bestCapture.mask);
-					imwrite(trainDir + newTrainingFile + ".jpg", a);
+						std::to_string(obj.id) + "_";
 
-					std::cout << "save training file '"
-							  << trainDir + newTrainingFile << "'" << std::endl;
+					Mat a;
+                    // Mat img;
+					// for (const Capture &cap : obj.trace) {
+					for (size_t i = 0; i < obj.trace.size(); ++i) {
+						const Capture &cap = obj.trace[i];
+                        Mat img = cap.img;
+						std::string file = trainDir + newTrainingFile +
+										   std::to_string(i) + ".jpg";
+
+						cap.img.copyTo(a, cap.mask);
+						imwrite(file, a);
+
+						std::cout << "save training file '" << file << "'"
+								  << std::endl;
+					}
 				}
 			}
 		}

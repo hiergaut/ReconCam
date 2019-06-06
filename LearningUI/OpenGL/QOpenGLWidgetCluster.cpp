@@ -2,108 +2,83 @@
 
 #include <QtGlobal>
 
-static const char* vertexshader_source = "#version 330 core\n\
+static const char* vertexshader_source[] = {
+    "#version 330 core\n\
         layout (location = 0) in vec3 vertex;\n\
         uniform mat4 model;\n\
         uniform mat4 view;\n\
         uniform mat4 projection;\n\
         void main()\n\
         {\n\
-//            gl_Position = vec4(vertex, 1.0);\n\
-            gl_Position = projection * view * model * vec4(vertex, 1.0);\n\
-        }\n";
+          gl_Position = projection * view * model * vec4(vertex, 1.0);\n\
+        }\n",
 
-static const char* fragmentshader_source = "#version 330 core\n\
+    "#version 330 core\n\
+        layout (location = 0) in vec3 vertex;\n\
+        layout (location = 1) in vec3 color;\n\
+        out vec3 ourColor;\n\
+        uniform mat4 model;\n\
+        uniform mat4 view;\n\
+        uniform mat4 projection;\n\
+        void main()\n\
+        {\n\
+          gl_Position = projection * view * model * vec4(vertex, 1.0);\n\
+          ourColor = color;\n\
+        }\n",
+};
+
+static const char* fragmentshader_source[] = {
+    "#version 330 core\n\
         out vec4 color;\n\
         void main()\n\
         {\n\
-            color = vec4(1.0f, 0.5f, 0.2f, 0.5);\n\
-        }\n";
+          color = vec4(0.0f, 1.0f, 0.0f, 0.5);\n\
+        }\n",
 
-static const char* fragmentshader_source2 = "#version 330 core\n\
+    "#version 330 core\n\
+        in vec3 ourColor;\n\
         out vec4 color;\n\
         void main()\n\
         {\n\
-            color = vec4(0, 1.0, 0.0, 1.0);\n\
-        }\n";
+          color = vec4(ourColor, 1.0);\n\
+        }\n"
+};
 
 QOpenGLWidgetCluster::QOpenGLWidgetCluster(QWidget* parent)
     : QOpenGLWidget(parent)
-    , m_vbo(QOpenGLBuffer::VertexBuffer)
-    , m_ebo(QOpenGLBuffer::IndexBuffer)
-    , m_vbo2(QOpenGLBuffer::VertexBuffer)
 {
 }
 
 QOpenGLWidgetCluster::~QOpenGLWidgetCluster()
 {
-
-    makeCurrent();
-
-    m_vbo.destroy();
-    m_ebo.destroy();
-    m_vbo2.destroy();
-
-    doneCurrent();
-
     glDeleteVertexArrays(2, vao);
     glDeleteBuffers(2, vbo);
+}
+
+void QOpenGLWidgetCluster::setPoints(const std::vector<float> points)
+{
+    glBindVertexArray(vao[1]);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+//    m_dots.assign(triangle, triangle + sizeof(triangle) / sizeof(float));
+    m_dots = std::move(points);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, m_dots.size() * sizeof(float), m_dots.data());
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+
 }
 
 void QOpenGLWidgetCluster::initializeGL()
 {
     initializeOpenGLFunctions();
 
-    // --------------------------- SHADERS
-    //    int success;
-    //    char infoLog[512];
-    //    vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    //    //    QFile shader(":/vshader.glsl");
-    //    //    QTextStream in(&shader);
-    //    //    const GLchar str = static_cast<const GLchar>(in.readAll().toStdString().c_str());
-    //    //    glShaderSource(vertexShader, 1, (const GLchar*)str.c_str(), NULL);
-    //    glShaderSource(vertexShader, 1, &vertexshader_source, NULL);
-    //    glCompileShader(vertexShader);
-    //    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    //    if (!success) {
-    //        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-    //        qDebug() << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n"
-    //                 << infoLog;
-    //    }
-
-    //    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    //    glShaderSource(fragmentShader, 1, &fragmentshader_source, NULL);
-    //    glCompileShader(fragmentShader);
-    //    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    //    if (!success) {
-    //        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-    //        qDebug() << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n"
-    //                 << infoLog;
-    //    }
-    //    shaderProgram = glCreateProgram();
-    //    glAttachShader(shaderProgram, vertexShader);
-    //    glAttachShader(shaderProgram, fragmentShader);
-    //    glLinkProgram(shaderProgram);
-
-    //    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    //    if (!success) {
-    //        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-    //        qDebug() << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n"
-    //                 << infoLog;
-    //    }
-    //    //    glUseProgram(shaderProgram);
-    //    glDeleteShader(vertexShader);
-    //    glDeleteShader(fragmentShader);
-
-    //    m_program.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/vshader.glsl");
-    //    m_program.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/fshader.glsl");
-    m_program[0].addShaderFromSourceCode(QOpenGLShader::Vertex, vertexshader_source);
-    m_program[0].addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentshader_source);
+    m_program[0].addShaderFromSourceCode(QOpenGLShader::Vertex, vertexshader_source[0]);
+    m_program[0].addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentshader_source[0]);
     m_program[0].link();
     //    m_program[0].bind();
 
-    m_program[1].addShaderFromSourceCode(QOpenGLShader::Vertex, vertexshader_source);
-    m_program[1].addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentshader_source2);
+    m_program[1].addShaderFromSourceCode(QOpenGLShader::Vertex, vertexshader_source[1]);
+    m_program[1].addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentshader_source[1]);
     m_program[1].link();
     //    m_program[1].bind();
 
@@ -126,16 +101,21 @@ void QOpenGLWidgetCluster::initializeGL()
     //    glBindBuffer(GL_ARRAY_BUFFER, 0);
     //    glBindVertexArray(0);
 
+    //    m_dots.fill(m_vertices, sizeof(m_vertices));
+    m_dots.assign(m_vertices, m_vertices + sizeof(m_vertices) / sizeof(float));
     //
     //    glGenVertexArrays(1, &vao2);
     glBindVertexArray(vao[1]);
 
     //    glGenBuffers(1, &vbo2);
     glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(m_vertices), m_vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, m_dots.size() * sizeof(float), m_dots.data(), GL_DYNAMIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof (float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -143,7 +123,17 @@ void QOpenGLWidgetCluster::initializeGL()
     //    //    memcpy(&concat[24], m_vertices, sizeof(m_vertices));
 
     //    m_vao.create();
+    //    memcpy(m_dots, m_vertices, sizeof(m_vertices));
+    //    m_nbDots = sizeof(m_vertices) / (3 * sizeof(float));
+    //    m_nbDots = 10;
     //    QOpenGLVertexArrayObject::Binder vaoBinder(&m_vao);
+
+//    glBindVertexArray(vao[1]);
+//    glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+//    m_dots.assign(triangle, triangle + sizeof(triangle) / sizeof(float));
+//    glBufferSubData(GL_ARRAY_BUFFER, 0, m_dots.size() * sizeof(float), m_dots.data());
+//    glBindBuffer(GL_ARRAY_BUFFER, 0);
+//    glBindVertexArray(0);
 
     //    m_ebo.create();
     //    qDebug() << "ebo id : " << m_ebo.bufferId();
@@ -179,6 +169,11 @@ void QOpenGLWidgetCluster::initializeGL()
     m_model_loc[1] = m_program[1].uniformLocation("model");
     m_view_loc[1] = m_program[1].uniformLocation("view");
     m_projection_loc[1] = m_program[1].uniformLocation("projection");
+
+    //    m_program[1].bind();
+    //    m_program[1].setUniformValue(m_model_loc[1], m_model);
+    //    m_program[1].setUniformValue(m_view_loc[1], m_view);
+    //    m_program[1].setUniformValue(m_projection_loc[1], m_projection);
 
     //    m_program[1].bindAttributeLocation("view", m_view_loc);
     //    m_program[1].bindAttributeLocation("projection", m_projection_loc);
@@ -242,7 +237,7 @@ void QOpenGLWidgetCluster::paintGL()
     //    m_program[1].setUniformValue(m_view_loc, m_view);
     //    m_program[1].setUniformValue(m_projection_loc, m_projection);
 
-    glDrawArrays(GL_POINTS, 0, 12);
+    glDrawArrays(GL_POINTS, 0, m_dots.size() / 6);
 
     glBindVertexArray(0);
     glUseProgram(0);

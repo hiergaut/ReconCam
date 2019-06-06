@@ -49,6 +49,15 @@
                <height>16777215</height>
               </size>
              </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_5">
+              <item>
+               <widget class="QTreeViewOpengl" name="treeView">
+                <property name="autoExpandDelay">
+                 <number>-1</number>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </widget>
            </item>
           </layout>
@@ -200,6 +209,11 @@
    <class>QOpenGLWidgetCluster</class>
    <extends>QOpenGLWidget</extends>
    <header>OpenGL/QOpenGLWidgetCluster.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QTreeViewOpengl</class>
+   <extends>QTreeView</extends>
+   <header>QTreeViewOpengl.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

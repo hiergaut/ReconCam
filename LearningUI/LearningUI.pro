@@ -34,6 +34,8 @@ SOURCES += \
         QStyledItemDelegateKnown.cpp \
         QStyledItemDelegateThumbnail.cpp \
         QStyledItemDelegateThumbnailDown.cpp \
+        QStyleditemDelegateOpengl.cpp \
+        QTreeViewOpengl.cpp \
         main.cpp \
         mainwindow.cpp \
         qfilesystemmodelnewevent.cpp
@@ -48,8 +50,10 @@ HEADERS += \
         QStyledItemDelegateKnown.h \
         QStyledItemDelegateThumbnail.h \
         QStyledItemDelegateThumbnailDown.h \
+        QStyleditemDelegateOpengl.h \
         QToolTipper.h \
         QToolTipperKnown.h \
+        QTreeViewOpengl.h \
         global.h \
         mainwindow.h \
         qfilesystemmodelnewevent.h

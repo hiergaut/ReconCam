@@ -14,6 +14,9 @@
 #include <string>
 #include <unistd.h>
 
+#include "color.hpp"
+#include "function.hpp"
+
 #ifdef PC
 #define TIMELAPSE_INTERVAL 30 // 30 sec
 #else
@@ -32,178 +35,7 @@
 
 using namespace cv;
 
-RNG rng(29791);
-
-typedef struct s_capture {
-	Mat img;
-	Mat mask;
-	std::vector<Point> contour;
-	Rect rect;
-	int density;
-} Capture;
-
-typedef struct s_object {
-	double distance; // from first pos
-	Point2f pos;
-	int density;
-	Point2f speedVector;
-	Scalar color;
-	int id;
-	// Capture bestCapture;
-	int bestCapture;
-	std::vector<Capture> trace;
-	Point2f firstPos;
-	uint years;
-} Object;
-
-typedef struct s_line {
-	Point p;
-	Point p2;
-	Scalar color;
-} Line;
-
-typedef struct s_deadObj {
-	Point p;
-	Scalar color;
-} DeadObj;
-
-std::string gpioDir;
-// std::string gpioDir = "/sys/class/gpio/";
-
-void initGpio(int gpio, std::string direction) {
-	std::string gpioExportDir = gpioDir + "export";
-	std::ofstream exportGpio(gpioExportDir.c_str());
-	if (!exportGpio.is_open()) {
-		std::cout << "unable to export gpio" << std::endl;
-		perror(gpioExportDir.c_str());
-		exit(1);
-	}
-	exportGpio << gpio;
-	exportGpio.close();
-	usleep(100000);
-
-	std::string gpioNumDir = gpioDir + "gpio" + std::to_string(gpio) + "/";
-	std::string gpioNumDirectionDir = gpioNumDir + "direction";
-	std::ofstream directionGpio(gpioNumDirectionDir.c_str());
-	if (!directionGpio.is_open()) {
-		std::cout << "unable to set direction gpio" << std::endl;
-		perror(gpioNumDirectionDir.c_str());
-		exit(2);
-	}
-	directionGpio << direction;
-	directionGpio.close();
-	usleep(100000);
-}
-
-int gpioGetValue(int gpio) {
-	std::string gpioValueFile =
-		gpioDir + "gpio" + std::to_string(gpio) + "/value";
-	std::ifstream getValueGpio(gpioValueFile.c_str());
-	if (!getValueGpio.is_open()) {
-		std::cout << "unable to get value gpio" << std::endl;
-		perror(gpioValueFile.c_str());
-		exit(3);
-	}
-
-	int val;
-	getValueGpio >> val;
-	getValueGpio.close();
-	// usleep(100000);
-
-	return val;
-}
-
-void gpioSetValue(int gpio, int value) {
-	std::string gpioValueFile =
-		gpioDir + "gpio" + std::to_string(gpio) + "/value";
-	std::ofstream setValueGpio(gpioValueFile.c_str());
-	if (!setValueGpio.is_open()) {
-		std::cout << "unable to set value gpio" << std::endl;
-		perror(gpioValueFile.c_str());
-		exit(4);
-	}
-
-	setValueGpio << value;
-	setValueGpio.close();
-	// usleep(100000);
-}
-
-std::string getHostname() {
-	std::string file = "/etc/hostname";
-	std::ifstream getFile(file.c_str());
-	if (!getFile.is_open()) {
-		std::cout << "unable to open /etc/hostname" << std::endl;
-		perror(file.c_str());
-		exit(4);
-	}
-
-	std::string ret;
-	getFile >> ret;
-	getFile.close();
-
-	return ret;
-}
-
-std::string getCurTime() {
-	time_t t = time(0);
-	tm *now = localtime(&t);
-
-	int hour = now->tm_hour;
-	std::string hour_str = std::to_string(hour);
-	if (hour < 10) {
-		hour_str = "0" + hour_str;
-	}
-
-	int min = now->tm_min;
-	std::string min_str = std::to_string(min);
-	if (min < 10)
-		min_str = "0" + min_str;
-
-	int sec = now->tm_sec;
-	std::string sec_str = std::to_string(sec);
-	if (sec < 10)
-		sec_str = "0" + sec_str;
-
-	return hour_str + ':' + min_str + ':' + sec_str;
-}
-
-std::string getDay() {
-	time_t t = time(0);
-	tm *now = localtime(&t);
-
-	int year = now->tm_year + 1900;
-	int month = now->tm_mon + 1;
-	int day = now->tm_mday;
-
-	return std::to_string(year) + ":" + std::to_string(month) + ":" +
-		   std::to_string(day);
-}
-
-int sensorGpioNum;
-int sensorAdditional;
-
-bool hasMovement() {
-	bool ret = false;
-
-	if (sensorGpioNum != -1) {
-		ret = gpioGetValue(sensorGpioNum) == 1;
-
-		if (sensorAdditional != -1) {
-			ret = ret && gpioGetValue(sensorAdditional) == 1;
-		}
-	}
-
-	return ret;
-}
-
-bool isNight() {
-	time_t t = time(0);
-	tm *now = localtime(&t);
-
-	int hour = now->tm_hour;
-
-	return 19 < hour && hour < 23;
-}
+// extern int sensorGpioNum;
 
 // ------------------------------- MAIN ---------------------------------------
 int main(int argc, char **argv) {
@@ -675,18 +507,17 @@ int main(int argc, char **argv) {
 					lines.push_back({obj.pos, mc[iMov], obj.color});
 					obj.pos = mc[iMov];
 					obj.density = mu[iMov].m00;
-					++obj.years;
+					++obj.age;
 
 					Point2i tl = boundRect[iMov].tl();
 					rectangle(drawing, tl, boundRect[iMov].br(), obj.color, 2);
 
-                    tl += Point2i(boundRect[iMov].width + 5, 10);
+					tl += Point2i(boundRect[iMov].width + 5, 10);
 
-					putText(drawing, std::to_string(obj.id),
-							tl + Point(0, 0), FONT_HERSHEY_DUPLEX, 0.5,
-							obj.color, 1);
+					putText(drawing, std::to_string(obj.id), tl + Point(0, 0),
+							FONT_HERSHEY_DUPLEX, 0.5, obj.color, 1);
 					putText(drawing,
-								std::to_string(static_cast<int>(obj.distance)),
+							std::to_string(static_cast<int>(obj.distance)),
 							tl + Point(0, 20), FONT_HERSHEY_DUPLEX, 0.5,
 							obj.color, 1);
 					putText(drawing, std::to_string(obj.density),
@@ -725,7 +556,7 @@ int main(int argc, char **argv) {
 			imshow("drawing", drawing);
 			imshow("mask", mask);
 			imshow("grey", grey);
-			if (waitKey(300) == 'q')
+			if (waitKey(200) == 'q')
 				break;
 #endif
 
@@ -770,7 +601,7 @@ int main(int argc, char **argv) {
 			drawContours(drawing, contours, 0, obj.color, 2);
 
 			if (obj.distance > THRESH_MOV_IS_OBJECT &&
-				obj.years > MIN_MOV_YEARS_FOR_OBJECT) {
+				obj.age > MIN_MOV_YEARS_FOR_OBJECT) {
 				++nbRealObjects;
 
 				if (training) {
@@ -780,19 +611,22 @@ int main(int argc, char **argv) {
 						std::to_string(obj.id) + "_";
 
 					Mat a;
-                    // Mat img;
+					// Mat img;
 					// for (const Capture &cap : obj.trace) {
 					for (size_t i = 0; i < obj.trace.size(); ++i) {
 						const Capture &cap = obj.trace[i];
-                        Mat img = cap.img;
-						std::string file = trainDir + newTrainingFile +
-										   std::to_string(i) + ".jpg";
+						const Mat img = cap.img;
+						const std::string file =
+							trainDir + newTrainingFile + std::to_string(i);
+						std::cout << "new training event '" << file << "'"
+								  << std::endl;
 
 						cap.img.copyTo(a, cap.mask);
-						imwrite(file, a);
+						imwrite(file + ".jpg", a);
 
-						std::cout << "save training file '" << file << "'"
-								  << std::endl;
+						Mat mask = cap.mask;
+						Mat histImg = hsvHist(img, mask);
+						imwrite(file + "_hist.jpg", histImg);
 					}
 				}
 			}

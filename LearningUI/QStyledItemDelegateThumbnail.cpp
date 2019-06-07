@@ -22,7 +22,7 @@ void QStyledItemDelegateThumbnail::paint(QPainter* painter, const QStyleOptionVi
     //    qDebug() << "fuck" << _model->data(index).toString();
 
     //    QModelIndex rootIndex = _view->rootIndex();
-    QString filename = str_newEventDir + _model->data(index).toString();
+    QString filename = str_newEventDir + _model->data(index).toString() + "/image.jpg";
     QFile img(filename);
     if (!img.exists()) {
         qDebug() << "file not exist : " << img;

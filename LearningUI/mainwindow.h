@@ -38,11 +38,16 @@ public slots:
     void on_modelChanged();
 
 private:
+    void updateKnownBestPicture();
+    void newHashKnownDir(QString path);
+
+private:
     Ui::MainWindow* ui;
 
 //    QFileSystemModel* model_newEvent;
 //    QFileSystemModel* model_known;
     QFileSystemModel* _model;
+    std::map<QString, std::vector<float>> m_colors;
 
 
 //    QString str_learningRootDir { QDir::currentPath() + "/../learningFile/" };

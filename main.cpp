@@ -5,6 +5,7 @@
 
 #include "opencv2/imgproc/imgproc.hpp" // bounding boxes
 
+#include <assert.h>
 #include <cassert>
 #include <ctime>
 #include <fstream>
@@ -187,6 +188,7 @@ int main(int argc, char **argv) {
 	// 	isNotMov = gpioGetValue(sensorNotMov) == 1;
 	// }
 	while (1) {
+		// std::cout << "while (1) {" << std::endl;
 		// std::cout << "wait new motion, future lapse at " << tickTimeLapse <<
 		// "clock = " << clock()
 		std::cout << "[TIMELAPSE] wait new motion, future lapse at "
@@ -492,13 +494,14 @@ int main(int argc, char **argv) {
 
 					obj.trace.emplace_back(std::move(cap));
 
+                    // if found 
 					if (mu[iMov].m00 > obj.trace[obj.bestCapture].density) {
-						Capture cap{Mat(inputFrame, boundRect[iMov]).clone(),
-									Mat(mask, boundRect[iMov]).clone(),
-									contours[iMov], boundRect[iMov],
-									static_cast<int>(mu[iMov].m00)};
+						// Capture cap{Mat(inputFrame, boundRect[iMov]).clone(),
+						// 			Mat(mask, boundRect[iMov]).clone(),
+						// 			contours[iMov], boundRect[iMov],
+						// 			static_cast<int>(mu[iMov].m00)};
 
-						obj.bestCapture = obj.trace.size();
+						obj.bestCapture = obj.trace.size() -1;
 					}
 					obj.speedVector = mc[iMov] - obj.pos;
 					// obj.dist += norm(obj.speedVector);
@@ -592,16 +595,32 @@ int main(int argc, char **argv) {
 		int nbRealObjects = 0;
 		// if (objects.size() > 0) {
 
-		for (Object obj : objects) {
-			Capture &bestCapture = obj.trace[obj.bestCapture];
-			Mat m = bestCapture.img;
+		// std::cout << "for (Object obj : objects) {" << std::endl;
+		for (const Object &obj : objects) {
+			// assert(obj.trace[obj.bestCapture]);
 
-			m.copyTo(Mat(drawing, bestCapture.rect), bestCapture.mask);
-			std::vector<std::vector<Point>> contours{bestCapture.contour};
-			drawContours(drawing, contours, 0, obj.color, 2);
 
 			if (obj.distance > THRESH_MOV_IS_OBJECT &&
 				obj.age > MIN_MOV_YEARS_FOR_OBJECT) {
+
+				const Capture &bestCapture = obj.trace[obj.bestCapture];
+				// std::cout << "bestCapture = " << bestCapture << std::endl;
+				const Mat &m = bestCapture.img;
+
+                if (bestCapture.rect.empty() ) {
+                    assert(! bestCapture.img.empty());
+                    imshow("bestCapture", bestCapture.img);
+                    waitKey(0);
+                    continue;
+                }
+                assert(! bestCapture.rect.empty());
+                assert(! bestCapture.mask.empty());
+                // std::cout << bestCapture.rect.size() << " = " << bestCapture.mask.size() << std::endl;
+				assert(bestCapture.rect.size() == bestCapture.mask.size());
+
+				m.copyTo(Mat(drawing, bestCapture.rect), bestCapture.mask);
+				std::vector<std::vector<Point>> contours{bestCapture.contour};
+				drawContours(drawing, contours, 0, obj.color, 2);
 				++nbRealObjects;
 
 				if (training) {
@@ -614,29 +633,38 @@ int main(int argc, char **argv) {
 					// Mat img;
 					// for (const Capture &cap : obj.trace) {
 					for (size_t i = 0; i < obj.trace.size(); ++i) {
-						const Capture &cap = obj.trace[i];
-						const Mat img = cap.img;
-						const std::string file =
-							trainDir + newTrainingFile + std::to_string(i);
-						std::cout << "new training event '" << file << "'"
+						const Capture &cap { obj.trace[i]};
+						const Mat & img { cap.img};
+						const Mat & mask { cap.mask };
+
+						const std::string dir = trainDir + newTrainingFile +
+												std::to_string(i) + "/";
+						std::cout << "new training event '" << dir << "'"
 								  << std::endl;
 
-						cap.img.copyTo(a, cap.mask);
-						imwrite(file + ".jpg", a);
+						cmd = "mkdir -p " + dir;
+						system(cmd.c_str());
 
-						Mat mask = cap.mask;
-						Mat histImg = hsvHist(img, mask);
-						imwrite(file + "_hist.jpg", histImg);
+						img.copyTo(a, cap.mask);
+						imwrite(dir + "image.jpg", a);
+
+						Mat histImg;
+                        Triplet triplet = hsvHist(img, mask, histImg);
+						imwrite(dir + "hist.jpg", histImg);
+
+                        triplet.write(dir + "primary.txt");
 					}
 				}
 			}
 		}
+		// std::cout << "end : for (Object obj : objects) {" << std::endl;
 
 		outputVideo << drawing;
 		outputVideo.release();
 		std::cout << "save video '" << outputVideoFile << "'" << std::endl;
 
 		// if (nbRealObjects > 0) {
+		// std::cout << "if (iCap >= ..." << std::endl;
 		if (iCap >= NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST +
 						NB_CAP_MIN_FOR_REAL_MOTION) {
 			// if (true) {

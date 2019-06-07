@@ -4,6 +4,7 @@
 // #include "opencv2/videoio.hpp"
 
 #include "opencv2/imgproc/imgproc.hpp" // bounding boxes
+#include <opencv2/core/types.hpp>
 
 #include <cassert>
 #include <ctime>

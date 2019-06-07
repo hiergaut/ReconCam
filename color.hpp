@@ -6,18 +6,39 @@
 
 using namespace cv;
 
+#include <fstream>
+#include <iostream>
 #include <set>
 #include <vector>
 
 class Color {
   public:
-	int h;
-	int s;
-	int v;
+	float h;
+	float s;
+	float v;
 	// int intensity;
+    int x;
+    int y;
+
 
 	friend std::ostream &operator<<(std::ostream &out, Color &c) {
-		return out << "[" << c.h << ", " << c.s << ", " << c.v << "]";
+		// return out << "[" << c.h << ", " << c.s << ", " << c.v << "]";
+		return out << c.h << " " << c.s << " " << c.v;
+	}
+};
+
+// using Triplet = std::vector<Color>;
+class Triplet {
+  public:
+	std::vector<Color> colors;
+
+	void write(std::string file) {
+		std::ofstream out;
+		out.open(file);
+		out << colors[0] << std::endl;
+		out << colors[1] << std::endl;
+		out << colors[2] << std::endl;
+		out.close();
 	}
 };
 
@@ -41,8 +62,6 @@ const int sStep = (sranges[1] - sranges[0]) / sbins;
 const int channels[] = {0, 1};
 const float *ranges[] = {hranges, sranges};
 
-using Triplet = std::vector<Color>;
-
 Triplet getPrimaryColor(const Mat &src, const Mat &mask) {
 	Mat hsv;
 
@@ -63,9 +82,9 @@ Triplet getPrimaryColor(const Mat &src, const Mat &mask) {
 	for (int h = 0; h < hbins; ++h) {
 		for (int s = 0; s < sbins; ++s) {
 			float binVal = hist.at<float>(h, s);
-			int v = cvRound(binVal * 255 / maxVal);
+			float v = cvRound(binVal * 255 / maxVal);
 
-			colors.insert({h, s, v});
+			colors.insert({(h + 0.5f) * hStep / 180.0f , (s + 0.5f) * sStep / 256.0f, v});
 		}
 	}
 
@@ -73,7 +92,7 @@ Triplet getPrimaryColor(const Mat &src, const Mat &mask) {
 	Triplet firstThree;
 	for (Color c : colors) {
 
-		firstThree.push_back(c);
+		firstThree.colors.push_back(c);
 
 		if (cpt++ > 2)
 			break;
@@ -84,7 +103,7 @@ Triplet getPrimaryColor(const Mat &src, const Mat &mask) {
 /**
  * @function main
  */
-Mat hsvHist(const Mat &src, const Mat &mask) {
+Triplet hsvHist(const Mat &src, const Mat &mask, Mat &histImage) {
 	Mat hsv;
 	cvtColor(src, hsv, COLOR_BGR2HSV);
 
@@ -104,13 +123,17 @@ Mat hsvHist(const Mat &src, const Mat &mask) {
 	for (int h = 0; h < hbins; ++h) {
 		for (int s = 0; s < sbins; ++s) {
 			float binVal = hist.at<float>(h, s);
-			int v = cvRound(binVal * 255 / maxVal);
+			float v = cvRound(binVal * 255.f / maxVal);
 
-			colors.insert({h, s, v});
+            float hTemp = (h + 0.5) * hStep / 179.0;
+            float sTemp = (s + 0.5) * sStep / 255.0;
+
+			colors.insert({hTemp, sTemp, v, h, s});
+			// colors.insert({(h + 0.5) * hStep / 180.0 , (s + 0.5) * sStep / 256.0, v, h, s});
 
 			Mat hsvColor(1, 1, CV_8UC3,
 						 // Scalar((s + 0.5) * hStep, (v + 0.5) * sStep, vMax));
-						 Scalar((h + 0.5) * hStep, (s + 0.5) * sStep, v));
+						 Scalar(hTemp,  sTemp, v));
 
 			Mat bgrColor;
 			cvtColor(hsvColor, bgrColor, COLOR_HSV2BGR);
@@ -126,20 +149,20 @@ Mat hsvHist(const Mat &src, const Mat &mask) {
 	}
 
 	int cpt = 1;
-	std::vector<Color> firstThree;
+	Triplet firstThree;
 	for (Color c : colors) {
 		// std::cout << c.intensity << " " << c.h << " " << c.s << std::endl;
 		putText(histImg, std::to_string(cpt),
-				Point(c.h * scale + 1, c.s * scale + 9), FONT_HERSHEY_PLAIN,
+				Point(c.x * scale + 1, c.y * scale + 9), FONT_HERSHEY_PLAIN,
 				0.8, Scalar(0, 0, 0));
 
-		firstThree.push_back(c);
+		firstThree.colors.push_back(c);
 
 		if (cpt++ > 2)
 			break;
 	}
 
-	// histImg.copyTo(histImage);
+	histImg.copyTo(histImage);
 
-	return std::move(histImg);
+	return std::move(firstThree);
 }

@@ -12,7 +12,7 @@ DEP := $(addprefix $(OBJDIR)/, $(DEP))
 # WARNING := -Wall -Wextra -Wpedantic --pedantic-errors -Weffc++
 WARNING := -Wall
 OPENCV := `pkg-config --cflags opencv4` `pkg-config --libs opencv4`
-CXXFLAGS := -g $(OPENCV)
+CXXFLAGS := -g -pthread $(OPENCV)
 
 .PHONY: all clean
 

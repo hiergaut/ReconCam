@@ -5,10 +5,10 @@
 #include <QEvent>
 #include <QPainter>
 
-QStyledItemDelegateThumbnailDown::QStyledItemDelegateThumbnailDown(QAbstractItemModel* model, QListView *view, QObject* parent)
+QStyledItemDelegateThumbnailDown::QStyledItemDelegateThumbnailDown(QAbstractItemModel* model, QListView* view, QObject* parent)
     : QStyledItemDelegate(parent)
     , _model(model)
-    , _view{view}
+    , _view { view }
 {
 }
 
@@ -19,24 +19,28 @@ void QStyledItemDelegateThumbnailDown::paint(QPainter* painter, const QStyleOpti
     //    QFileInfo image(_rootPath + _model->data(index).toString());
     //    QPixmap pix;
     //    return;
-//    qDebug() << "fuck" << _model->data(index).toString();
+    //    qDebug() << "fuck" << _model->data(index).toString();
 
     QModelIndex rootIndex = _view->rootIndex();
-    QString filename = str_knownDir  + _model->data(rootIndex).toString() + "/" + _model->data(index).toString();
-    QFileInfo img(filename);
-    if (img.isDir()) {
-        return;
-    }
-    if (!img.exists()) {
-//        qDebug() << "file not exist : " << img;
-        return;
-    }
-//    qDebug() << img;
-    QPixmap color(filename);
+    QString path = str_knownDir + _model->data(rootIndex).toString() + "/" + _model->data(index).toString() + "/";
+    //    QString imagePath = path + "image.jpg";
+    //    QFileInfo img(imagePath);
+    //    if (img.isDir()) {
+    //        return;
+    //    }
+    //    if (!img.exists()) {
+    ////        qDebug() << "file not exist : " << img;
+    //        return;
+    //    }
+    //    qDebug() << img;
+    QPixmap color(path + "image.jpg");
+    QPixmap hist(path + "hist.jpg");
 
-//    qDebug() << "color = " << color;
+    //    qDebug() << "color = " << color;
+//    int w = rect.width();
+//    int middle = w / 2 - 10;
     if (option.state & QStyle::State_Selected) {
-//                qDebug() << "paint selected";
+        //                qDebug() << "paint selected";
         //        painter->setBrush(QBrush(Qt::white));
         //        painter->drawRect(rect.x(), rect.y(), rect.width(), rect.height());
         //        painter->fillRect(rect, QBrush(Qt::green));
@@ -47,6 +51,9 @@ void QStyledItemDelegateThumbnailDown::paint(QPainter* painter, const QStyleOpti
     } else {
         painter->drawPixmap(rect.x() + 2, rect.y() + 2, rect.width() - 4, rect.height() - 4, color);
     }
+
+    //    painter->drawPixmap(rect.x() + 2 + middle, rect.y() + 2, middle + middle, rect.height() - 4, hist);
+    //    painter->drawPixmap(rect.x() + 2, rect.y() + 2, middle, rect.height() - 4, hist);
     //    else {
     //        painter->setBrush(QBrush(Qt::black));
     //    }
@@ -73,6 +80,7 @@ QSize QStyledItemDelegateThumbnailDown::sizeHint(const QStyleOptionViewItem& opt
     int size = 100;
     result.setHeight(size);
     result.setWidth(size);
-    return QSize(size, size);
     //    return result;
+//    return QSize(size, size);
+        return result;
 }

@@ -3,11 +3,23 @@
 
 #include <QObject>
 #include <QListView>
+#include "QListViewKnown.h"
+#include <QLabel>
+#include <QTextEdit>
 
 class QListViewKnownEvent : public QListView {
     Q_OBJECT
 public:
     QListViewKnownEvent(QWidget* parent);
+
+
+
+
+    void setKnown(QListViewKnown *value);
+
+    void setLabel(QLabel *value);
+
+    void setText(QTextEdit *value);
 
 signals:
     void spacePressed();
@@ -15,6 +27,10 @@ signals:
 
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
+
+    QLabel * label;
+    QListViewKnown * known;
+    QTextEdit * text;
 };
 
 #endif // QLISTVIEWKNOWNEVENT_H

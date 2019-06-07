@@ -1,6 +1,13 @@
 #include "OpenGL/QOpenGLWidgetCluster.h"
 
 #include <QtGlobal>
+//#include <algorithm>
+//#include <iterator>
+//#include <iostream>
+//#include <vector>
+//#include <numeric>
+
+#define MAX_DOTS 1000
 
 static const char* vertexshader_source[] = {
     "#version 330 core\n\
@@ -57,15 +64,25 @@ QOpenGLWidgetCluster::~QOpenGLWidgetCluster()
 
 void QOpenGLWidgetCluster::setPoints(const std::vector<float> points)
 {
+    Q_ASSERT(points.size() % 6 == 0);
+    Q_ASSERT(points.size() < MAX_DOTS * 6);
+//    qDebug() << points;
+
     glBindVertexArray(vao[1]);
     glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-//    m_dots.assign(triangle, triangle + sizeof(triangle) / sizeof(float));
-    m_dots = std::move(points);
+    //    m_dots.assign(triangle, triangle + sizeof(triangle) / sizeof(float));
+    m_dots = points;
+    //    std::copy(m_dots.begin(), points.begin(), points.end());
+
+    //    m_dots.assign(m_vertices, m_vertices + sizeof(m_vertices) / sizeof(float));
+    //    m_dots.assign(triangle, triangle + sizeof(triangle) / sizeof(float));
+    //    qDebug() << "m_dots = " << m_dots.data();
     glBufferSubData(GL_ARRAY_BUFFER, 0, m_dots.size() * sizeof(float), m_dots.data());
+    //    glBufferSubData(GL_ARRAY_BUFFER, 0, points.size() * sizeof(float), points.data());
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-
+    update();
 }
 
 void QOpenGLWidgetCluster::initializeGL()
@@ -103,18 +120,21 @@ void QOpenGLWidgetCluster::initializeGL()
 
     //    m_dots.fill(m_vertices, sizeof(m_vertices));
     m_dots.assign(m_vertices, m_vertices + sizeof(m_vertices) / sizeof(float));
+    //    m_dots.assign(triangle, triangle + sizeof(triangle) / sizeof(float));
+    //    m_dots.assign(m_vertices, m_vertices + sizeof(m_vertices) / sizeof(float));
     //
     //    glGenVertexArrays(1, &vao2);
     glBindVertexArray(vao[1]);
 
     //    glGenBuffers(1, &vbo2);
     glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-    glBufferData(GL_ARRAY_BUFFER, m_dots.size() * sizeof(float), m_dots.data(), GL_DYNAMIC_DRAW);
+    //    glBufferData(GL_ARRAY_BUFFER, m_dots.size() * sizeof(float), m_dots.data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 6 * MAX_DOTS * sizeof(float), m_dots.data(), GL_DYNAMIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof (float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -128,12 +148,12 @@ void QOpenGLWidgetCluster::initializeGL()
     //    m_nbDots = 10;
     //    QOpenGLVertexArrayObject::Binder vaoBinder(&m_vao);
 
-//    glBindVertexArray(vao[1]);
-//    glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-//    m_dots.assign(triangle, triangle + sizeof(triangle) / sizeof(float));
-//    glBufferSubData(GL_ARRAY_BUFFER, 0, m_dots.size() * sizeof(float), m_dots.data());
-//    glBindBuffer(GL_ARRAY_BUFFER, 0);
-//    glBindVertexArray(0);
+    //    glBindVertexArray(vao[1]);
+    //    glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+    //    m_dots.assign(triangle, triangle + sizeof(triangle) / sizeof(float));
+    //    glBufferSubData(GL_ARRAY_BUFFER, 0, m_dots.size() * sizeof(float), m_dots.data());
+    //    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    //    glBindVertexArray(0);
 
     //    m_ebo.create();
     //    qDebug() << "ebo id : " << m_ebo.bufferId();
@@ -210,7 +230,8 @@ void QOpenGLWidgetCluster::resizeGL(int w, int h)
 void QOpenGLWidgetCluster::paintGL()
 {
     // display objects
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+//    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     //    m_program[0].setUniformValue(m_model_loc, m_model);
@@ -237,6 +258,8 @@ void QOpenGLWidgetCluster::paintGL()
     //    m_program[1].setUniformValue(m_view_loc, m_view);
     //    m_program[1].setUniformValue(m_projection_loc, m_projection);
 
+//    qDebug() << "draw dots, nb dot = " << m_dots.size() / 6;
+//    qDebug() << "dots = " << m_dots;
     glDrawArrays(GL_POINTS, 0, m_dots.size() / 6);
 
     glBindVertexArray(0);

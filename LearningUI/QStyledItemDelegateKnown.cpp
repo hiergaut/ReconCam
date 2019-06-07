@@ -4,10 +4,11 @@
 #include <QEvent>
 #include <QPainter>
 
-QStyledItemDelegateKnown::QStyledItemDelegateKnown(QFileSystemModel* model, QListView* view, QObject* parent)
+QStyledItemDelegateKnown::QStyledItemDelegateKnown(QFileSystemModel* model, QListView* view, std::map<QString, std::vector<float>> & colors,  QObject* parent)
     : QStyledItemDelegate(parent)
     , _model(model)
     , _listView_knownEvent { view }
+    , m_colors{colors}
 {
 }
 
@@ -17,23 +18,35 @@ void QStyledItemDelegateKnown::paint(QPainter* painter, const QStyleOptionViewIt
     //    qDebug() << _model->data(index).toString();
     //    QFileInfo image(_rootPath + _model->data(index).toString());
     QString dir = str_knownDir + _model->data(index).toString() + "/";
+    QPixmap pix(dir + "best.jpg");
     //    return;
-    if (option.state & QStyle::State_Selected) {
+    if (! (option.state & QStyle::State_Selected)) {
         //        qDebug() << "paint selected";
         //        painter->setBrush(QBrush(Qt::white));
         //        painter->drawRect(rect.x(), rect.y(), rect.width(), rect.height());
-        painter->fillRect(rect, QBrush(Qt::green));
+//        painter->fillRect(rect, QBrush(Qt::green));
 //        if (_listView_knownEvent->rootIndex() != _model->index(dir)) {
 //            _listView_knownEvent->setRootIndex(_model->index(dir));
-////            qDebug() << "set root knownEvent : " << _model->index(dir);
 //            qDebug() << "new known path : " << _model->data(index).toString();
 //        }
+        QImage img_gray = pix.toImage().convertToFormat(QImage::Format_Grayscale8);
+        pix = QPixmap::fromImage(img_gray);
     }
+
+//    Q_ASSERT(! m_colors[dir].empty());
+    if (m_colors[dir].empty()) {
+        return;
+    }
+    std::vector<float> color = m_colors[dir];
+    QColor c;
+    c.setRgbF(color[0], color[1], color[2]);
+    painter->fillRect(rect, QBrush(c));
+
+
     //    else {
     //        painter->setBrush(QBrush(Qt::black));
     //    }
 
-    QPixmap pix(dir + "best.jpeg");
     //    qDebug() << _model->data(index, Qt::ToolTipRole);
     //    QRect rect = option.rect;
     if (option.showDecorationSelected) {

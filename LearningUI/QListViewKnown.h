@@ -11,6 +11,8 @@ class QListViewKnown : public QListView
 public:
     explicit QListViewKnown(QWidget *parent = nullptr);
 
+    QString getSelected();
+
 signals:
     void deletePressed();
 

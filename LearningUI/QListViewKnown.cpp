@@ -13,6 +13,11 @@ QListViewKnown::QListViewKnown(QWidget *parent) : QListView(parent)
     installEventFilter(this);
 }
 
+QString QListViewKnown::getSelected()
+{
+    return selectedIndexes().first().data().toString() + "/";
+}
+
 bool QListViewKnown::eventFilter(QObject *watched, QEvent *event)
 {
     if (event->type() == QEvent::ToolTip) {

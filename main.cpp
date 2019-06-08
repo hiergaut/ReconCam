@@ -28,7 +28,8 @@
 #ifdef PC
 #define TIMELAPSE_INTERVAL 30 // 30 sec
 #else
-#define TIMELAPSE_INTERVAL 1800 // 30 min
+// #define TIMELAPSE_INTERVAL 1800 // 30 min
+#define TIMELAPSE_INTERVAL 1200 // 20 min
 #endif
 
 #define THRESH_MOV_IS_OBJECT 50

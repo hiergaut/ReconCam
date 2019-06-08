@@ -24,7 +24,7 @@ public:
     QOpenGLWidgetCluster(QWidget* parent = nullptr);
     ~QOpenGLWidgetCluster();
 
-    void setPoints(const std::vector<float> points);
+    void setPoints(const std::vector<float> points, int nbDots, int nbBoxes);
 
 protected:
     void initializeGL() override;
@@ -60,36 +60,51 @@ private:
     uint vao[2];
 //    uint vao2;
 
-    float triangle [18] = {
-        -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
-        0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
-        0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f
+    float triangle [21] = {
+        -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.5f,
+        0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.5f,
+        0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.5f
     };
 
 //    float m_dots[3 * 1024];
+    float box [56] {
+        -1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+        1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+        1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+        1.0f, 1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+        1.0f, 1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+        -1.0f, 1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+        -1.0f, 1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+        -1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f
+    };
+
     std::vector<float> m_dots;
+    std::vector<float> m_boxes;
+
+    int m_nbBoxes = 0;
+    int m_nbDots = 0;
 //    QVector<float> m_dots;
 //    uint m_nbDots;
 //    size_t m_dotsSize;
 
 
-    float m_vertices[72] {
+    float m_vertices[84] {
 
-        -0.5f, 0.5f, -5.0f, 1.0f, 0.0f, 0.0f,
-        -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+        -0.5f, 0.5f, -5.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+        -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+        0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
 
-        0.0f, 0.0f, 0.5f, 0.0f, 1.0f, 0.0f,
-        0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-        0.5f, 0.5f, 2.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 0.8f,
+        0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.8f,
+        0.5f, 0.5f, 2.0f, 0.0f, 1.0f, 0.0f, 0.8f,
 
-        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,
-        0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,
-        0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f,
+        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.5f,
+        0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.5f,
+        0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.5f,
 
-        0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 1.0f,
-        -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, 1.0f,
-        0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f
+        0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.5f,
+        -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, 1.0f, 0.5f,
+        0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.5f
     };
 
     float m_box[24] {

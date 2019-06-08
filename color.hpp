@@ -14,7 +14,7 @@ using namespace cv;
 class Color {
   public:
 	float h;
-	float s;
+	int s;
 	float v;
 	// int intensity;
     int x;
@@ -24,6 +24,7 @@ class Color {
 	friend std::ostream &operator<<(std::ostream &out, Color &c) {
 		// return out << "[" << c.h << ", " << c.s << ", " << c.v << "]";
 		return out << c.h << " " << c.s << " " << c.v;
+		// return out << c.h << " " << c.s << " " << c.v;
 	}
 };
 
@@ -40,6 +41,16 @@ class Triplet {
 		out << colors[2] << std::endl;
 		out.close();
 	}
+
+    bool in(const std::pair<Point3f, Point3f> & bound) const {
+        Point3f Min = bound.first;
+        Point3f Max = bound.second;
+
+        Point3f cur (colors[0].h, colors[1].h, colors[2].h);
+
+        return (Min.x < cur.x && cur.x < Max.x && Min.y < cur.y && cur.y < Max.y && Min.z < cur.z && cur.z < Max.z);
+
+    }
 };
 
 struct s_customCompare {
@@ -48,7 +59,7 @@ struct s_customCompare {
 	}
 };
 
-const int side = 32;
+const int side = 30;
 const int hbins = side;
 const int sbins = side;
 const int histSize[] = {hbins, sbins};
@@ -84,7 +95,7 @@ Triplet getPrimaryColor(const Mat &src, const Mat &mask) {
 			float binVal = hist.at<float>(h, s);
 			float v = cvRound(binVal * 255 / maxVal);
 
-			colors.insert({(h + 0.5f) * hStep / 180.0f , (s + 0.5f) * sStep / 256.0f, v});
+			colors.insert({h * hStep / 87.0f -1.0f , s, v, h, s});
 		}
 	}
 
@@ -125,15 +136,17 @@ Triplet hsvHist(const Mat &src, const Mat &mask, Mat &histImage) {
 			float binVal = hist.at<float>(h, s);
 			float v = cvRound(binVal * 255.f / maxVal);
 
-            float hTemp = (h + 0.5) * hStep / 179.0;
-            float sTemp = (s + 0.5) * sStep / 255.0;
+            // float hTemp = (h + 0.5) * hStep / 179.0;
+            // float sTemp = (s + 0.5) * sStep / 255.0;
 
-			colors.insert({hTemp, sTemp, v, h, s});
+			// colors.insert({(h + 0.5f) * hStep / 90.0f -1.0f , (s + 0.5f) * sStep / 128.0f - 1.0f, v, h, s});
+			colors.insert({h * hStep / 87.0f -1.0f , s, v, h, s});
+			// colors.insert({hTemp, sTemp, v, h, s});
 			// colors.insert({(h + 0.5) * hStep / 180.0 , (s + 0.5) * sStep / 256.0, v, h, s});
 
 			Mat hsvColor(1, 1, CV_8UC3,
 						 // Scalar((s + 0.5) * hStep, (v + 0.5) * sStep, vMax));
-						 Scalar(hTemp,  sTemp, v));
+						 Scalar((h + 0.5) * hStep,  (s + 0.5) * sStep, v));
 
 			Mat bgrColor;
 			cvtColor(hsvColor, bgrColor, COLOR_HSV2BGR);

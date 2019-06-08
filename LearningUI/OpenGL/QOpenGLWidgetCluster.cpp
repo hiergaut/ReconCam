@@ -22,8 +22,8 @@ static const char* vertexshader_source[] = {
 
     "#version 330 core\n\
         layout (location = 0) in vec3 vertex;\n\
-        layout (location = 1) in vec3 color;\n\
-        out vec3 ourColor;\n\
+        layout (location = 1) in vec4 color;\n\
+        out vec4 ourColor;\n\
         uniform mat4 model;\n\
         uniform mat4 view;\n\
         uniform mat4 projection;\n\
@@ -39,15 +39,15 @@ static const char* fragmentshader_source[] = {
         out vec4 color;\n\
         void main()\n\
         {\n\
-          color = vec4(0.0f, 1.0f, 0.0f, 0.5);\n\
+          color = vec4(0.0f, 1.0f, 0.0f, 0.3);\n\
         }\n",
 
     "#version 330 core\n\
-        in vec3 ourColor;\n\
+        in vec4 ourColor;\n\
         out vec4 color;\n\
         void main()\n\
         {\n\
-          color = vec4(ourColor, 1.0);\n\
+          color = vec4(ourColor);\n\
         }\n"
 };
 
@@ -62,11 +62,16 @@ QOpenGLWidgetCluster::~QOpenGLWidgetCluster()
     glDeleteBuffers(2, vbo);
 }
 
-void QOpenGLWidgetCluster::setPoints(const std::vector<float> points)
+void QOpenGLWidgetCluster::setPoints(const std::vector<float> points, int nbDots, int nbBoxes)
 {
-    Q_ASSERT(points.size() % 6 == 0);
-    Q_ASSERT(points.size() < MAX_DOTS * 6);
-//    qDebug() << points;
+
+    Q_ASSERT(points.size() % 7 == 0);
+    Q_ASSERT(points.size() < MAX_DOTS * 7);
+
+    m_nbDots = nbDots;
+    m_nbBoxes = nbBoxes;
+    //    qDebug() << "setPoints : " << points.size() << nbDots << nbBoxes;
+    //    qDebug() << points;
 
     glBindVertexArray(vao[1]);
     glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
@@ -120,6 +125,7 @@ void QOpenGLWidgetCluster::initializeGL()
 
     //    m_dots.fill(m_vertices, sizeof(m_vertices));
     m_dots.assign(m_vertices, m_vertices + sizeof(m_vertices) / sizeof(float));
+    m_nbDots = m_dots.size() / 7;
     //    m_dots.assign(triangle, triangle + sizeof(triangle) / sizeof(float));
     //    m_dots.assign(m_vertices, m_vertices + sizeof(m_vertices) / sizeof(float));
     //
@@ -129,12 +135,12 @@ void QOpenGLWidgetCluster::initializeGL()
     //    glGenBuffers(1, &vbo2);
     glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
     //    glBufferData(GL_ARRAY_BUFFER, m_dots.size() * sizeof(float), m_dots.data(), GL_DYNAMIC_DRAW);
-    glBufferData(GL_ARRAY_BUFFER, 6 * MAX_DOTS * sizeof(float), m_dots.data(), GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 7 * MAX_DOTS * sizeof(float), m_dots.data(), GL_DYNAMIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -230,7 +236,7 @@ void QOpenGLWidgetCluster::resizeGL(int w, int h)
 void QOpenGLWidgetCluster::paintGL()
 {
     // display objects
-//    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    //    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -238,15 +244,6 @@ void QOpenGLWidgetCluster::paintGL()
 
     //    m_program[0].setUniformValue(m_view_loc, m_view);
     //    m_program[0].setUniformValue(m_projection_loc, m_projection);
-    m_program[0].bind();
-    m_program[0].setUniformValue(m_model_loc[0], m_model);
-    m_program[0].setUniformValue(m_view_loc[0], m_view);
-    m_program[0].setUniformValue(m_projection_loc[0], m_projection);
-
-    glBindVertexArray(vao[0]);
-    //    glDrawArrays(GL_LINES, 0, 12);
-    glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, (void*)0);
-    //    qDebug() << sizeof(m_boxIndices);
 
     m_program[1].bind();
     m_program[1].setUniformValue(m_model_loc[1], m_model);
@@ -258,10 +255,24 @@ void QOpenGLWidgetCluster::paintGL()
     //    m_program[1].setUniformValue(m_view_loc, m_view);
     //    m_program[1].setUniformValue(m_projection_loc, m_projection);
 
-//    qDebug() << "draw dots, nb dot = " << m_dots.size() / 6;
-//    qDebug() << "dots = " << m_dots;
-    glDrawArrays(GL_POINTS, 0, m_dots.size() / 6);
+    //    qDebug() << "draw dots, nb dot = " << m_dots.size() / 6;
+    //    qDebug() << "dots = " << m_dots;
+    glDrawArrays(GL_POINTS, 0, m_nbDots);
+    glDrawArrays(GL_LINES, m_nbDots, m_nbBoxes * 2 * 12);
+    //    qDebug() << m_nbBoxes;
 
+    //
+    m_program[0].bind();
+    m_program[0].setUniformValue(m_model_loc[0], m_model);
+    m_program[0].setUniformValue(m_view_loc[0], m_view);
+    m_program[0].setUniformValue(m_projection_loc[0], m_projection);
+
+    glBindVertexArray(vao[0]);
+    //    glDrawArrays(GL_LINES, 0, 12);
+    glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, (void*)0);
+    //    qDebug() << sizeof(m_boxIndices);
+
+    //
     glBindVertexArray(0);
     glUseProgram(0);
 }

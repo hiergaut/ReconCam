@@ -35,12 +35,12 @@ bool QListViewKnownEvent::eventFilter(QObject* watched, QEvent* event)
         QModelIndex index = indexAt(pos);
 //        qDebug() << index;
         if (! index.isValid()) {
-            qDebug() << "[QListViewKnownEvent::eventFilter] index not valid";
+//            qDebug() << "[QListViewKnownEvent::eventFilter] index not valid";
             return false;
         }
         //            qDebug() << "index = " << index;
         QString itemText = model()->data(index, Qt::DisplayRole).toString();
-                    qDebug() << itemText;
+//                    qDebug() << itemText;
         QToolTip::showText(helpEvent->globalPos(), itemText, this);
 
         QString path = str_knownDir + known->getSelected() + itemText + "/";

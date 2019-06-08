@@ -28,6 +28,7 @@ signals:
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
 
+private:
     QLabel * label;
     QListViewKnown * known;
     QTextEdit * text;

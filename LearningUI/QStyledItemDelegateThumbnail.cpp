@@ -25,7 +25,7 @@ void QStyledItemDelegateThumbnail::paint(QPainter* painter, const QStyleOptionVi
     QString filename = str_newEventDir + _model->data(index).toString() + "/image.jpg";
     QFile img(filename);
     if (!img.exists()) {
-        qDebug() << "file not exist : " << img;
+        qDebug() << "[QStyledItemDelegateThumbnail::paint] file not exist : " << img;
     }
 //    qDebug() << img;
     QPixmap color(filename);

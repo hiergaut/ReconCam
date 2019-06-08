@@ -29,7 +29,7 @@ void QStyledItemDelegateThumbnailDown::paint(QPainter* painter, const QStyleOpti
     //        return;
     //    }
     //    if (!img.exists()) {
-    ////        qDebug() << "file not exist : " << img;
+    ////        qDebug() << "[QStyledItemDelegateThumbnailDown] file not exist : " << img;
     //        return;
     //    }
     //    qDebug() << img;

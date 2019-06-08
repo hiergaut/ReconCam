@@ -3,10 +3,10 @@
 
 #include <QMainWindow>
 
-#include <QFileSystemModel>
-#include <QStandardItemModel>
 #include "QFileSystemModelDatum.h"
+#include <QFileSystemModel>
 #include <QItemSelection>
+#include <QStandardItemModel>
 
 namespace Ui {
 class MainWindow;
@@ -18,6 +18,9 @@ class MainWindow : public QMainWindow {
 public:
     explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
+
+    QVector3D vec3ReadFromBig(QString path);
+    QVector3D vec3Read(QString path);
 
 private slots:
     void on_pushButton_up_clicked();
@@ -35,24 +38,22 @@ public slots:
     void on_moveKnownEventSelectedToNewEvent();
     void on_deleteKnownEventSelected();
 
-    void on_modelChanged();
-
 private:
     void updateKnownBestPicture();
     void newHashKnownDir(QString path);
+    void on_modelChanged();
 
 private:
     Ui::MainWindow* ui;
 
-//    QFileSystemModel* model_newEvent;
-//    QFileSystemModel* model_known;
+    //    QFileSystemModel* model_newEvent;
+    //    QFileSystemModel* model_known;
     QFileSystemModel* _model;
-    std::map<QString, std::vector<float>> m_colors;
+    std::map<QString, QColor> m_colors;
 
-
-//    QString str_learningRootDir { QDir::currentPath() + "/../learningFile/" };
-//    QString str_newEventDir { str_learningRootDir + "newEvent/" };
-//    QString str_knownDir { str_learningRootDir + "known/" };
+    //    QString str_learningRootDir { QDir::currentPath() + "/../learningFile/" };
+    //    QString str_newEventDir { str_learningRootDir + "newEvent/" };
+    //    QString str_knownDir { str_learningRootDir + "known/" };
 };
 
 #endif // MAINWINDOW_H

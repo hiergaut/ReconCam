@@ -11,12 +11,19 @@
 #include <fstream>
 #include <iostream>
 #include <list>
+#include <map>
 #include <sstream>
 #include <string>
 #include <unistd.h>
 
 #include "color.hpp"
 #include "function.hpp"
+
+#include <dirent.h>
+// #include <filesystem>
+// #include <experimental/filesystem>
+// namespace fs = filesystem;
+// namespace fs = std::experimental::filesystem;
 
 #ifdef PC
 #define TIMELAPSE_INTERVAL 30 // 30 sec
@@ -63,6 +70,7 @@ int main(int argc, char **argv) {
 		"{inVideo       |               | video in}"
 		"{training take | false         | save movement capture for post "
 		"learning}"
+		"{recon         | false         | recon event}"
 		//
 	);
 
@@ -80,6 +88,7 @@ int main(int argc, char **argv) {
 	int lightGpio = parser.get<int>("light");
 	bool hasVegetation = parser.get<bool>("vegetation");
 	bool training = parser.get<bool>("training");
+	bool recon = parser.get<bool>("recon");
 	// std::string inVideo = parser.get<std::string>("inVideo");
 	// std::cout << "inVideo = " << inVideo << std::endl;
 	if (!parser.check()) {
@@ -129,6 +138,9 @@ int main(int argc, char **argv) {
 
 		cmd = "mkdir -p learningFile/known/";
 		system(cmd.c_str());
+
+		cmd = "mkdir -p learningFile/empty/";
+		system(cmd.c_str());
 	}
 
 	ObjList objects;
@@ -177,6 +189,80 @@ int main(int argc, char **argv) {
 
 	// bool firstLapse = true;
 
+	// cmd = "mkdir -p learningFile/known/";
+	std::map<std::string, std::pair<Point3f, Point3f>> boxes;
+	if (recon) {
+		std::string pathName = "learningFile/known/";
+		std::vector<std::string> files;
+		DIR *dp;
+		struct dirent *dirp;
+		if ((dp = opendir(pathName.c_str())) == NULL) {
+			std::cout << "Error cannot opening " << pathName << std::endl;
+			return 1;
+		}
+		while ((dirp = readdir(dp)) != NULL) {
+			files.push_back(std::string(dirp->d_name));
+		}
+		closedir(dp);
+		// const fs::path path {pathName};
+
+		// std::cout << files[2] << std::endl;
+		std::string line, line2;
+		for (std::string filename : files) {
+			if (filename.compare(".") && filename.compare("..")) {
+
+				std::ifstream script("learningFile/known/" + filename +
+									 "/script.sh");
+
+				if (script.good()) {
+					std::cout << filename << "/script.sh activated"
+							  << std::endl;
+
+					std::ifstream file("learningFile/known/" + filename +
+									   "/min.txt");
+					if (!file.is_open()) {
+						std::cout << "cannot open file known" << std::endl;
+						return 2;
+					}
+
+					// while (getline(file, line)) {
+					getline(file, line);
+					// std::cout << line << std::endl;
+					std::ifstream file2("learningFile/known/" + filename +
+										"/max.txt");
+					if (!file2.is_open()) {
+						std::cout << "cannot open file known" << std::endl;
+						return 2;
+					}
+
+					// while (getline(file, line)) {
+					getline(file2, line2);
+					// std::cout << line << std::endl;
+					// }
+
+					file.close();
+					file2.close();
+
+					float h, h2, h3;
+					sscanf(line.c_str(), "%f %f %f", &h, &h2, &h3);
+					Point3f point(h, h2, h3);
+					sscanf(line2.c_str(), "%f %f %f", &h, &h2, &h3);
+					Point3f point2(h, h2, h3);
+
+					boxes[filename] =
+						std::pair<Point3f, Point3f>({point, point2});
+				}
+
+				// std::cout << h << h2 << h3 << std::endl;
+				// std::cout << boxes[filename].second << std::endl;
+			}
+		}
+
+		// for (const auto & entry : fs::path(path)) {
+		// std::cout << entry.path() << std::endl;
+
+		// }
+	}
 	// if (sensorNotMov != -1) {
 	// 	initGpio(sensorNotMov);
 	// 	gpioGetValue(sensorNotMov);
@@ -487,21 +573,39 @@ int main(int argc, char **argv) {
 				}
 				// movement object
 				else {
+
 					Capture cap{Mat(inputFrame, boundRect[iMov]).clone(),
 								Mat(mask, boundRect[iMov]).clone(),
 								contours[iMov], boundRect[iMov],
 								static_cast<int>(mu[iMov].m00)};
 
+					if (!obj.name.compare("")) {
+						Triplet triplet = getPrimaryColor(cap.img, cap.mask);
+						for (const auto &pair : boxes) {
+							std::string path = pair.first;
+							std::pair<Point3f, Point3f> bound = pair.second;
+
+							if (triplet.in(bound)) {
+                                std::string script = "learningFile/known/" + path + "/script.sh";
+								std::cout << "object " << obj.id << " run : " << script
+										  << std::endl;
+
+                                system(script.c_str());
+								obj.name = path;
+							}
+						}
+					}
+
 					obj.trace.emplace_back(std::move(cap));
 
-                    // if found 
+					// if found
 					if (mu[iMov].m00 > obj.trace[obj.bestCapture].density) {
 						// Capture cap{Mat(inputFrame, boundRect[iMov]).clone(),
 						// 			Mat(mask, boundRect[iMov]).clone(),
 						// 			contours[iMov], boundRect[iMov],
 						// 			static_cast<int>(mu[iMov].m00)};
 
-						obj.bestCapture = obj.trace.size() -1;
+						obj.bestCapture = obj.trace.size() - 1;
 					}
 					obj.speedVector = mc[iMov] - obj.pos;
 					// obj.dist += norm(obj.speedVector);
@@ -517,8 +621,14 @@ int main(int argc, char **argv) {
 
 					tl += Point2i(boundRect[iMov].width + 5, 10);
 
-					putText(drawing, std::to_string(obj.id), tl + Point(0, 0),
-							FONT_HERSHEY_DUPLEX, 0.5, obj.color, 1);
+					if (obj.name.compare("")) {
+						putText(drawing, obj.name, tl + Point(0, 0),
+								FONT_HERSHEY_DUPLEX, 0.5, obj.color, 1);
+					} else {
+						putText(drawing, std::to_string(obj.id),
+								tl + Point(0, 0), FONT_HERSHEY_DUPLEX, 0.5,
+								obj.color, 1);
+					}
 					putText(drawing,
 							std::to_string(static_cast<int>(obj.distance)),
 							tl + Point(0, 20), FONT_HERSHEY_DUPLEX, 0.5,
@@ -599,7 +709,6 @@ int main(int argc, char **argv) {
 		for (const Object &obj : objects) {
 			// assert(obj.trace[obj.bestCapture]);
 
-
 			if (obj.distance > THRESH_MOV_IS_OBJECT &&
 				obj.age > MIN_MOV_YEARS_FOR_OBJECT) {
 
@@ -607,15 +716,16 @@ int main(int argc, char **argv) {
 				// std::cout << "bestCapture = " << bestCapture << std::endl;
 				const Mat &m = bestCapture.img;
 
-                if (bestCapture.rect.empty() ) {
-                    assert(! bestCapture.img.empty());
-                    imshow("bestCapture", bestCapture.img);
-                    waitKey(0);
-                    continue;
-                }
-                assert(! bestCapture.rect.empty());
-                assert(! bestCapture.mask.empty());
-                // std::cout << bestCapture.rect.size() << " = " << bestCapture.mask.size() << std::endl;
+				if (bestCapture.rect.empty()) {
+					assert(!bestCapture.img.empty());
+					imshow("bestCapture", bestCapture.img);
+					waitKey(0);
+					continue;
+				}
+				assert(!bestCapture.rect.empty());
+				assert(!bestCapture.mask.empty());
+				// std::cout << bestCapture.rect.size() << " = " <<
+				// bestCapture.mask.size() << std::endl;
 				assert(bestCapture.rect.size() == bestCapture.mask.size());
 
 				m.copyTo(Mat(drawing, bestCapture.rect), bestCapture.mask);
@@ -633,9 +743,9 @@ int main(int argc, char **argv) {
 					// Mat img;
 					// for (const Capture &cap : obj.trace) {
 					for (size_t i = 0; i < obj.trace.size(); ++i) {
-						const Capture &cap { obj.trace[i]};
-						const Mat & img { cap.img};
-						const Mat & mask { cap.mask };
+						const Capture &cap{obj.trace[i]};
+						const Mat &img{cap.img};
+						const Mat &mask{cap.mask};
 
 						const std::string dir = trainDir + newTrainingFile +
 												std::to_string(i) + "/";
@@ -649,10 +759,10 @@ int main(int argc, char **argv) {
 						imwrite(dir + "image.jpg", a);
 
 						Mat histImg;
-                        Triplet triplet = hsvHist(img, mask, histImg);
+						Triplet triplet = hsvHist(img, mask, histImg);
 						imwrite(dir + "hist.jpg", histImg);
 
-                        triplet.write(dir + "primary.txt");
+						triplet.write(dir + "primary.txt");
 					}
 				}
 			}

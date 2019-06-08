@@ -39,6 +39,7 @@ typedef struct s_object {
 	std::vector<Capture> trace;
 	Point2f firstPos;
 	uint age;
+    std::string name;
 } Object;
 
 typedef struct s_line {

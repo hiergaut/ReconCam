@@ -1,12 +1,6 @@
 <!DOCTYPE html>
 <html>
 
-<!-- javascript -->
-<script>
-    function refreshPage() {
-        window.location.reload();
-    }
-</script>
 
 <body>
 
@@ -74,7 +68,7 @@
             <img src=\"$dir/$file/latest.jpeg\" width=320 height=240 />
             </a>
             ";
-                // $cur_dir =exec("echo $file | cut -d. -f1");
+            // $cur_dir =exec("echo $file | cut -d. -f1");
             // echo "
             // 	    <a href=\"displayAll.php?dir=$cur_dir\" >
             // 		    <img src=\"$dir/$file\" width=320 height=240 />

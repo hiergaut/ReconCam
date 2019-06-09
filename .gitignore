@@ -36,9 +36,12 @@
 *.jpg
 
 .vscode
+!.vscode/*.json
 motion/
 *.zip
 yesterdayMotion/
 # gpio/
 build*
 learningFile/
+alertSong/
+script.sh

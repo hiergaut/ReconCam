@@ -7,7 +7,7 @@
 //#include <vector>
 //#include <numeric>
 
-#define MAX_DOTS 1000
+#define MAX_DOTS 10000
 
 static const char* vertexshader_source[] = {
     "#version 330 core\n\

@@ -14,6 +14,12 @@
 #include <sstream>
 #include <string>
 #include <unistd.h>
+#include <fstream>
+#include <cstdio>
+
+#include <dirent.h>
+#include <sstream>
+#include <vector>
 
 using namespace cv;
 
@@ -39,7 +45,7 @@ typedef struct s_object {
 	std::vector<Capture> trace;
 	Point2f firstPos;
 	uint age;
-    std::string name;
+	std::string name;
 } Object;
 
 typedef struct s_line {
@@ -189,4 +195,57 @@ bool isNight() {
 	int hour = now->tm_hour;
 
 	return 19 < hour && hour < 23;
+}
+
+Point3f readPointFromFile(std::string path) {
+
+	// std::ifstream file("learningFile/known/" + filename + "/min.txt");
+	std::ifstream file(path);
+	if (!file.is_open()) {
+		std::cout << "cannot open file known" << std::endl;
+		exit(1);
+	}
+
+	// while (getline(file, line)) {
+	std::string line;
+	getline(file, line);
+	file.close();
+	float h, h2, h3;
+	sscanf(line.c_str(), "%f %f %f", &h, &h2, &h3);
+
+	return std::move(Point3f(h, h2, h3));
+}
+
+std::vector<std::string> forEachFileInDir(std::string dirPath) {
+	// std::string dirPath = "learningFile/known/";
+	std::vector<std::string> files;
+	DIR *dp;
+	struct dirent *dirp;
+	if ((dp = opendir(dirPath.c_str())) == NULL) {
+		std::cout << "Error cannot opening " << dirPath << std::endl;
+		exit(2);
+	}
+	while ((dirp = readdir(dp)) != NULL) {
+		std::string filename(dirp->d_name);
+		if (filename.compare(".") && filename.compare("..")) {
+			files.push_back(std::move(filename));
+		}
+	}
+	closedir(dp);
+
+	return std::move(files);
+}
+
+void thread_alert(std::string filename) {
+    std::cout << "new thread : " << filename << std::endl;
+    std::fstream fs;
+    fs.open(filename, std::ios::out);
+    if (! fs.is_open()) {
+        std::cout << "unable to open file : " << filename << std::endl;
+    }
+    fs.close();
+
+    usleep(1000000 * 18);
+
+    std::remove(filename.c_str());
 }

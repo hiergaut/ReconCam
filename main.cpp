@@ -14,6 +14,7 @@
 #include <map>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <unistd.h>
 
 #include "color.hpp"
@@ -32,11 +33,11 @@
 #define TIMELAPSE_INTERVAL 1200 // 20 min
 #endif
 
-#define THRESH_MOV_IS_OBJECT 50
-#define NB_CAP_LEARNING_MODEL_FIRST 20
+#define NB_CAP_LEARNING_MODEL_FIRST 10
 #define NB_CAP_FOCUS_BRIGHTNESS 10
-#define NB_CAP_MIN_FOR_REAL_MOTION 5
 
+#define NB_CAP_MIN_FOR_REAL_MOTION 5
+#define THRESH_MOV_IS_OBJECT 50
 #define NEW_OBJECT_MIN_DENSITY 10
 #define MAX_DIST_NEW_POS 100000
 #define MIN_MOV_YEARS_FOR_OBJECT 5
@@ -72,6 +73,7 @@ int main(int argc, char **argv) {
 		"{training take | false         | save movement capture for post "
 		"learning}"
 		"{recon         | false         | recon event}"
+        "{script        | false         | launch script on recognize}"
 		//
 	);
 
@@ -90,6 +92,7 @@ int main(int argc, char **argv) {
 	bool hasVegetation = parser.get<bool>("vegetation");
 	bool training = parser.get<bool>("training");
 	bool recon = parser.get<bool>("recon");
+    bool script = parser.get<bool>("script");
 	// std::string inVideo = parser.get<std::string>("inVideo");
 	// std::cout << "inVideo = " << inVideo << std::endl;
 	if (!parser.check()) {
@@ -121,8 +124,8 @@ int main(int argc, char **argv) {
 	}
 	std::string hostname = getHostname();
 
-	auto model = createBackgroundSubtractorKNN();
-	// auto model = createBackgroundSubtractorMOG2();
+	// auto model = createBackgroundSubtractorKNN();
+	auto model = createBackgroundSubtractorMOG2();
 
 	VideoCapture vCap;
 
@@ -191,77 +194,34 @@ int main(int argc, char **argv) {
 	// bool firstLapse = true;
 
 	// cmd = "mkdir -p learningFile/known/";
-	std::map<std::string, std::pair<Point3f, Point3f>> boxes;
+	std::map<std::string, std::tuple<Point3f, Point3f, Point3f>> boxes;
 	if (recon) {
-		std::string pathName = "learningFile/known/";
-		std::vector<std::string> files;
-		DIR *dp;
-		struct dirent *dirp;
-		if ((dp = opendir(pathName.c_str())) == NULL) {
-			std::cout << "Error cannot opening " << pathName << std::endl;
-			return 1;
-		}
-		while ((dirp = readdir(dp)) != NULL) {
-			files.push_back(std::string(dirp->d_name));
-		}
-		closedir(dp);
 		// const fs::path path {pathName};
 
 		// std::cout << files[2] << std::endl;
-		std::string line, line2;
-		for (std::string filename : files) {
-			if (filename.compare(".") && filename.compare("..")) {
+		for (std::string filename : forEachFileInDir("learningFile/known/")) {
+			// std::ifstream script("learningFile/known/" + filename +
+			// 					 "/script.sh");
+			// if (script.good()) {
+			// 	std::cout << filename << "/script.sh activated"
+			// 			  << std::endl;
+			// }
+			std::string path = "learningFile/known/" + filename + "/";
+			Point3f Min = readPointFromFile(path + "min.txt");
 
-				std::ifstream script("learningFile/known/" + filename +
-									 "/script.sh");
+			// std::cout << line << std::endl;
+			Point3f Mean = readPointFromFile(path + "mean.txt");
+			Point3f Max = readPointFromFile(path + "max.txt");
 
-				if (script.good()) {
-					std::cout << filename << "/script.sh activated"
-							  << std::endl;
-
-					std::ifstream file("learningFile/known/" + filename +
-									   "/min.txt");
-					if (!file.is_open()) {
-						std::cout << "cannot open file known" << std::endl;
-						return 2;
-					}
-
-					// while (getline(file, line)) {
-					getline(file, line);
-					// std::cout << line << std::endl;
-					std::ifstream file2("learningFile/known/" + filename +
-										"/max.txt");
-					if (!file2.is_open()) {
-						std::cout << "cannot open file known" << std::endl;
-						return 2;
-					}
-
-					// while (getline(file, line)) {
-					getline(file2, line2);
-					// std::cout << line << std::endl;
-					// }
-
-					file.close();
-					file2.close();
-
-					float h, h2, h3;
-					sscanf(line.c_str(), "%f %f %f", &h, &h2, &h3);
-					Point3f point(h, h2, h3);
-					sscanf(line2.c_str(), "%f %f %f", &h, &h2, &h3);
-					Point3f point2(h, h2, h3);
-
-					boxes[filename] =
-						std::pair<Point3f, Point3f>({point, point2});
-				}
-
-				// std::cout << h << h2 << h3 << std::endl;
-				// std::cout << boxes[filename].second << std::endl;
-			}
+			// boxes[filename] = std::tuple<Point3f, Point3f, Point3f>({Min,
+			// Mean, Max});
+			boxes[filename] = {Min, Mean, Max};
+			// }
+			// std::cout << h << h2 << h3 << std::endl;
+			// std::cout << boxes[filename].second << std::endl;
 		}
-
 		// for (const auto & entry : fs::path(path)) {
 		// std::cout << entry.path() << std::endl;
-
 		// }
 	}
 	// if (sensorNotMov != -1) {
@@ -422,6 +382,9 @@ int main(int argc, char **argv) {
 				std::cout << "Finished reading" << std::endl;
 				break;
 			}
+			if (iCap < NB_CAP_FOCUS_BRIGHTNESS) {
+				continue;
+			}
 
 			// ------------------- TRAINING MODEL -----------------------------
 			Mat grey;
@@ -574,30 +537,15 @@ int main(int argc, char **argv) {
 				}
 				// movement object
 				else {
+					Point2i tl = boundRect[iMov].tl();
+					Point2i tr = tl + Point2i(boundRect[iMov].width + 5, 10);
 
 					Capture cap{Mat(inputFrame, boundRect[iMov]).clone(),
 								Mat(mask, boundRect[iMov]).clone(),
 								contours[iMov], boundRect[iMov],
 								static_cast<int>(mu[iMov].m00)};
 
-					if (!obj.name.compare("")) {
-						Triplet triplet = getPrimaryColor(cap.img, cap.mask);
-						for (const auto &pair : boxes) {
-							std::string path = pair.first;
-							std::pair<Point3f, Point3f> bound = pair.second;
-
-							if (triplet.in(bound)) {
-                                std::string script = "learningFile/known/" + path + "/script.sh";
-								std::cout << "object " << obj.id << " run : " << script
-										  << std::endl;
-
-                                system(script.c_str());
-								obj.name = path;
-							}
-						}
-					}
-
-					obj.trace.emplace_back(std::move(cap));
+					obj.trace.emplace_back(cap);
 
 					// if found
 					if (mu[iMov].m00 > obj.trace[obj.bestCapture].density) {
@@ -617,30 +565,82 @@ int main(int argc, char **argv) {
 					obj.density = mu[iMov].m00;
 					++obj.age;
 
-					Point2i tl = boundRect[iMov].tl();
 					rectangle(drawing, tl, boundRect[iMov].br(), obj.color, 2);
 
-					tl += Point2i(boundRect[iMov].width + 5, 10);
+					// tl += Point2i(boundRect[iMov].width + 5, 10);
+					// Point2i tr = tl + Point2i(boundRect[iMov].width + 5, 10);
 
 					if (obj.name.compare("")) {
-						putText(drawing, obj.name, tl + Point(0, 0),
+						putText(drawing, obj.name, tr + Point(0, 0),
 								FONT_HERSHEY_DUPLEX, 0.5, obj.color, 1);
 					} else {
 						putText(drawing, std::to_string(obj.id),
-								tl + Point(0, 0), FONT_HERSHEY_DUPLEX, 0.5,
+								tr + Point(0, 0), FONT_HERSHEY_DUPLEX, 0.5,
 								obj.color, 1);
 					}
 					putText(drawing,
 							std::to_string(static_cast<int>(obj.distance)),
-							tl + Point(0, 20), FONT_HERSHEY_DUPLEX, 0.5,
+							tr + Point(0, 20), FONT_HERSHEY_DUPLEX, 0.5,
 							obj.color, 1);
 					putText(drawing, std::to_string(obj.density),
-							tl + Point(0, 40), FONT_HERSHEY_DUPLEX, 0.5,
+							tr + Point(0, 40), FONT_HERSHEY_DUPLEX, 0.5,
 							obj.color, 1);
 
 					line(drawing, obj.pos, obj.pos + obj.speedVector * 2,
 						 Scalar(0, 0, 255), 1, LineTypes::LINE_AA);
 
+					if (recon && objects.size() <= 10) {
+						if (!obj.name.compare("")) {
+							Triplet triplet =
+								getPrimaryColor(cap.img, cap.mask);
+							putText(drawing, std::string(triplet),
+									tr + Point(0, -20), FONT_HERSHEY_DUPLEX,
+									0.5, obj.color, 1);
+
+							std::string bestPath = "";
+							double bestDist = 640 * 480;
+							for (const auto &pair : boxes) {
+								std::string path = pair.first;
+								std::tuple<Point3f, Point3f, Point3f> bound =
+									pair.second;
+								const Point3f &Min = std::get<0>(bound);
+								const Point3f &Mean = std::get<1>(bound);
+								const Point3f &Max = std::get<2>(bound);
+
+								if (triplet.in(Min, Max)) {
+									// std::string scriptPath =
+									// "learningFile/known/" + path +
+									// "/script.sh";
+
+									// std::ifstream in(scriptPath);
+									// if (in.good()) {
+									double curDist = triplet.dist(Mean);
+									if (curDist < bestDist) {
+										curDist = bestDist;
+										bestPath = path;
+									}
+								}
+							}
+
+							if (bestPath.compare("")) {
+								std::cout << "object " << obj.id
+										  << " was detected as : " << bestPath
+										  << std::endl;
+
+								imwrite("alert.jpg", drawing);
+								if (script) {
+									cmd = "./script.sh " + bestPath + " &";
+									system(cmd.c_str());
+								}
+								// }
+								std::thread thread(thread_alert, std::string("alert/" +bestPath));
+                                thread.detach();
+
+								obj.name = bestPath;
+								boxes.erase(bestPath);
+							}
+						}
+					}
 					++it;
 				}
 
@@ -669,8 +669,8 @@ int main(int argc, char **argv) {
 #ifdef PC
 			imshow("drawing", drawing);
 			imshow("mask", mask);
-			imshow("grey", grey);
-			if (waitKey(200) == 'q')
+			// imshow("grey", grey);
+			if (waitKey(300) == 'q')
 				break;
 #endif
 

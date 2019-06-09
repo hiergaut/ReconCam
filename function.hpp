@@ -236,6 +236,16 @@ std::vector<std::string> forEachFileInDir(std::string dirPath) {
 	return std::move(files);
 }
 
+bool emptyDir(std::string dirPath) {
+    int cpt = 0;
+    for (auto & file : forEachFileInDir(dirPath)) {
+        (void)file;
+        ++cpt;
+    }
+
+    return cpt == 0;
+}
+
 void thread_alert(std::string filename) {
     std::cout << "new thread : " << filename << std::endl;
     std::fstream fs;
@@ -248,4 +258,9 @@ void thread_alert(std::string filename) {
     usleep(1000000 * 18);
 
     std::remove(filename.c_str());
+
+    if (emptyDir("alert/")) {
+        std::remove("alert.jpg");
+    }
+
 }

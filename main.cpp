@@ -57,23 +57,18 @@ int main(int argc, char **argv) {
 	// }
 	CommandLineParser parser(
 		argc, argv,
-		"{s sensor      | -1            | gpio number of IR senror}"
-		"{a and         | -1            | add detect sensor, and logic}"
-		"{l light       | -1            | light up on movment}"
-		// "{n not         | -1             | sensor disable motion}"
-		"{d device      | 0             | device camera, /dev/video0 by "
-		"default}"
-		"{f flip        | false         | rotate image 180}"
-		"{r repository  | "
-		"            | save motion to specific repository}"
-		"{p port        | -1            | remote port repository}"
-		"{help h        |               | help message}"
-		"{vegetation v  | false         | outside camera}"
-		"{inVideo       |               | video in}"
-		"{training take | false         | save movement capture for post "
-		"learning}"
-		"{recon         | false         | recon event}"
-        "{script        | false         | launch script on recognize}"
+		"{s sensor      | -1        | gpio number of IR senror}"
+		"{a and         | -1        | add detect sensor, (and logic)}"
+		"{l light       | -1        | pin light up on movment}"
+		"{d device      | 0         | camera device /dev/video<device>}"
+		"{f flip        | false     | rotate image 180}"
+		"{r repository  |           | save motion to specific repo}"
+		"{p port        | -1        | remote port repository}"
+		"{v vegetation  | false     | outside camera}"
+		"{training      | false     | save movement capture for learning}"
+		"{recon         | false     | recon event}"
+		"{script        | false     | launch script on recognize}"
+		"{help h        |           | help message}"
 		//
 	);
 
@@ -92,7 +87,7 @@ int main(int argc, char **argv) {
 	bool hasVegetation = parser.get<bool>("vegetation");
 	bool training = parser.get<bool>("training");
 	bool recon = parser.get<bool>("recon");
-    bool script = parser.get<bool>("script");
+	bool script = parser.get<bool>("script");
 	// std::string inVideo = parser.get<std::string>("inVideo");
 	// std::cout << "inVideo = " << inVideo << std::endl;
 	if (!parser.check()) {
@@ -633,8 +628,10 @@ int main(int argc, char **argv) {
 									system(cmd.c_str());
 								}
 								// }
-								std::thread thread(thread_alert, std::string("alert/" +bestPath));
-                                thread.detach();
+								std::thread thread(
+									thread_alert,
+									std::string("alert/" + bestPath));
+								thread.detach();
 
 								obj.name = bestPath;
 								boxes.erase(bestPath);

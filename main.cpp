@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
 		"{f flip        | false     | rotate image 180}"
 		"{r repository  |           | save motion to specific repo}"
 		"{p port        | -1        | remote port repository}"
-		"{v vegetation  | false     | outside camera}"
+		// "{v vegetation  | false     | outside camera}"
 		"{training      | false     | save movement capture for learning}"
 		"{recon         | false     | recon event}"
 		"{script        | false     | launch script on recognize}"

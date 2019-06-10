@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
 		"{training      | false     | save movement capture for learning}"
 		"{recon         | false     | recon event}"
 		"{script        | false     | launch script on recognize}"
-		"{onlyRec       | false     | record video without treatment}"
+		// "{onlyRec       | false     | record video without treatment}"
 		"{help h        |           | help message}");
 
 	if (parser.has("help")) {
@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
 	bool training = parser.get<bool>("training");
 	bool recon = parser.get<bool>("recon");
 	bool script = parser.get<bool>("script");
-	bool onlyRec = parser.get<bool>("onlyRec");
+	// bool onlyRec = parser.get<bool>("onlyRec");
 	if (!parser.check()) {
 		parser.printMessage();
 		parser.printErrors();
@@ -262,31 +262,32 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 
-		std::string outputVideoFileRec;
-		VideoWriter outputVideoRec;
-		if (onlyRec) {
-			outputVideoFileRec = newMotionDir + "/video.avi";
-			outputVideoRec = VideoWriter(
-				outputVideoFileRec, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'),
-				3, sizeScreen, true);
-		}
 		std::string outputVideoFile = newMotionDir + "/video.webm";
 		VideoWriter outputVideo = VideoWriter(
 			outputVideoFile, cv::VideoWriter::fourcc('V', 'P', '8', '0'), 3,
 			sizeScreen, true);
+
+		std::string outputVideoFileRec;
+		VideoWriter outputVideoRec;
+		// if (onlyRec) {
+		outputVideoFileRec = newMotionDir + "/video.avi";
+		outputVideoRec = VideoWriter(
+			outputVideoFileRec, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), 3,
+			sizeScreen, true);
+		// }
 		// VideoWriter outputVideo(newMotionDir + "/video.ogv",
 		// 						cv::VideoWriter::fourcc('T', 'H', 'E', 'O'), 2,
 		// 						sizeScreen, true);
-		if (!outputVideo.isOpened()) {
+		if (!outputVideo.isOpened() || !outputVideoRec.isOpened()) {
 			std::cout << "failed to write video" << std::endl;
 			return 6;
 		}
 
 		vCap >> inputFrame;
 		outputVideo << inputFrame;
-        if (onlyRec) {
-            outputVideoRec << inputFrame;
-        }
+		// if (onlyRec) {
+		outputVideoRec << inputFrame;
+		// }
 
 		// outputVideo.open(newMotionDir + "/clip.avi", VideoWriter::fourcc('M',
 		// 'J', 'P', 'G'), 2, Size(vCap.get(cv::CAP_PROP_FRAME_WIDTH),
@@ -300,6 +301,7 @@ int main(int argc, char **argv) {
 
 		// auto model = createBackgroundSubtractorKNN();
 		auto model = createBackgroundSubtractorMOG2();
+		bool streamFinished = false;
 
 		while (hasMovement()) {
 			++iCap;
@@ -308,14 +310,15 @@ int main(int argc, char **argv) {
 			vCap >> inputFrame;
 			if (inputFrame.empty()) {
 				std::cout << "Finished reading" << std::endl;
+				streamFinished = true;
 				break;
 			}
-			if (onlyRec) {
-				outputVideo << inputFrame;
-                outputVideoRec << inputFrame;
-				usleep(1000 * 300);
-				continue;
-			}
+			// if (onlyRec) {
+			// outputVideo << inputFrame;
+			outputVideoRec << inputFrame;
+			// usleep(1000 * 300);
+			// continue;
+			// }
 			// if (iCap < NB_CAP_FOCUS_BRIGHTNESS) {
 			// 	continue;
 			// }
@@ -333,28 +336,33 @@ int main(int argc, char **argv) {
 			// equalizeHist(grey, grey);
 			// model->apply(grey, mask);
 			model->apply(inputFrame, mask, 0.9);
+			// imshow("mask", mask);
 
 			if (iCap < NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST) {
+				// waitKey(300);
+                outputVideo << inputFrame;
 				continue;
 			}
 			// model->apply(inputFrame, mask, 0);
 
 			// ------------------- BOUNDING MOVMENT ---------------------------
-			imshow("inputFrame", mask);
-			// medianBlur(mask, mask, 9);
-			auto kernel = getStructuringElement(MORPH_RECT, Size(3, 3));
-			morphologyEx(mask, mask, MORPH_OPEN, kernel, Point(-1, -1), 3);
+			// imshow("inputFrame", mask);
+			medianBlur(mask, mask, 9);
+			// auto kernel = getStructuringElement(MORPH_RECT, Size(3, 3));
+			// morphologyEx(mask, mask, MORPH_OPEN, kernel, Point(-1, -1), 5);
 			// dilate(mask, mask, kernel, Point(-1, -1), 1);
 			// medianBlur(mask, mask, 21);
-			// const int size = 50;
-			// blur(mask, mask, Size(size, size));
+			const int size = 10;
+			blur(mask, mask, Size(size, size));
 			// blur(mask, mask, Size(size, size));
 
-			// threshold(mask, mask, 50, 255, THRESH_BINARY);
+			threshold(mask, mask, 0, 255, THRESH_BINARY);
 
-			imshow("mask", mask);
-			waitKey(200);
-			continue;
+			// imshow("mask2", mask);
+			// waitKey(300);
+			// outputVideo << inputFrame;
+			// drawing = inputFrame;
+			// continue;
 
 			std::vector<std::vector<Point>> contours;
 			std::vector<Vec4i> hierarchy;
@@ -601,7 +609,7 @@ int main(int argc, char **argv) {
 			imshow("drawing", drawing);
 			imshow("mask", mask);
 			// imshow("grey", grey);
-			if (waitKey(100) == 'q')
+			if (waitKey(200) == 'q')
 				break;
 #endif
 
@@ -677,14 +685,18 @@ int main(int argc, char **argv) {
 			}
 		}
 
-		if (onlyRec) {
-			drawing = inputFrame;
-            outputVideoRec << drawing;
-            outputVideoRec.release();
-		}
+		// if (onlyRec) {
+		// 	drawing = inputFrame;
+		// 	outputVideoRec << drawing;
+		// 	outputVideoRec.release();
+		// 	// } else if (streamFinished) {
+		// 	// drawing = inputFrame;
+		// }
 
 		outputVideo << drawing;
+		// outputVideoFileRec << drawing;
 		outputVideo.release();
+		outputVideoRec.release();
 		std::cout << "save video '" << outputVideoFile << "'" << std::endl;
 
 		// if (iCap >= NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST +
@@ -714,6 +726,9 @@ int main(int argc, char **argv) {
 			gpioSetValue(lightGpio, 0);
 		}
 
+		if (streamFinished) {
+			return 0;
+		}
 	} // while (1)
 
 	return 0;

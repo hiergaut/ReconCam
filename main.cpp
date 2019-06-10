@@ -262,19 +262,18 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 
-		std::string outputVideoFile;
-		VideoWriter outputVideo;
+		std::string outputVideoFileRec;
+		VideoWriter outputVideoRec;
 		if (onlyRec) {
-			outputVideoFile = newMotionDir + "/video.avi";
-			outputVideo = VideoWriter(
-				outputVideoFile, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), 3,
-				sizeScreen, true);
-		} else {
-			outputVideoFile = newMotionDir + "/video.webm";
-			outputVideo = VideoWriter(
-				outputVideoFile, cv::VideoWriter::fourcc('V', 'P', '8', '0'), 3,
-				sizeScreen, true);
+			outputVideoFileRec = newMotionDir + "/video.avi";
+			outputVideoRec = VideoWriter(
+				outputVideoFileRec, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'),
+				3, sizeScreen, true);
 		}
+		std::string outputVideoFile = newMotionDir + "/video.webm";
+		VideoWriter outputVideo = VideoWriter(
+			outputVideoFile, cv::VideoWriter::fourcc('V', 'P', '8', '0'), 3,
+			sizeScreen, true);
 		// VideoWriter outputVideo(newMotionDir + "/video.ogv",
 		// 						cv::VideoWriter::fourcc('T', 'H', 'E', 'O'), 2,
 		// 						sizeScreen, true);
@@ -285,6 +284,9 @@ int main(int argc, char **argv) {
 
 		vCap >> inputFrame;
 		outputVideo << inputFrame;
+        if (onlyRec) {
+            outputVideoRec << inputFrame;
+        }
 
 		// outputVideo.open(newMotionDir + "/clip.avi", VideoWriter::fourcc('M',
 		// 'J', 'P', 'G'), 2, Size(vCap.get(cv::CAP_PROP_FRAME_WIDTH),
@@ -310,6 +312,7 @@ int main(int argc, char **argv) {
 			}
 			if (onlyRec) {
 				outputVideo << inputFrame;
+                outputVideoRec << inputFrame;
 				usleep(1000 * 300);
 				continue;
 			}
@@ -676,6 +679,8 @@ int main(int argc, char **argv) {
 
 		if (onlyRec) {
 			drawing = inputFrame;
+            outputVideoRec << drawing;
+            outputVideoRec.release();
 		}
 
 		outputVideo << drawing;

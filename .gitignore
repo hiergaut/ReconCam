@@ -33,6 +33,7 @@
 
 
 *.avi
+*.webm
 *.jpg
 
 .vscode
@@ -46,3 +47,4 @@ learningFile/
 alertSong/
 script.sh
 videoTest/
+

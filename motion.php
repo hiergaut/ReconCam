@@ -86,6 +86,7 @@
                 // echo "$file";
                 // if (file_exists("$dir/$file/complete.var")) {
                 $heure = exec("echo $file | cut -c1-2");
+                // $heure = exec("echo $file | cut -d_ -f2 | cut -c1-2");
                 #$fileName =exec("echo $file | awk -F. '{print $1}'");
 
                 if ($heure != $previousHeure) {

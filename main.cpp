@@ -302,6 +302,7 @@ int main(int argc, char **argv) {
 		// auto model = createBackgroundSubtractorKNN();
 		auto model = createBackgroundSubtractorMOG2();
 		bool streamFinished = false;
+        drawing = inputFrame;
 
 		while (hasMovement()) {
 			++iCap;
@@ -609,7 +610,7 @@ int main(int argc, char **argv) {
 			imshow("drawing", drawing);
 			imshow("mask", mask);
 			// imshow("grey", grey);
-			if (waitKey(200) == 'q')
+			if (waitKey(300) == 'q')
 				break;
 #endif
 

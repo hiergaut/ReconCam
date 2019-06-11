@@ -10,9 +10,9 @@ DEP := $(patsubst %.cpp,%.d,$(SRC))
 DEP := $(addprefix $(OBJDIR)/, $(DEP))
 
 # WARNING := -Wall -Wextra -Wpedantic --pedantic-errors -Weffc++
-WARNING := -Wall
+WARNING := -Wall -Wfatal-errors
 OPENCV := `pkg-config --cflags opencv4` `pkg-config --libs opencv4`
-CXXFLAGS := -g -pthread $(OPENCV) #-std=c++17
+CXXFLAGS := -g -pthread $(OPENCV) -std=c++17
 
 .PHONY: all clean
 

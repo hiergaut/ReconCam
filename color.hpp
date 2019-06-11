@@ -73,7 +73,7 @@ class Triplet {
 };
 
 struct s_customCompare {
-	bool operator()(const Color &left, const Color &right) {
+	inline bool operator()(const Color &left, const Color &right) const {
 		return left.v > right.v;
 	}
 };

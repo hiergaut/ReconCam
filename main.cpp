@@ -33,11 +33,11 @@
 #define NB_CAP_LEARNING_MODEL_FIRST 0
 #define NB_CAP_FOCUS_BRIGHTNESS 10
 
-#define NB_CAP_MIN_FOR_REAL_MOTION 5
-#define THRESH_MOV_IS_OBJECT 50
+// #define NB_CAP_MIN_FOR_REAL_MOTION 5
+// #define MIN_MOV_DIST_TO_SAVE_OBJECT 10
 #define NEW_OBJECT_MIN_DENSITY 10
-#define MAX_DIST_NEW_POS 100000
-#define MIN_MOV_YEARS_FOR_OBJECT 5
+#define MAX_ERROR_DIST_FOR_NEW_POS_OBJECT 10000
+#define MIN_MOV_YEARS_TO_SAVE_OBJECT 5
 
 using namespace cv;
 
@@ -85,6 +85,15 @@ int main(int argc, char **argv) {
 
 #ifdef PC
 	gpioDir = "gpio/";
+	// namedWindow("inputFrame", WINDOW_AUTOSIZE);
+	// resizeWindow("inputFrame", 320, 240);
+	// moveWindow("inputFrame", 0, 0);
+	// moveWindow("mask", 640, 0);
+
+	namedWindow("mask", WINDOW_AUTOSIZE);
+	namedWindow("mask2", WINDOW_AUTOSIZE);
+	namedWindow("drawing", WINDOW_AUTOSIZE);
+	// while (waitKey(100) != ' ');
 #else
 	gpioDir = "/sys/class/gpio/";
 #endif
@@ -101,7 +110,7 @@ int main(int argc, char **argv) {
 	// stream = "/dev/video0";
 
 	bool hasRemoteDir = !remoteDir.empty();
-	using ObjList = std::list<Object>;
+	// using ObjList = std::list<Object>;
 	std::string motionDir;
 	if (hasRemoteDir) {
 		motionDir = "/tmp/motion/";
@@ -132,7 +141,8 @@ int main(int argc, char **argv) {
 		system(cmd.c_str());
 	}
 
-	ObjList objects;
+	// ObjList objects;
+    std::set<Object> objects;
 	std::vector<Line> lines;
 	std::vector<DeadObj> tombs;
 
@@ -299,11 +309,13 @@ int main(int argc, char **argv) {
 		tombs.clear();
 		objects.clear();
 
-		// auto model = createBackgroundSubtractorKNN();
-		auto model = createBackgroundSubtractorMOG2();
+		auto model = createBackgroundSubtractorKNN();
+		// auto model = createBackgroundSubtractorMOG2();
+		// auto model = createBackgroundSubtractorGMG();
 		bool streamFinished = false;
-        drawing = inputFrame;
+		drawing = inputFrame;
 
+        // ----------------------- WHILE HAS MOVEMENT
 		while (hasMovement()) {
 			++iCap;
 			int nbObjects = objects.size();
@@ -336,35 +348,60 @@ int main(int argc, char **argv) {
 			// }
 			// equalizeHist(grey, grey);
 			// model->apply(grey, mask);
-			model->apply(inputFrame, mask, 0.9);
-			// imshow("mask", mask);
+			model->apply(inputFrame, mask);
+#ifdef PC
+			// imshow("inputFrame", inputFrame);
+			if (waitKey(100) == 'q') {
+				return 0;
+			}
+			// imshow("inputFrame", inputFrame);
+			// moveWindow("inputFrame", 100, 100);
+			imshow("mask", mask);
+			// resizeWindow("mask", 100, 100);
+			// imshow("drawing", inputFrame);
+#endif
 
 			if (iCap < NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST) {
 				// waitKey(300);
-                outputVideo << inputFrame;
+				outputVideo << inputFrame;
 				continue;
 			}
 			// model->apply(inputFrame, mask, 0);
 
 			// ------------------- BOUNDING MOVMENT ---------------------------
-			// imshow("inputFrame", mask);
-			medianBlur(mask, mask, 9);
+			// threshold(mask, mask, 127, 255, THRESH_BINARY);
+			medianBlur(mask, mask, 11);
+
 			// auto kernel = getStructuringElement(MORPH_RECT, Size(3, 3));
-			// morphologyEx(mask, mask, MORPH_OPEN, kernel, Point(-1, -1), 5);
-			// dilate(mask, mask, kernel, Point(-1, -1), 1);
+			// morphologyEx(mask, mask, MORPH_OPEN, kernel, Point(-1, -1), 1);
+			// imshow("inputFrame", mask);
+			// threshold(mask, mask, 127, 255, THRESH_BINARY);
 			// medianBlur(mask, mask, 21);
-			const int size = 10;
-			blur(mask, mask, Size(size, size));
+			// medianBlur(mask, mask, 3);
+			// medianBlur(mask, mask, 3);
+			// medianBlur(mask, mask, 3);
+			// blur(mask, mask,  Size(3, 3));
+			// blur(mask, mask,  Size(3, 3));
+			// blur(mask, mask,  Size(3, 3));
+			// medianBlur(mask, mask, 9);
+			// medianBlur(mask, mask, 9);
+
+			// dilate(mask, mask, kernel, Point(-1, -1), 1);
+			// threshold(mask, mask, 127, 255, THRESH_BINARY);
+			// medianBlur(mask, mask, 21);
+			// const int size = 100;
+			// blur(mask, mask, Size(size, size));
 			// blur(mask, mask, Size(size, size));
 
-			threshold(mask, mask, 0, 255, THRESH_BINARY);
-
-			// imshow("mask2", mask);
+#ifdef PC
+			imshow("mask2", mask);
+#endif
 			// waitKey(300);
 			// outputVideo << inputFrame;
 			// drawing = inputFrame;
 			// continue;
 
+            // ------------------- BOUNDING BOXING MOVEMENTS
 			std::vector<std::vector<Point>> contours;
 			std::vector<Vec4i> hierarchy;
 			findContours(mask, contours, hierarchy, RETR_TREE,
@@ -389,6 +426,7 @@ int main(int argc, char **argv) {
 				mc[i] = Point2f(mu[i].m10 / mu[i].m00, mu[i].m01 / mu[i].m00);
 			}
 
+            // ------------------- FIND PREVIOUS OBJECTS POSITIONS
 			std::vector<int> nearestObj(nbMovements);
 			std::vector<double> distNearestObj(nbMovements);
 			std::vector<int> nearestMov(nbObjects);
@@ -397,7 +435,7 @@ int main(int argc, char **argv) {
 				nearestMov[i] = -1;
 			}
 
-			const int thresh = MAX_DIST_NEW_POS;
+			const int thresh = MAX_ERROR_DIST_FOR_NEW_POS_OBJECT;
 			for (int i = 0; i < nbMovements; ++i) {
 				nearestObj[i] = -1;
 				distNearestObj[i] = thresh;
@@ -405,14 +443,15 @@ int main(int argc, char **argv) {
 
 			// find for each object the closest movement
 			int iObj = 0;
+			std::vector<Object> objectsVector(objects.begin(), objects.end());
 			for (const auto &obj : objects) {
 
 				int iMovMin = -1;
 				int distMovMin = thresh;
 				for (int i = 0; i < nbMovements; ++i) {
 					double dist =
-						pow(norm((obj.pos + obj.speedVector) - mc[i]), 2) +
-						abs(obj.density - mu[i].m00);
+						pow(norm((obj.pos + obj.speedVector) - mc[i]), 2) + abs(obj.density - mu[i].m00);
+					// pow(norm((obj.pos + obj.speedVector) - mc[i]) +
 
 					if (dist < distMovMin) {
 						distMovMin = dist;
@@ -420,15 +459,26 @@ int main(int argc, char **argv) {
 					}
 				}
 
+				// if found movement
 				if (iMovMin != -1) {
+					// if movement already chosen by other object
 					if (nearestObj[iMovMin] != -1) {
+						// if nearest by other
 						if (distMovMin < distNearestObj[iMovMin]) {
-							nearestMov[nearestObj[iMovMin]] = -1;
+							if (obj.age >
+								objectsVector[nearestObj[iMovMin]].age) {
 
-							distNearestObj[iMovMin] = distMovMin;
-							nearestObj[iMovMin] = iObj;
+								nearestMov[nearestObj[iMovMin]] = -2;
 
-							nearestMov[iObj] = iMovMin;
+								distNearestObj[iMovMin] = distMovMin;
+								nearestObj[iMovMin] = iObj;
+
+								nearestMov[iObj] = iMovMin;
+							} else {
+								nearestMov[iObj] = -2;
+							}
+						} else {
+							nearestMov[iObj] = -2;
 						}
 					} else {
 						distNearestObj[iMovMin] = distMovMin;
@@ -442,13 +492,16 @@ int main(int argc, char **argv) {
 			}
 
 			// new movement become new object if no previous object near
-			ObjList newObjects;
+			// ObjList newObjects;
+            std::set<Object> newObjects;
+            // std::set newObjects;
 			for (int i = 0; i < nbMovements; ++i) {
 
 				int iObj = nearestObj[i];
 				int density = mu[i].m00;
 				// new object
 				if (iObj == -1 && density > NEW_OBJECT_MIN_DENSITY) {
+				// if (iObj == -1) {
 					Scalar color =
 						Scalar(rng.uniform(0, 255), rng.uniform(0, 255),
 							   rng.uniform(0, 255));
@@ -457,24 +510,26 @@ int main(int argc, char **argv) {
 								Mat(mask, boundRect[i]).clone(), contours[i],
 								boundRect[i], density};
 
-					Object &&obj{0.0,   mc[i],	 density, Vec2f(0, 0),
-								 color, iNewObj++, 0,		{std::move(cap)},
-								 mc[i], 0};
-					newObjects.emplace_back(obj);
+					Object obj{0.0,   mc[i],	 density, Vec2f(0, 0),
+							   color, iNewObj++, 0,		  {std::move(cap)},
+							   mc[i], 0};
+					// newObjects.emplace_back(std::move(obj));
+                    newObjects.insert(std::move(obj));
 				}
 			}
 
 			iObj = 0;
-			auto it = objects.begin();
+			std::set<Object>::iterator it = objects.begin();
 			int nbDeleteObj = 0;
 			while (it != objects.end()) {
-				Object &obj = *it;
+				auto obj = *it;
 				int iMov = nearestMov[iObj];
 
 				// delete object if not moving (no event)
-				if (iMov == -1) {
+				if (iMov == -1 || iMov == -2) {
 					// delete passing object event
-					if (obj.distance < THRESH_MOV_IS_OBJECT) {
+					// if (obj.distance < MIN_MOV_DIST_TO_SAVE_OBJECT) {
+					if (obj.age < MIN_MOV_YEARS_TO_SAVE_OBJECT) {
 						tombs.push_back({obj.pos, obj.color});
 
 						objects.erase(it++);
@@ -488,6 +543,11 @@ int main(int argc, char **argv) {
 						++it;
 					}
 
+				// } else if (iMov == -2) {
+				// 	tombs.push_back({obj.pos, obj.color});
+
+				// 	objects.erase(it++);
+				// 	++nbDeleteObj;
 				}
 				// movement object
 				else {
@@ -506,8 +566,10 @@ int main(int argc, char **argv) {
 						obj.bestCapture = obj.trace.size() - 1;
 					}
 					obj.speedVector = mc[iMov] - obj.pos;
-					obj.distance =
-						std::max(obj.distance, norm(mc[iMov] - obj.firstPos));
+					// obj.distance =
+					// std::max(obj.distance, norm(mc[iMov] - obj.firstPos));
+					obj.distance += norm(mc[iMov] - obj.firstPos);
+
 					lines.push_back({obj.pos, mc[iMov], obj.color});
 					obj.pos = mc[iMov];
 					obj.density = mu[iMov].m00;
@@ -531,7 +593,7 @@ int main(int argc, char **argv) {
 							tr + Point(0, 40), FONT_HERSHEY_DUPLEX, 0.5,
 							obj.color, 1);
 
-					line(drawing, obj.pos, obj.pos + obj.speedVector * 2,
+					line(drawing, obj.pos, obj.pos + obj.speedVector,
 						 Scalar(0, 0, 255), 1, LineTypes::LINE_AA);
 
 					if (recon && objects.size() <= 10) {
@@ -582,14 +644,17 @@ int main(int argc, char **argv) {
 						}
 					}
 					++it;
-				}
+				} // else {
 
 				++iObj;
-			}
+			} // while (it != objects.end()) {
 
-			for (auto &obj : newObjects) {
-				objects.push_back(obj);
-			}
+			// for (auto &obj : newObjects) {
+			// 	objects.push_back(obj);
+			// }
+			// objects.insert(objects.end(), newObjects.begin(), newObjects.end());
+            objects.merge(newObjects);
+
 
 			putText(drawing, "nbObjs : " + std::to_string(nbObjects),
 					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 255));
@@ -608,10 +673,10 @@ int main(int argc, char **argv) {
 
 #ifdef PC
 			imshow("drawing", drawing);
-			imshow("mask", mask);
+			// imshow("mask", mask);
 			// imshow("grey", grey);
-			if (waitKey(300) == 'q')
-				break;
+			// if (waitKey(300) == 'q')
+			// break;
 #endif
 
 			outputVideo << drawing;
@@ -629,8 +694,8 @@ int main(int argc, char **argv) {
 		for (const Object &obj : objects) {
 			// assert(obj.trace[obj.bestCapture]);
 
-			if (obj.distance > THRESH_MOV_IS_OBJECT &&
-				obj.age > MIN_MOV_YEARS_FOR_OBJECT) {
+			// if (obj.distance > MIN_MOV_DIST_TO_SAVE_OBJECT) {
+			if (obj.age > MIN_MOV_YEARS_TO_SAVE_OBJECT) {
 
 				const Capture &bestCapture = obj.trace[obj.bestCapture];
 				const Mat &m = bestCapture.img;

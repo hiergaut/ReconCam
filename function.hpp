@@ -7,6 +7,7 @@
 #include <opencv2/core/types.hpp>
 
 #include <cassert>
+#include <cstdio>
 #include <ctime>
 #include <fstream>
 #include <iostream>
@@ -14,8 +15,6 @@
 #include <sstream>
 #include <string>
 #include <unistd.h>
-#include <fstream>
-#include <cstdio>
 
 #include <dirent.h>
 #include <sstream>
@@ -24,6 +23,12 @@
 using namespace cv;
 
 RNG rng(29791);
+
+typedef struct s_line {
+	Point p;
+	Point p2;
+	Scalar color;
+} Line;
 
 typedef struct s_capture {
 	Mat img;
@@ -34,6 +39,9 @@ typedef struct s_capture {
 } Capture;
 
 typedef struct s_object {
+	// class Object {
+	// public:
+
 	double distance; // from first pos
 	Point2f pos;
 	int density;
@@ -46,13 +54,28 @@ typedef struct s_object {
 	Point2f firstPos;
 	uint age;
 	std::string name;
+    std::vector<Line> lines;
+
+	bool operator<(const struct s_object &right) const {
+		// return id < right.id;
+		if (age == 0 && right.age == 0) {
+			return density > right.density;
+		}
+		if (age == right.age) {
+			// 	return density > right.density;
+			return distance > right.distance;
+		}
+		return age > right.age;
+	}
 } Object;
 
-typedef struct s_line {
-	Point p;
-	Point p2;
-	Scalar color;
-} Line;
+// struct s_ObjectCompare {
+// 	inline bool operator()(const Object &left, const Object &right) const {
+//         return left.age > right.age;
+// 		// return left.v > right.v;
+// 	}
+// };
+
 
 typedef struct s_deadObj {
 	Point p;
@@ -237,30 +260,29 @@ std::vector<std::string> forEachFileInDir(std::string dirPath) {
 }
 
 bool emptyDir(std::string dirPath) {
-    int cpt = 0;
-    for (auto & file : forEachFileInDir(dirPath)) {
-        (void)file;
-        ++cpt;
-    }
+	int cpt = 0;
+	for (auto &file : forEachFileInDir(dirPath)) {
+		(void)file;
+		++cpt;
+	}
 
-    return cpt == 0;
+	return cpt == 0;
 }
 
 void thread_alert(std::string filename) {
-    std::cout << "new thread : " << filename << std::endl;
-    std::fstream fs;
-    fs.open(filename, std::ios::out);
-    if (! fs.is_open()) {
-        std::cout << "unable to open file : " << filename << std::endl;
-    }
-    fs.close();
+	std::cout << "new thread : " << filename << std::endl;
+	std::fstream fs;
+	fs.open(filename, std::ios::out);
+	if (!fs.is_open()) {
+		std::cout << "unable to open file : " << filename << std::endl;
+	}
+	fs.close();
 
-    usleep(1000000 * 18);
+	usleep(1000000 * 18);
 
-    std::remove(filename.c_str());
+	std::remove(filename.c_str());
 
-    if (emptyDir("alert/")) {
-        std::remove("alert.jpg");
-    }
-
+	if (emptyDir("alert/")) {
+		std::remove("alert.jpg");
+	}
 }

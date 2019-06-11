@@ -6,10 +6,17 @@
 #include "opencv2/imgproc/imgproc.hpp" // bounding boxes
 // #include <any>
 
+// omp_set_num_threads(1);
+// #define WITH_IPP OFF
+// #define WITH_TBB OFF
+// #define WITH_OPENMP OFF
+// #define WITH_PTHREADS_PF OFF
+
 #include <assert.h>
 #include <cassert>
 #include <ctime>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <list>
 #include <map>
@@ -36,13 +43,16 @@
 // #define NB_CAP_MIN_FOR_REAL_MOTION 5
 // #define MIN_MOV_DIST_TO_SAVE_OBJECT 10
 #define NEW_OBJECT_MIN_DENSITY 10
-#define MAX_ERROR_DIST_FOR_NEW_POS_OBJECT 10000
+#define MAX_ERROR_DIST_FOR_NEW_POS_OBJECT 100
 #define MIN_MOV_YEARS_TO_SAVE_OBJECT 5
+// #define DELTA_DIFF_MAX_DENSITY 2000
 
 using namespace cv;
 
 // ------------------------------- MAIN ---------------------------------------
 int main(int argc, char **argv) {
+	std::cout << std::fixed << std::setprecision(3);
+
 	CommandLineParser parser(
 		argc, argv,
 		"{s sensor      | -1        | gpio number of IR senror}"
@@ -142,8 +152,8 @@ int main(int argc, char **argv) {
 	}
 
 	// ObjList objects;
-    std::set<Object> objects;
-	std::vector<Line> lines;
+	std::set<Object> objects;
+	// std::vector<Line> lines;
 	std::vector<DeadObj> tombs;
 
 	Mat inputFrame, mask, drawing;
@@ -305,7 +315,7 @@ int main(int argc, char **argv) {
 
 		iNewObj = 0;
 		iCap = -1;
-		lines.clear();
+		// lines.clear();
 		tombs.clear();
 		objects.clear();
 
@@ -315,10 +325,11 @@ int main(int argc, char **argv) {
 		bool streamFinished = false;
 		drawing = inputFrame;
 
-        // ----------------------- WHILE HAS MOVEMENT
+		// ----------------------- WHILE HAS MOVEMENT
 		while (hasMovement()) {
 			++iCap;
 			int nbObjects = objects.size();
+			// std::cout << "nbObjects = " << nbObjects << std::endl;
 
 			vCap >> inputFrame;
 			if (inputFrame.empty()) {
@@ -351,12 +362,14 @@ int main(int argc, char **argv) {
 			model->apply(inputFrame, mask);
 #ifdef PC
 			// imshow("inputFrame", inputFrame);
+
 			if (waitKey(100) == 'q') {
 				return 0;
 			}
+			imshow("mask", mask);
+
 			// imshow("inputFrame", inputFrame);
 			// moveWindow("inputFrame", 100, 100);
-			imshow("mask", mask);
 			// resizeWindow("mask", 100, 100);
 			// imshow("drawing", inputFrame);
 #endif
@@ -366,6 +379,13 @@ int main(int argc, char **argv) {
 				outputVideo << inputFrame;
 				continue;
 			}
+
+            // if (iCap > 150) {
+			// if (waitKey(0) == 'q') {
+			// 	return 0;
+			// }
+            // }
+			// std::cout << "------------------------" << std::endl;
 			// model->apply(inputFrame, mask, 0);
 
 			// ------------------- BOUNDING MOVMENT ---------------------------
@@ -395,13 +415,14 @@ int main(int argc, char **argv) {
 
 #ifdef PC
 			imshow("mask2", mask);
+			// imshow("mask2", drawing);
 #endif
 			// waitKey(300);
 			// outputVideo << inputFrame;
 			// drawing = inputFrame;
 			// continue;
 
-            // ------------------- BOUNDING BOXING MOVEMENTS
+			// ------------------- BOUNDING BOXING MOVEMENTS
 			std::vector<std::vector<Point>> contours;
 			std::vector<Vec4i> hierarchy;
 			findContours(mask, contours, hierarchy, RETR_TREE,
@@ -426,131 +447,110 @@ int main(int argc, char **argv) {
 				mc[i] = Point2f(mu[i].m10 / mu[i].m00, mu[i].m01 / mu[i].m00);
 			}
 
-            // ------------------- FIND PREVIOUS OBJECTS POSITIONS
-			std::vector<int> nearestObj(nbMovements);
-			std::vector<double> distNearestObj(nbMovements);
-			std::vector<int> nearestMov(nbObjects);
+			// ------------------- FIND PREVIOUS OBJECTS POSITIONS
+			// std::vector<int> nearestObj(nbMovements);
+			// std::vector<double> distNearestObj(nbMovements);
+			// std::vector<int> nearestMov(nbObjects);
 
-			for (int i = 0; i < nbObjects; ++i) {
-				nearestMov[i] = -1;
-			}
+			// for (int i = 0; i < nbObjects; ++i) {
+			// 	nearestMov[i] = -1;
+			// }
 
-			const int thresh = MAX_ERROR_DIST_FOR_NEW_POS_OBJECT;
-			for (int i = 0; i < nbMovements; ++i) {
-				nearestObj[i] = -1;
-				distNearestObj[i] = thresh;
-			}
+			// const int thresh = MAX_ERROR_DIST_FOR_NEW_POS_OBJECT;
+			// for (int i = 0; i < nbMovements; ++i) {
+			// 	nearestObj[i] = -1;
+			// 	distNearestObj[i] = thresh;
+			// }
 
+			bool movFound[nbMovements] = {0};
 			// find for each object the closest movement
-			int iObj = 0;
-			std::vector<Object> objectsVector(objects.begin(), objects.end());
-			for (const auto &obj : objects) {
-
-				int iMovMin = -1;
-				int distMovMin = thresh;
-				for (int i = 0; i < nbMovements; ++i) {
-					double dist =
-						pow(norm((obj.pos + obj.speedVector) - mc[i]), 2) + abs(obj.density - mu[i].m00);
-					// pow(norm((obj.pos + obj.speedVector) - mc[i]) +
-
-					if (dist < distMovMin) {
-						distMovMin = dist;
-						iMovMin = i;
-					}
-				}
-
-				// if found movement
-				if (iMovMin != -1) {
-					// if movement already chosen by other object
-					if (nearestObj[iMovMin] != -1) {
-						// if nearest by other
-						if (distMovMin < distNearestObj[iMovMin]) {
-							if (obj.age >
-								objectsVector[nearestObj[iMovMin]].age) {
-
-								nearestMov[nearestObj[iMovMin]] = -2;
-
-								distNearestObj[iMovMin] = distMovMin;
-								nearestObj[iMovMin] = iObj;
-
-								nearestMov[iObj] = iMovMin;
-							} else {
-								nearestMov[iObj] = -2;
-							}
-						} else {
-							nearestMov[iObj] = -2;
-						}
-					} else {
-						distNearestObj[iMovMin] = distMovMin;
-						nearestObj[iMovMin] = iObj;
-
-						nearestMov[iObj] = iMovMin;
-					}
-				}
-
-				++iObj;
-			}
-
-			// new movement become new object if no previous object near
-			// ObjList newObjects;
-            std::set<Object> newObjects;
-            // std::set newObjects;
-			for (int i = 0; i < nbMovements; ++i) {
-
-				int iObj = nearestObj[i];
-				int density = mu[i].m00;
-				// new object
-				if (iObj == -1 && density > NEW_OBJECT_MIN_DENSITY) {
-				// if (iObj == -1) {
-					Scalar color =
-						Scalar(rng.uniform(0, 255), rng.uniform(0, 255),
-							   rng.uniform(0, 255));
-
-					Capture cap{Mat(inputFrame, boundRect[i]).clone(),
-								Mat(mask, boundRect[i]).clone(), contours[i],
-								boundRect[i], density};
-
-					Object obj{0.0,   mc[i],	 density, Vec2f(0, 0),
-							   color, iNewObj++, 0,		  {std::move(cap)},
-							   mc[i], 0};
-					// newObjects.emplace_back(std::move(obj));
-                    newObjects.insert(std::move(obj));
-				}
-			}
-
-			iObj = 0;
+			// int iObj = 0;
+			// std::vector<Object&> objectsVector;
+			// for (Object & obj : objects) {
+			//     objectsVector.emplace_back(obj);
+			// }
+			std::set<Object> newObjects;
+			// std::vector<std::unique_ptr<Object>> trash;
+			// std::vector<Object> objectsVector(objects.begin(),
+			// objects.end());
 			std::set<Object>::iterator it = objects.begin();
-			int nbDeleteObj = 0;
 			while (it != objects.end()) {
-				auto obj = *it;
-				int iMov = nearestMov[iObj];
+			// Object & obj = *it;
+			// for (const Object &cobj : objects) {
+				Object &obj = const_cast<Object &>(*it);
+				// auto obj = *it;
+				// for (auto &obj : objects) {
+				// std::cout << "object " << obj.id << std::endl;
+				// std::cout << "[" << obj.id << "] age:" << obj.age
+				// 		  << ", dens:" << obj.density
+				// 		  << ", dist:" << obj.distance << std::endl;
 
-				// delete object if not moving (no event)
-				if (iMov == -1 || iMov == -2) {
-					// delete passing object event
+				int iMov = -1;
+				int distMovMin = MAX_ERROR_DIST_FOR_NEW_POS_OBJECT;
+				for (int i = 0; i < nbMovements; ++i) {
+					// if (nearestObj[i] != -1) {
+					if (!movFound[i]) {
+						// double density = abs(obj.density - mu[i].m00);
+						double density = 3.0 * fmax(obj.density, mu[i].m00) /
+										 fmin(obj.density, mu[i].m00);
+
+						// if (abs(density - 1.0) )
+						// if (density > DELTA_DIFF_MAX_DENSITY) {
+						// continue;
+						// }
+
+						double distance =
+							norm((obj.pos + obj.speedVector) - mc[i]);
+
+						// double dist = distance;
+
+						// std::cout << "[" << obj.id << ", " << i << "] ";
+						// std::cout << "distance : " << distance
+						// 		  << ", density : " << density << std::endl;
+						// double dist =
+						// 	pow(norm((obj.pos + obj.speedVector) - mc[i]), 2) +
+						double dist = distance + density;
+						// abs(obj.density - mu[i].m00); pow(norm((obj.pos +
+						// obj.speedVector) - mc[i]) +
+
+						if (dist < distMovMin) {
+							distMovMin = dist;
+							iMov = i;
+						}
+					}
+				}
+
+				// std::cout << "[" << obj.id << "] ";
+				// no event near object
+				if (iMov == -1) {
+					// std::cout << ", no movement near, ";
 					// if (obj.distance < MIN_MOV_DIST_TO_SAVE_OBJECT) {
 					if (obj.age < MIN_MOV_YEARS_TO_SAVE_OBJECT) {
+						// std::cout << "object killed";
 						tombs.push_back({obj.pos, obj.color});
 
-						objects.erase(it++);
-						++nbDeleteObj;
+						// Object & del = obj;
+						// --it;
+						// objects.erase(it++);
+						// trash.push_back(std::make_unique<Object>(obj));
+						// ++nbDeleteObj;
 
 					}
-					// save position of motionless object
+					// save position of no moved object
 					else {
+						// std::cout << "object saved";
 						putText(drawing, "s", obj.pos + Point2f(-9, 9),
 								FONT_HERSHEY_DUPLEX, 1, obj.color, 1);
-						++it;
+						// ++it;
+                        newObjects.insert(std::move(obj));
 					}
 
-				// } else if (iMov == -2) {
-				// 	tombs.push_back({obj.pos, obj.color});
-
-				// 	objects.erase(it++);
-				// 	++nbDeleteObj;
 				}
-				// movement object
+				// object moved
 				else {
+					// std::cout << "is moving ";
+					movFound[iMov] = true;
+
 					Point2i tl = boundRect[iMov].tl();
 					Point2i tr = tl + Point2i(boundRect[iMov].width + 5, 10);
 
@@ -559,9 +559,12 @@ int main(int argc, char **argv) {
 								contours[iMov], boundRect[iMov],
 								static_cast<int>(mu[iMov].m00)};
 
+					// auto node = objects.extract(it);
+
+
 					obj.trace.emplace_back(cap);
 
-					// if found
+					// if found best trace
 					if (mu[iMov].m00 > obj.trace[obj.bestCapture].density) {
 						obj.bestCapture = obj.trace.size() - 1;
 					}
@@ -570,7 +573,8 @@ int main(int argc, char **argv) {
 					// std::max(obj.distance, norm(mc[iMov] - obj.firstPos));
 					obj.distance += norm(mc[iMov] - obj.firstPos);
 
-					lines.push_back({obj.pos, mc[iMov], obj.color});
+					// lines.push_back({obj.pos, mc[iMov], obj.color});
+                    obj.lines.push_back({obj.pos, mc[iMov], obj.color});
 					obj.pos = mc[iMov];
 					obj.density = mu[iMov].m00;
 					++obj.age;
@@ -624,9 +628,9 @@ int main(int argc, char **argv) {
 							}
 
 							if (bestPath.compare("")) {
-								std::cout << "object " << obj.id
-										  << " was detected as : " << bestPath
-										  << std::endl;
+								// std::cout << "object " << obj.id
+								// 		  << " was detected as : " << bestPath
+								// 		  << std::endl;
 
 								imwrite("alert.jpg", drawing);
 								if (script) {
@@ -643,28 +647,106 @@ int main(int argc, char **argv) {
 							}
 						}
 					}
-					++it;
-				} // else {
 
-				++iObj;
+                    newObjects.insert(std::move(obj));
+					// // if movement already chosen by other object
+					// if (nearestObj[iMovMin] != -1) {
+					// 	// if nearest by other
+					// 	if (distMovMin < distNearestObj[iMovMin]) {
+					// 		if (obj.age >
+					// 			objectsVector[nearestObj[iMovMin]].age) {
+
+					// 			nearestMov[nearestObj[iMovMin]] = -2;
+
+					// 			distNearestObj[iMovMin] = distMovMin;
+					// 			nearestObj[iMovMin] = iObj;
+
+					// 			nearestMov[iObj] = iMovMin;
+					// 		} else {
+					// 			nearestMov[iObj] = -2;
+					// 		}
+					// 	} else {
+					// 		nearestMov[iObj] = -2;
+					// 	}
+					// } else {
+					// distNearestObj[iMov] = distMovMin;
+					// nearestObj[iMov] = iObj;
+
+					// ++it;
+					// nearestMov[iObj] = iMov;
+					// }
+				} // if (iMov != -1) {
+
+				// ++iObj;
+				// std::cout << std::endl;
+                ++it;
+				// ++it;
 			} // while (it != objects.end()) {
+
+            objects = std::move(newObjects);
+			// for (auto &ptr : trash) {
+			// 	objects.erase(*ptr);
+			// }
+			// new movement become new object if no previous object near
+			// ObjList newObjects;
+			// std::set<Object> newObjects;
+			// std::set newObjects;
+			for (int i = 0; i < nbMovements; ++i) {
+
+				// int iObj = nearestObj[i];
+				int density = mu[i].m00;
+				// new object
+				if (!movFound[i] && density > NEW_OBJECT_MIN_DENSITY) {
+					// if (iObj == -1) {
+					Scalar color =
+						Scalar(rng.uniform(0, 255), rng.uniform(0, 255),
+							   rng.uniform(0, 255));
+
+					Capture cap{Mat(inputFrame, boundRect[i]).clone(),
+								Mat(mask, boundRect[i]).clone(), contours[i],
+								boundRect[i], density};
+
+					std::vector<std::vector<Point>> contour{contours[i]};
+					drawContours(drawing, contour, 0, color, 2);
+					// circle(drawing, mc[i], MAX_ERROR_DIST_FOR_NEW_POS_OBJECT,
+					// 	   color, 1);
+					// circle(drawing, mc[i], MAX_ERROR_DIST_FOR_NEW_POS_OBJECT,
+					//    color, 1);
+
+					Object obj{0.0,   mc[i],	 density, Vec2f(0, 0),
+							   color, iNewObj++, 0,		  {std::move(cap)},
+							   mc[i], 0};
+					// newObjects.emplace_back(std::move(obj));
+					// newObjects.insert(std::move(obj));
+					objects.insert(std::move(obj));
+				}
+			}
+			nbObjects = objects.size();
 
 			// for (auto &obj : newObjects) {
 			// 	objects.push_back(obj);
 			// }
-			// objects.insert(objects.end(), newObjects.begin(), newObjects.end());
-            objects.merge(newObjects);
+			// objects.insert(objects.end(), newObjects.begin(),
+			// newObjects.end()); objects.insert()
 
-
-			putText(drawing, "nbObjs : " + std::to_string(nbObjects),
+			// objects.merge(newObjects);
+			putText(drawing, "nbMovs : " + std::to_string(nbMovements),
 					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 255));
 
-			putText(drawing, "frame : " + std::to_string(iCap), Point(0, 60),
+			putText(drawing, "nbObjs : " + std::to_string(nbObjects),
+					Point(0, 60), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 255));
+
+			putText(drawing, "frame : " + std::to_string(iCap), Point(0, 90),
 					FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 255));
 
-			for (size_t i = 0; i < lines.size(); ++i) {
-				line(drawing, lines[i].p, lines[i].p2, lines[i].color, 2);
-			}
+			// for (size_t i = 0; i < lines.size(); ++i) {
+			// 	line(drawing, lines[i].p, lines[i].p2, lines[i].color, 2);
+			// }
+            for (auto & obj : objects) {
+                for (auto & l : obj.lines) {
+                    line(drawing, l.p, l.p2, obj.color, 2);
+                }
+            }
 
 			for (DeadObj obj : tombs) {
 				putText(drawing, "x", obj.p + Point(-9, 9), FONT_HERSHEY_DUPLEX,

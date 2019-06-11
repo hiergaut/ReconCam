@@ -730,8 +730,8 @@ int main(int argc, char **argv) {
 			// newObjects.end()); objects.insert()
 
 			// objects.merge(newObjects);
-			putText(drawing, "nbMovs : " + std::to_string(nbMovements),
-					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 255));
+			// putText(drawing, "nbMovs : " + std::to_string(nbMovements),
+			// 		Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 255));
 
 			putText(drawing, "nbObjs : " + std::to_string(nbObjects),
 					Point(0, 60), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 255));

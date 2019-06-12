@@ -376,8 +376,10 @@ int main(int argc, char **argv) {
 #endif
 
 			if (iCap < NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST) {
-				// waitKey(300);
-                imshow("drawing", inputFrame);
+// waitKey(300);
+#ifdef PC
+				imshow("drawing", inputFrame);
+#endif
 				outputVideo << inputFrame;
 				continue;
 			}

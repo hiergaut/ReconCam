@@ -270,6 +270,7 @@ int main(int argc, char **argv) {
 		// hostname + "_" + getDay() + "_" + getCurTime() + "_" + deviceName;
 		// std::string startTime = getCurTime();
 		std::string motionId = getCurTime() + "_" + hostname + "_" + deviceName;
+        std::cout << "new event : " << motionId << std::endl;
 		std::string newMotionDir = motionDir + motionId;
 		// std::string newMotionDir = motionDir + startTime + "_" + hostname;
 		cmd = "mkdir -p " + newMotionDir;

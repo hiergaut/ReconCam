@@ -36,6 +36,25 @@
 
         function notifyMe(event) {
             audio.play();
+
+            // Notification.requestPermission().then(function(result) {
+            //     if (result === 'denied') {
+            //         console.log('Permission wasn\'t granted. Allow a retry.');
+            //         return;
+            //     }
+            //     if (result === 'default') {
+            //         console.log('The permission request was dismissed.');
+            //         return;
+            //     }
+            //     if (result == 'granted') {
+
+            //         var notification = new Notification(event, options);
+            //     }
+            //     // Do something with the granted permission.
+            // });
+            // Notification.requestPermission().then(function(result) {
+            //     console.log(result);
+            // });
             // Let's check if the browser supports notifications
             if (!("Notification" in window)) {
                 alert("This browser does not support system notifications");
@@ -57,8 +76,9 @@
                 });
             }
 
-            // Finally, if the user has denied notifications and you 
-            // want to be respectful there is no need to bother them any more.
+        }
+        // Finally, if the user has denied notifications and you 
+        // want to be respectful there is no need to bother them any more.
         }
         // notifyMe();
         // });
@@ -68,9 +88,6 @@
         // };
         // registration.showNotification(title, options);
 
-        // Notification.requestPermission().then(function(result) {
-        //     console.log(result);
-        // });
         // // sound.play();
     </script>
 </head>

@@ -6,6 +6,7 @@ if [ -z $1 ]; then
     exit 1
 fi
 
+mkdir -p alert
 touch alert/$1
 sleep 18
 rm alert/$1

@@ -20,7 +20,7 @@
 			// "command": "make && ./a.out 10 -remote=/srv/http/motion/",
 			// "command": "rm -fr motion && make CFLAGS=\"-D PC\" && ./a.out --sensor=10 --training=true --recon=true --script=true",
 			// "command": "rm -fr motion && make CFLAGS=\"-D PC\" && ./a.out --sensor=10",
-			"command": "rm -fr motion && make CFLAGS=\"-D PC\" && i3-msg workspace 2 && ./a.out --sensor=10 --stream=video.avi && i3-msg workspace 0",
+			"command": "rm -fr motion && make CFLAGS=\"-D PC\" && i3-msg workspace 6 && ./a.out --sensor=10 --stream=video.avi && i3-msg workspace 0",
 			// "command": "rm -fr motion && make CFLAGS=\"-D PC\" &&  ./a.out --sensor=10 --stream=video.avi",
 			// "command": "g++ *.cpp && ./a.out",
 			"problemMatcher": "$gcc",

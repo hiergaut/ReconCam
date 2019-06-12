@@ -270,7 +270,7 @@ int main(int argc, char **argv) {
 		// hostname + "_" + getDay() + "_" + getCurTime() + "_" + deviceName;
 		// std::string startTime = getCurTime();
 		std::string motionId = getCurTime() + "_" + hostname + "_" + deviceName;
-        std::cout << "new event : " << motionId << std::endl;
+		std::cout << "new event : " << motionId << std::endl;
 		std::string newMotionDir = motionDir + motionId;
 		// std::string newMotionDir = motionDir + startTime + "_" + hostname;
 		cmd = "mkdir -p " + newMotionDir;
@@ -320,8 +320,8 @@ int main(int argc, char **argv) {
 		tombs.clear();
 		objects.clear();
 
-		auto model = createBackgroundSubtractorKNN();
-		// auto model = createBackgroundSubtractorMOG2();
+		// auto model = createBackgroundSubtractorKNN();
+		auto model = createBackgroundSubtractorMOG2();
 		// auto model = createBackgroundSubtractorGMG();
 		bool streamFinished = false;
 		drawing = inputFrame;
@@ -356,7 +356,7 @@ int main(int argc, char **argv) {
 			// 	cvtColor(inputWithoutGreen, grey, COLOR_BGR2GRAY);
 			// 	// imshow("notGreen", inputWithoutGreen);
 			// } else {
-			// 	cvtColor(inputFrame, grey, COLOR_BGR2GRAY);
+			// cvtColor(inputFrame, grey, COLOR_BGR2GRAY);
 			// }
 			// equalizeHist(grey, grey);
 			// model->apply(grey, mask);
@@ -377,15 +377,16 @@ int main(int argc, char **argv) {
 
 			if (iCap < NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST) {
 				// waitKey(300);
+                imshow("drawing", inputFrame);
 				outputVideo << inputFrame;
 				continue;
 			}
 
-            // if (iCap > 150) {
+			// if (iCap > 150) {
 			// if (waitKey(0) == 'q') {
 			// 	return 0;
 			// }
-            // }
+			// }
 			// std::cout << "------------------------" << std::endl;
 			// model->apply(inputFrame, mask, 0);
 
@@ -430,6 +431,10 @@ int main(int argc, char **argv) {
 						 CHAIN_APPROX_SIMPLE, Point(0, 0));
 
 			int nbMovements = contours.size();
+			// if (nbMovements > 9) {
+			// 	outputVideo << inputFrame;
+			// 	continue;
+			// }
 			std::vector<std::vector<Point>> contours_poly(nbMovements);
 			std::vector<Rect> boundRect(nbMovements);
 			for (int i = 0; i < nbMovements; ++i) {
@@ -476,8 +481,8 @@ int main(int argc, char **argv) {
 			// objects.end());
 			std::set<Object>::iterator it = objects.begin();
 			while (it != objects.end()) {
-			// Object & obj = *it;
-			// for (const Object &cobj : objects) {
+				// Object & obj = *it;
+				// for (const Object &cobj : objects) {
 				Object &obj = const_cast<Object &>(*it);
 				// auto obj = *it;
 				// for (auto &obj : objects) {
@@ -543,7 +548,7 @@ int main(int argc, char **argv) {
 						putText(drawing, "s", obj.pos + Point2f(-9, 9),
 								FONT_HERSHEY_DUPLEX, 1, obj.color, 1);
 						// ++it;
-                        newObjects.insert(std::move(obj));
+						newObjects.insert(std::move(obj));
 					}
 
 				}
@@ -562,7 +567,6 @@ int main(int argc, char **argv) {
 
 					// auto node = objects.extract(it);
 
-
 					obj.trace.emplace_back(cap);
 
 					// if found best trace
@@ -575,7 +579,7 @@ int main(int argc, char **argv) {
 					obj.distance += norm(mc[iMov] - obj.firstPos);
 
 					// lines.push_back({obj.pos, mc[iMov], obj.color});
-                    obj.lines.push_back({obj.pos, mc[iMov], obj.color});
+					obj.lines.push_back({obj.pos, mc[iMov], obj.color});
 					obj.pos = mc[iMov];
 					obj.density = mu[iMov].m00;
 					++obj.age;
@@ -649,7 +653,7 @@ int main(int argc, char **argv) {
 						}
 					}
 
-                    newObjects.insert(std::move(obj));
+					newObjects.insert(std::move(obj));
 					// // if movement already chosen by other object
 					// if (nearestObj[iMovMin] != -1) {
 					// 	// if nearest by other
@@ -680,11 +684,11 @@ int main(int argc, char **argv) {
 
 				// ++iObj;
 				// std::cout << std::endl;
-                ++it;
+				++it;
 				// ++it;
 			} // while (it != objects.end()) {
 
-            objects = std::move(newObjects);
+			objects = std::move(newObjects);
 			// for (auto &ptr : trash) {
 			// 	objects.erase(*ptr);
 			// }
@@ -735,19 +739,19 @@ int main(int argc, char **argv) {
 			// 		Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 255));
 
 			putText(drawing, "nbObjs : " + std::to_string(nbObjects),
-					Point(0, 60), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 255));
+					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 255));
 
-			putText(drawing, "frame : " + std::to_string(iCap), Point(0, 90),
+			putText(drawing, "frame : " + std::to_string(iCap), Point(0, 60),
 					FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 255));
 
 			// for (size_t i = 0; i < lines.size(); ++i) {
 			// 	line(drawing, lines[i].p, lines[i].p2, lines[i].color, 2);
 			// }
-            for (auto & obj : objects) {
-                for (auto & l : obj.lines) {
-                    line(drawing, l.p, l.p2, obj.color, 2);
-                }
-            }
+			for (auto &obj : objects) {
+				for (auto &l : obj.lines) {
+					line(drawing, l.p, l.p2, obj.color, 2);
+				}
+			}
 
 			for (DeadObj obj : tombs) {
 				putText(drawing, "x", obj.p + Point(-9, 9), FONT_HERSHEY_DUPLEX,

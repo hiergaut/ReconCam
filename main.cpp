@@ -434,10 +434,10 @@ int main(int argc, char **argv) {
 						 CHAIN_APPROX_SIMPLE, Point(0, 0));
 
 			int nbMovements = contours.size();
-			// if (nbMovements > 9) {
-			// 	outputVideo << inputFrame;
-			// 	continue;
-			// }
+			if (nbMovements > 9) {
+				outputVideo << inputFrame;
+				continue;
+			}
 			std::vector<std::vector<Point>> contours_poly(nbMovements);
 			std::vector<Rect> boundRect(nbMovements);
 			for (int i = 0; i < nbMovements; ++i) {
@@ -742,14 +742,14 @@ int main(int argc, char **argv) {
 			// 		Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 255));
 
 			putText(drawing, "nbObjs : " + std::to_string(nbObjects),
-					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 2);
+					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 5);
 			putText(drawing, "nbObjs : " + std::to_string(nbObjects),
-					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(255, 0, 255));
+					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(255, 255, 255));
 
 			putText(drawing, "frame : " + std::to_string(iCap), Point(0, 60),
-					FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 2);
+					FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 5);
 			putText(drawing, "frame : " + std::to_string(iCap), Point(0, 60),
-					FONT_HERSHEY_DUPLEX, 1, Scalar(255, 0, 255));
+					FONT_HERSHEY_DUPLEX, 1, Scalar(255, 255, 255), 1);
 
 			// for (size_t i = 0; i < lines.size(); ++i) {
 			// 	line(drawing, lines[i].p, lines[i].p2, lines[i].color, 2);

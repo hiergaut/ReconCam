@@ -741,8 +741,12 @@ int main(int argc, char **argv) {
 			// 		Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 255));
 
 			putText(drawing, "nbObjs : " + std::to_string(nbObjects),
+					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 3);
+			putText(drawing, "nbObjs : " + std::to_string(nbObjects),
 					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 255));
 
+			putText(drawing, "frame : " + std::to_string(iCap), Point(0, 60),
+					FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 3);
 			putText(drawing, "frame : " + std::to_string(iCap), Point(0, 60),
 					FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 255));
 

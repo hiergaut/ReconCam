@@ -37,8 +37,8 @@
 #define TIMELAPSE_INTERVAL 1200 // 20 min
 #endif
 
-#define NB_CAP_LEARNING_MODEL_FIRST 0
-#define NB_CAP_FOCUS_BRIGHTNESS 10
+#define NB_CAP_LEARNING_MODEL_FIRST 8
+#define NB_CAP_FOCUS_BRIGHTNESS 2
 
 // #define NB_CAP_MIN_FOR_REAL_MOTION 5
 // #define MIN_MOV_DIST_TO_SAVE_OBJECT 10
@@ -344,9 +344,9 @@ int main(int argc, char **argv) {
 			// usleep(1000 * 300);
 			// continue;
 			// }
-			// if (iCap < NB_CAP_FOCUS_BRIGHTNESS) {
-			// 	continue;
-			// }
+			if (iCap < NB_CAP_FOCUS_BRIGHTNESS) {
+				continue;
+			}
 
 			// ------------------- TRAINING MODEL -----------------------------
 			// Mat grey;
@@ -376,6 +376,7 @@ int main(int argc, char **argv) {
 #endif
 
 			if (iCap < NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST) {
+			// if (iCap < NB_CAP_FOCUS_BRIGHTNESS) {
 // waitKey(300);
 #ifdef PC
 				imshow("drawing", inputFrame);
@@ -741,14 +742,14 @@ int main(int argc, char **argv) {
 			// 		Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 255));
 
 			putText(drawing, "nbObjs : " + std::to_string(nbObjects),
-					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 3);
+					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 2);
 			putText(drawing, "nbObjs : " + std::to_string(nbObjects),
-					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 255));
+					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(255, 0, 255));
 
 			putText(drawing, "frame : " + std::to_string(iCap), Point(0, 60),
-					FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 3);
+					FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 2);
 			putText(drawing, "frame : " + std::to_string(iCap), Point(0, 60),
-					FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 255));
+					FONT_HERSHEY_DUPLEX, 1, Scalar(255, 0, 255));
 
 			// for (size_t i = 0; i < lines.size(); ++i) {
 			// 	line(drawing, lines[i].p, lines[i].p2, lines[i].color, 2);

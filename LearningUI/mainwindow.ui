@@ -49,6 +49,18 @@
            </property>
           </widget>
          </item>
+         <item>
+          <widget class="QOpenGLWidgetCluster" name="openGLWidget_density"/>
+         </item>
+         <item>
+          <widget class="QOpenGLWidgetCluster" name="openGLWidget_first"/>
+         </item>
+         <item>
+          <widget class="QOpenGLWidgetCluster" name="openGLWidget_second"/>
+         </item>
+         <item>
+          <widget class="QOpenGLWidgetCluster" name="openGLWidget_third"/>
+         </item>
         </layout>
        </item>
        <item>

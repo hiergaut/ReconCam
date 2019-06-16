@@ -16,6 +16,7 @@
 #include <QStandardItem>
 #include <QtDebug>
 //#include <map>
+#include "Identity.hpp"
 
 //void expandChildren(const QModelIndex &index, QTreeView *view)
 //{
@@ -119,6 +120,53 @@ MainWindow::MainWindow(QWidget* parent)
         newHashKnownDir(known);
     }
 
+    QMatrix4x4 object;
+    object.setToIdentity();
+//    object.rotate(180, QVector3D(1.0, 0, 0));
+    object.scale(1.0, -1.0, 1.0);
+//    object.translate(-1, -1, 0);
+    ui->openGLWidget_pos->setObject(object);
+    QMatrix4x4 normalize;
+    normalize.setToIdentity();
+    normalize.translate(-1, +1, 0);
+    normalize.scale(1.0f / 320.0f, 1.0f / 240.0f, 1.0f);
+    ui->openGLWidget_pos->setNormalize(normalize);
+    ui->openGLWidget_pos->setZCamera(-1.5);
+    ui->openGLWidget_pos->setArea(m_square, m_squareEbo);
+    //    ui->openGLWidget_pos->render(m_triangle);
+    //    ui->openGLWidget_pos->render(m_triangle);
+    //    ui->openGLWidget_pos->render(m_triangle);
+
+    //    ui->openGLWidget_density->setZCamera(-1.5);
+    //    normalize.rotate(90, QVector3D(1.0, 0, 0));
+    object.setToIdentity();
+    object.scale(1.0, 1.0, -1.0);
+//    object.translate(-1, -1, +1);
+    ui->openGLWidget_density->setObject(object);
+    normalize.setToIdentity();
+    normalize.translate(-1, -1, +1);
+    normalize.scale(2.0f / 640.0f, 2.0f / 480.0f, 10.0f / (640 * 480));
+    //    normalize.scale(1.0, 1.0, -1.0);
+    ui->openGLWidget_density->setNormalize(normalize);
+    ui->openGLWidget_density->setArea(m_box, m_boxEbo);
+
+//    object.setToIdentity();
+//    object.translate(-1, -1, -1);
+    ui->openGLWidget_first->setObject(object);
+    normalize.setToIdentity();
+    normalize.translate(-1, -1, +1);
+    normalize.scale(2.0f / 256.0f, 2.0f / 256.0f, 2.0f / 256.0f);
+    ui->openGLWidget_first->setNormalize(normalize);
+    ui->openGLWidget_first->setArea(m_box, m_boxEbo);
+
+    ui->openGLWidget_second->setObject(object);
+    ui->openGLWidget_second->setNormalize(normalize);
+    ui->openGLWidget_second->setArea(m_box, m_boxEbo);
+
+    ui->openGLWidget_third->setObject(object);
+    ui->openGLWidget_third->setNormalize(normalize);
+    ui->openGLWidget_third->setArea(m_box, m_boxEbo);
+
     _model = new QFileSystemModel(this);
     //    _model->setRootPath(str_learningRootDir);
     _model->setRootPath(str_learningRootDir);
@@ -153,8 +201,8 @@ MainWindow::MainWindow(QWidget* parent)
     ui->listView_newEvent->setRootIndex(_model->index(str_newEventDir));
     ui->listView_newEvent->setItemDelegate(new QStyledItemDelegateThumbnail(_model, ui->listView_newEvent));
 
-//    ui->listView_newEvent->setText(ui->textEdit_hist);
-//    ui->listView_newEvent->setLabel(ui->label_hist);
+    //    ui->listView_newEvent->setText(ui->textEdit_hist);
+    //    ui->listView_newEvent->setLabel(ui->label_hist);
     //        ui->listView_newEvent->setSelectionMode(QAbstractItemView::ExtendedSelection);
     connect(ui->listView_newEvent, &QListViewNewEvent::enterPressed, this, &MainWindow::on_moveNewEventSelectedToKnown);
     connect(ui->listView_newEvent, &QListViewNewEvent::deletePressed, this, &MainWindow::on_deleteNewEventSelected);
@@ -197,9 +245,9 @@ MainWindow::MainWindow(QWidget* parent)
     ui->listView_knownEvent->setModel(_model);
     ui->listView_knownEvent->setRootIndex(_model->index(str_learningRootDir + "empty/"));
     ui->listView_knownEvent->setItemDelegate(new QStyledItemDelegateThumbnailDown(_model, ui->listView_knownEvent, ui->listView_knownEvent));
-//    ui->listView_knownEvent->setLabel(ui->label_hist);
+    //    ui->listView_knownEvent->setLabel(ui->label_hist);
     ui->listView_knownEvent->setKnown(ui->listView_known);
-//    ui->listView_knownEvent->setText(ui->textEdit_hist);
+    //    ui->listView_knownEvent->setText(ui->textEdit_hist);
 
     connect(ui->listView_knownEvent, &QListViewKnownEvent::spacePressed, this, &MainWindow::on_moveKnownEventSelectedToNewEvent);
     connect(ui->listView_knownEvent, &QListViewKnownEvent::deletePressed, this, &MainWindow::on_deleteKnownEventSelected);
@@ -431,11 +479,16 @@ void MainWindow::on_deleteKnownEventSelected()
 
 void MainWindow::on_modelChanged()
 {
-    return;
+    //    return;
     //    using vec3 = std::vector<float>;
-    std::vector<float> points;
+    //    std::vector<float> points;
+    //    std::vector<float>
+    std::vector<float> poses;
+    std::vector<float> densities;
+    //    std::vector<float> firsts;
+    std::vector<float> rgbs[3];
 
-    std::vector<float> boxes;
+    //    std::vector<float> boxes;
     //    std::vector<float> color(3);
     //    std::vector<float> color;
     //    std::vector<float> point;
@@ -476,65 +529,89 @@ void MainWindow::on_modelChanged()
         //        qDebug() << _model->data(index, Qt::DecorationRole);
 
         for (const QString& dirName : dir.entryList()) {
+            QString filename = pathDir + dirName + "/";
+            //            points.insert(points.end(), point.begin(), point.end());
+            Identity id(filename.toStdString());
+
+            //            QVector3D vec3 = vec3ReadFromBig(pathDir + dirName + "/primary.txt");
+            //            std::vector<float> point({ vec3.x(), vec3.y(), vec3.z() });
+            std::vector<float> pos = id.pos();
+            poses.insert(poses.end(), pos.begin(), pos.end());
+            poses.insert(poses.end(), colors.begin(), colors.end());
+
+            std::vector<float> density = id.density();
+            densities.insert(densities.end(), density.begin(), density.end());
+            densities.insert(densities.end(), colors.begin(), colors.end());
+
+            for (int i = 0; i < 3; ++i) {
+                std::vector<float> rgb = id[i];
+                rgbs[i].insert(rgbs[i].end(), rgb.begin(), rgb.end());
+                rgbs[i].insert(rgbs[i].end(), colors.begin(), colors.end());
+            }
+
             //            points.insert(points.end(), point.begin(), point.end());
 
-            QVector3D vec3 = vec3ReadFromBig(pathDir + dirName + "/primary.txt");
-            std::vector<float> point({ vec3.x(), vec3.y(), vec3.z() });
-            points.insert(points.end(), point.begin(), point.end());
-
-            points.insert(points.end(), colors.begin(), colors.end());
+            //            points.insert(points.end(), colors.begin(), colors.end());
 
             //            file.close();
         }
 
-        if (pathDir != str_newEventDir) {
-            QVector3D min = vec3Read(pathDir + "/min.txt");
-            QVector3D max = vec3Read(pathDir + "/max.txt");
+        //        if (pathDir != str_newEventDir) {
+        //            QVector3D min = vec3Read(pathDir + "/min.txt");
+        //            QVector3D max = vec3Read(pathDir + "/max.txt");
 
-            std::vector<float> a({ min.x(), min.y(), min.z() });
-            std::vector<float> b({ max.x(), min.y(), min.z() });
-            std::vector<float> c({ max.x(), max.y(), min.z() });
-            std::vector<float> d({ min.x(), max.y(), min.z() });
+        //            std::vector<float> a({ min.x(), min.y(), min.z() });
+        //            std::vector<float> b({ max.x(), min.y(), min.z() });
+        //            std::vector<float> c({ max.x(), max.y(), min.z() });
+        //            std::vector<float> d({ min.x(), max.y(), min.z() });
 
-            std::vector<float> e({ min.x(), min.y(), max.z() });
-            std::vector<float> f({ max.x(), min.y(), max.z() });
-            std::vector<float> g({ max.x(), max.y(), max.z() });
-            std::vector<float> h({ min.x(), max.y(), max.z() });
+        //            std::vector<float> e({ min.x(), min.y(), max.z() });
+        //            std::vector<float> f({ max.x(), min.y(), max.z() });
+        //            std::vector<float> g({ max.x(), max.y(), max.z() });
+        //            std::vector<float> h({ min.x(), max.y(), max.z() });
 
-            //            std::vector<float> box({ min.x(), min.y(), min.z() });
-            //            std::vector<float> boxes;
-            std::vector<std::pair<std::vector<float>&, std::vector<float>&>> indices = { { a, b }, { b, c }, { c, d }, { d, a }, { e, f }, { f, g }, { g, h }, { h, e }, { a, e }, { b, f }, { c, g }, { d, h } };
-            for (int i = 0; i < 12; ++i) {
-                std::vector<float>& first = indices[i].first;
-                std::vector<float>& second = indices[i].second;
+        //            //            std::vector<float> box({ min.x(), min.y(), min.z() });
+        //            //            std::vector<float> boxes;
+        //            std::vector<std::pair<std::vector<float>&, std::vector<float>&>> indices = { { a, b }, { b, c }, { c, d }, { d, a }, { e, f }, { f, g }, { g, h }, { h, e }, { a, e }, { b, f }, { c, g }, { d, h } };
+        //            for (int i = 0; i < 12; ++i) {
+        //                std::vector<float>& first = indices[i].first;
+        //                std::vector<float>& second = indices[i].second;
 
-                //                qDebug() << first << second;
-                boxes.insert(boxes.end(), first.begin(), first.end());
-                boxes.insert(boxes.end(), colors.begin(), colors.end());
-                boxes.insert(boxes.end(), second.begin(), second.end());
-                boxes.insert(boxes.end(), colors.begin(), colors.end());
-            }
+        //                //                qDebug() << first << second;
+        //                boxes.insert(boxes.end(), first.begin(), first.end());
+        //                boxes.insert(boxes.end(), colors.begin(), colors.end());
+        //                boxes.insert(boxes.end(), second.begin(), second.end());
+        //                boxes.insert(boxes.end(), colors.begin(), colors.end());
+        //            }
 
-            //            boxes.insert(boxes.end(), box.begin(), box.end());
-            //            boxes.insert(boxes.end(), colors.begin(), colors.end());
+        //            //            boxes.insert(boxes.end(), box.begin(), box.end());
+        //            //            boxes.insert(boxes.end(), colors.begin(), colors.end());
 
-            //            box = { max.x(), max.y(), max.z() };
-            //            boxes.insert(boxes.end(), box.begin(), box.end());
-            //            boxes.insert(boxes.end(), colors.begin(), colors.end());
-        }
+        //            //            box = { max.x(), max.y(), max.z() };
+        //            //            boxes.insert(boxes.end(), box.begin(), box.end());
+        //            //            boxes.insert(boxes.end(), colors.begin(), colors.end());
+        //        }
     }
-    Q_ASSERT(points.size() % 7 == 0);
-    qDebug() << "[MainWindow::on_modelChanged] load nb points =" << points.size() / 6;
+    Q_ASSERT(poses.size() % 7 == 0);
+    Q_ASSERT(densities.size() % 7 == 0);
+    //    qDebug() << "[MainWindow::on_modelChanged] load nb poses =" << poses.size() / 7;
 
-    Q_ASSERT(boxes.size() % 7 == 0);
+    //    Q_ASSERT(boxes.size() % 7 == 0);
     //    Q_ASSERT(boxes.size() == nbBoxes * 7 * 2);
 
-    int nbPoints = points.size() / 7;
-    points.insert(points.end(), boxes.begin(), boxes.end());
+    //    int nbPoints = points.size() / 7;
+    //    points.insert(points.end(), boxes.begin(), boxes.end());
 
     //    qDebug() << boxes;
 
-//    ui->openGLWidget->setPoints(points, nbPoints, boxes.size() / (7 * 2 * 12));
+    //    ui->openGLWidget->setPoints(points, nbPoints, boxes.size() / (7 * 2 * 12));
+    ui->openGLWidget_pos->render(poses);
+    ui->openGLWidget_density->render(densities);
+    ui->openGLWidget_first->render(rgbs[0]);
+    ui->openGLWidget_second->render(rgbs[1]);
+    ui->openGLWidget_third->render(rgbs[2]);
+    //    ui->openGLWidget_pos->render(m_triangle);
+    //    ui->openGLWidget_pos->render(m_triangle);
 }
 
 void MainWindow::updateKnownBestPicture()
@@ -568,18 +645,18 @@ void MainWindow::updateKnownBestPicture()
             best = cur;
         }
 
-//        QVector3D vec3 = vec3ReadFromBig(path + "primary.txt");
-//        for (int i = 0; i < 3; ++i) {
-//            min[i] = qMin(min[i], vec3[i]);
-//            max[i] = qMax(max[i], vec3[i]);
-//        }
-//        sum += vec3;
+        //        QVector3D vec3 = vec3ReadFromBig(path + "primary.txt");
+        //        for (int i = 0; i < 3; ++i) {
+        //            min[i] = qMin(min[i], vec3[i]);
+        //            max[i] = qMax(max[i], vec3[i]);
+        //        }
+        //        sum += vec3;
         ++cpt;
     }
 
-//    vec3Save(min, str_knownDir + knownSelected + "min.txt");
-//    vec3Save(max, str_knownDir + knownSelected + "max.txt");
-//    vec3Save(sum / cpt, str_knownDir + knownSelected + "mean.txt");
+    //    vec3Save(min, str_knownDir + knownSelected + "min.txt");
+    //    vec3Save(max, str_knownDir + knownSelected + "max.txt");
+    //    vec3Save(sum / cpt, str_knownDir + knownSelected + "mean.txt");
 
     //    QString knownEventDir = _model->data(knownEventSelected.first()).toString() + "/";
     best.save(str_knownDir + knownSelected + "best.jpg");

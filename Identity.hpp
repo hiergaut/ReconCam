@@ -48,7 +48,7 @@ class Color {
 
 class NColors {
   public:
-	// NColors() {}
+	NColors() {}
 	NColors(std::vector<Color> colors) : m_colors{colors} {}
 
 	bool operator<=(const NColors &right) const {
@@ -88,7 +88,7 @@ class NColors {
 // typedef struct s_identity Identity;
 class Identity {
   public:
-    // Identity() {};
+    Identity() {};
 	Identity(std::string path);
 	Identity(int x, int y, int width, int height, int density, NColors colors);
 
@@ -118,6 +118,20 @@ class Identity {
     Color operator()(int i) const {
         return m_colors(i);
     }
+
+    std::vector<float> pos() {
+        return std::vector<float>({static_cast<float>(m_x), static_cast<float>(m_y), 0.0f});
+    }
+
+    std::vector<float> density() {
+        return std::vector<float>({static_cast<float>(m_width), static_cast<float>(m_height), static_cast<float>(m_density)});
+    }
+
+    std::vector<float> operator[](int i) {
+        const Color & c = m_colors(i);
+        return std::vector<float>({static_cast<float>(c.m_r), static_cast<float>(c.m_g), static_cast<float>(c.m_b)});
+    }
+
 
 	// const NColors &colors() { return m_colors; }
 

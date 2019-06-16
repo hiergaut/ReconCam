@@ -51,6 +51,54 @@ private:
     QFileSystemModel* _model;
     std::map<QString, QColor> m_colors;
 
+    std::vector<float> m_square {
+        -1, -1, 0,
+        1, -1, 0,
+        1, 1, 0,
+        -1, 1, 0
+    };
+
+    std::vector<uint> m_squareEbo {
+        0, 1,
+        1, 2,
+        2, 3,
+        3, 0
+    };
+
+    std::vector<float> m_box {
+        -1, -1, -1,
+        1, -1, -1,
+        1, 1, -1,
+        -1, 1, -1,
+
+        -1, -1, 1,
+        1, -1, 1,
+        1, 1, 1,
+        -1, 1, 1,
+    };
+
+    std::vector<uint> m_boxEbo {
+        0, 1,
+        1, 2,
+        2, 3,
+        3, 0,
+        4, 5,
+        5, 6,
+
+        6, 7,
+        7, 4,
+        0, 4,
+        1, 5,
+        2, 6,
+        3, 7
+    };
+
+    const std::vector<float> m_triangle {
+
+        -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.5f,
+        0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.5f,
+        0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.5f
+    };
     //    QString str_learningRootDir { QDir::currentPath() + "/../learningFile/" };
     //    QString str_newEventDir { str_learningRootDir + "newEvent/" };
     //    QString str_knownDir { str_learningRootDir + "known/" };

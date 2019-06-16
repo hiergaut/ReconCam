@@ -38,6 +38,7 @@ SOURCES += \
         QTreeViewOpengl.cpp \
         main.cpp \
         mainwindow.cpp \
+        Identity.cpp \
         qfilesystemmodelnewevent.cpp
 
 HEADERS += \
@@ -56,6 +57,7 @@ HEADERS += \
         QTreeViewOpengl.h \
         global.h \
         mainwindow.h \
+        Identity.hpp \
         qfilesystemmodelnewevent.h
 
 FORMS += \

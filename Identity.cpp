@@ -1,13 +1,14 @@
 #include "Identity.hpp"
+#include <assert.h>
 
 // #include <vector>
 
-Identity::Identity(std::string path) : m_x{-1}, m_y{-1}, m_width{-1}, m_height{-1}, m_density{-1}, m_colors{NColors({})} {
+Identity::Identity(std::string path) {
 
 	// std::ifstream file("learningFile/known/" + filename + "/min.txt");
-	std::ifstream file(path);
+	std::ifstream file(path + "identity.txt");
 	if (!file.is_open()) {
-		std::cout << "cannot open file known" << std::endl;
+		std::cout << "cannot open file : " << path + "identity.txt" << std::endl;
 		exit(1);
 	}
 
@@ -33,6 +34,9 @@ Identity::Identity(std::string path) : m_x{-1}, m_y{-1}, m_width{-1}, m_height{-
 	m_colors = colors;
 
 	// return std::move(Point3f(h, h2, h3));
+    assert(0 <= m_x && m_x <= 640);
+    assert(0 <= m_y && m_y <= 480);
+
 }
 
 Identity::Identity(int x, int y, int width, int height, int density,

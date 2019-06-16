@@ -18,13 +18,23 @@
 #include <QOpenGLFunctions_3_3_Core>
 //#include <QOpenGLFunctions_4_5_Core>
 
+#define BUFF_MAX 7000
+
 class QOpenGLWidgetCluster : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core {
     Q_OBJECT
 public:
     QOpenGLWidgetCluster(QWidget* parent = nullptr);
     ~QOpenGLWidgetCluster();
 
-    void setPoints(const std::vector<float> points, int nbDots, int nbBoxes);
+//    void setPoints(const std::vector<float> points, int nbDots, int nbBoxes);
+    void render(const std::vector<float> points);
+    void setArea(std::vector<float> vbo, std::vector<uint> ebo);
+
+    void setNormalize(const QMatrix4x4 &normalize);
+
+    void setZCamera(float zCamera);
+
+    void setObject(const QMatrix4x4 &object);
 
 protected:
     void initializeGL() override;
@@ -39,6 +49,7 @@ protected:
     void mouseReleaseEvent(QMouseEvent * event) override;
     void mouseMoveEvent(QMouseEvent * event) override;
 
+
 private:
     void updateProjection();
 
@@ -46,18 +57,23 @@ private:
     //    QOpenGLVertexArrayObject m_vao;
     QOpenGLShaderProgram m_program[2];
 
-    uint vbo[2];
-    QOpenGLBuffer m_vbo;
-    QOpenGLBuffer m_vbo2;
-    QOpenGLBuffer m_ebo;
-    uint ebo;
-    QOpenGLVertexArrayObject m_vao;
+    uint m_vbo[2];
+    float m_vbo_data[2][BUFF_MAX];
+    int m_vbo_dataLen[2] = {0};
+//    QOpenGLBuffer m_vbo;
+//    QOpenGLBuffer m_vbo2;
+//    QOpenGLBuffer m_ebo;
+    uint m_ebo[2];
+    int m_ebo_data[2][BUFF_MAX];
+    int m_ebo_dataLen[2] = {0};
 
-    uint vertexShader;
-    uint fragmentShader;
-    uint shaderProgram;
+//    QOpenGLVertexArrayObject m_vao;
 
-    uint vao[2];
+//    uint vertexShader;
+//    uint fragmentShader;
+//    uint shaderProgram;
+
+    uint m_vao[2];
 //    uint vao2;
 
     float triangle [21] = {
@@ -78,11 +94,11 @@ private:
         -1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f
     };
 
-    std::vector<float> m_dots;
-    std::vector<float> m_boxes;
+//    std::vector<float> m_dots;
+//    std::vector<float> m_boxes;
 
-    int m_nbBoxes = 0;
-    int m_nbDots = 0;
+//    int m_nbBoxes = 0;
+//    int m_nbDots = 0;
 //    QVector<float> m_dots;
 //    uint m_nbDots;
 //    size_t m_dotsSize;
@@ -119,6 +135,20 @@ private:
         -1, 1, 1,
     };
 
+    float m_square[12] {
+        -1, -1, 0,
+        1, -1, 0,
+        1, 1, 0,
+        -1, 1, 0
+    };
+
+    uint m_squareEbo[8] {
+        0, 1,
+        1, 2,
+        2, 3,
+        3, 0
+    };
+
     uint m_boxIndices[24] {
         0, 1,
         1, 2,
@@ -148,21 +178,28 @@ private:
 //        7, 5, 4
     };
 
+//    float ** m_area;
+
     //    QBasicTimer m_timer;
+
+    QMatrix4x4 m_normalize;
 
     QMatrix4x4 m_projection;
     QMatrix4x4 m_view;
     QMatrix4x4 m_model;
+    QMatrix4x4 m_object;
 
     int m_projection_loc[2];
     int m_view_loc[2];
     int m_model_loc[2];
+    int m_normalize_loc[2];
+    int m_object_loc[2];
     float m_xRot =0;
     float m_yRot =0;
     float m_zRot =0;
     float m_fov = 75;
 
-    float m_zCamera = -3;
+    float m_zCamera = -2.5;
 
     QPoint posFirstClicked;
 

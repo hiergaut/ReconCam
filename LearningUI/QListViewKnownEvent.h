@@ -17,9 +17,9 @@ public:
 
     void setKnown(QListViewKnown *value);
 
-    void setLabel(QLabel *value);
+//    void setLabel(QLabel *value);
 
-    void setText(QTextEdit *value);
+//    void setText(QTextEdit *value);
 
 signals:
     void spacePressed();
@@ -29,9 +29,9 @@ protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
 
 private:
-    QLabel * label;
+//    QLabel * label;
     QListViewKnown * known;
-    QTextEdit * text;
+//    QTextEdit * text;
 };
 
 #endif // QLISTVIEWKNOWNEVENT_H

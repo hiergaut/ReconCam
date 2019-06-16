@@ -6,6 +6,7 @@
 
 #include <assert.h>
 #include <cassert>
+#include <chrono>
 #include <ctime>
 #include <dirent.h>
 #include <fstream>
@@ -17,9 +18,15 @@
 #include <string>
 #include <thread>
 #include <unistd.h>
+// #include <tuple>
 
-#include "color.hpp"
+// #include "Color.hpp"
+#include <set>
+
+#include "Gpio.hpp"
+#include "System.hpp"
 #include "function.hpp"
+// #include "LearningUI/Capture.h"
 
 #ifdef PC
 #define TIMELAPSE_INTERVAL 30 // 30 sec
@@ -28,7 +35,7 @@
 #define TIMELAPSE_INTERVAL 1200 // 20 min
 #endif
 
-#define NB_CAP_LEARNING_MODEL_FIRST 8
+#define NB_CAP_LEARNING_MODEL_FIRST 5
 #define NB_CAP_FOCUS_BRIGHTNESS 2
 
 // #define NB_CAP_MIN_FOR_REAL_MOTION 5
@@ -36,9 +43,13 @@
 #define NEW_OBJECT_MIN_DENSITY 10
 #define MAX_ERROR_DIST_FOR_NEW_POS_OBJECT 100
 #define MIN_MOV_YEARS_TO_SAVE_OBJECT 5
+
+#define MAX_MOVEMENTS 20
 // #define DELTA_DIFF_MAX_DENSITY 2000
 
 using namespace cv;
+
+RNG rng(29791);
 
 // ------------------------------- MAIN ---------------------------------------
 int main(int argc, char **argv) {
@@ -77,6 +88,7 @@ int main(int argc, char **argv) {
 	bool training = parser.get<bool>("training");
 	bool recon = parser.get<bool>("recon");
 	bool script = parser.get<bool>("script");
+	bool hasStream = !stream.empty();
 	// bool onlyRec = parser.get<bool>("onlyRec");
 	if (!parser.check()) {
 		parser.printMessage();
@@ -87,15 +99,17 @@ int main(int argc, char **argv) {
 #ifdef PC
 	gpioDir = "gpio/";
 
+	// if (hasStream) {
 	namedWindow("mask", WINDOW_AUTOSIZE);
 	namedWindow("mask2", WINDOW_AUTOSIZE);
 	namedWindow("drawing", WINDOW_AUTOSIZE);
+	// }
 #else
 	gpioDir = "/sys/class/gpio/";
 #endif
 
 	std::string deviceName;
-	if (stream.empty()) {
+	if (!hasStream) {
 		deviceName = std::to_string(device);
 		stream = "/dev/video" + deviceName;
 	} else {
@@ -151,8 +165,8 @@ int main(int argc, char **argv) {
 	Size sizeScreen(width, height);
 	vCap.release();
 
-	Mat notGreen = Mat::zeros(Size(width, height), CV_8UC3);
-	notGreen = Scalar(255, 0, 255);
+	// Mat notGreen = Mat::zeros(Size(width, height), CV_8UC3);
+	// notGreen = Scalar(255, 0, 255);
 
 	if (sensorGpioNum != -1) {
 		initGpio(sensorGpioNum, "in");
@@ -169,19 +183,27 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	std::map<std::string, std::tuple<Point3f, Point3f, Point3f>> boxes;
+	// std::map<std::string, std::tuple<Identity, Identity, Identity>> boxes;
+	// std::vector<std::pair<std::string, Box>> boxes;
+	std::map<std::string, Box> boxes;
 	if (recon) {
 
 		for (std::string filename : forEachFileInDir("learningFile/known/")) {
 			std::string path = "learningFile/known/" + filename + "/";
-			Point3f Min = readPointFromFile(path + "min.txt");
 
-			Point3f Mean = readPointFromFile(path + "mean.txt");
-			Point3f Max = readPointFromFile(path + "max.txt");
+			// Identity Min(path + "min.txt");
+			// Identity Mean(path + "mean.txt");
+			// Identity Max(path + "max.txt");
+			Box box(path);
 
-			boxes[filename] = {Min, Mean, Max};
+			// boxes[filename] = {Min, Mean, Max};
+			// auto tuple = std::make_tuple(Min, Mean, Max);
+			boxes.insert(std::make_pair(filename, std::move(box)));
+			// boxes[filename] = box;
 		}
 	}
+
+	bool movsFound[MAX_MOVEMENTS];
 
 	// --------------------------- INFINITE LOOP ------------------------------
 	while (1) {
@@ -276,9 +298,8 @@ int main(int argc, char **argv) {
 		outputVideo << inputFrame;
 		outputVideoRec << inputFrame;
 
-
 		iNewObj = 0;
-		iCap = -1;
+		iCap = 0;
 		tombs.clear();
 		objects.clear();
 
@@ -288,6 +309,7 @@ int main(int argc, char **argv) {
 		bool streamFinished = false;
 		drawing = inputFrame;
 
+		auto start = std::chrono::high_resolution_clock::now();
 		// ----------------------- WHILE HAS MOVEMENT
 		while (hasMovement()) {
 			++iCap;
@@ -300,7 +322,8 @@ int main(int argc, char **argv) {
 				break;
 			}
 			outputVideoRec << inputFrame;
-			if (iCap < NB_CAP_FOCUS_BRIGHTNESS) {
+			if (iCap <= NB_CAP_FOCUS_BRIGHTNESS) {
+				imshow("drawing", inputFrame);
 				continue;
 			}
 
@@ -319,24 +342,25 @@ int main(int argc, char **argv) {
 			model->apply(inputFrame, mask);
 #ifdef PC
 			if (waitKey(100) == 'q') {
-				return 0;
+				break;
+				// return 0;
 			}
 			imshow("mask", mask);
 #endif
 
-			if (iCap < NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST) {
+			if (iCap <= NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST) {
 				// if (iCap < NB_CAP_FOCUS_BRIGHTNESS) {
 #ifdef PC
+				// imshow("mask", mask);
 				imshow("drawing", inputFrame);
 #endif
 				outputVideo << inputFrame;
 				continue;
 			}
 
-
 			// ------------------- BOUNDING MOVMENT ---------------------------
 			// threshold(mask, mask, 127, 255, THRESH_BINARY);
-			medianBlur(mask, mask, 11);
+			medianBlur(mask, mask, 15);
 
 			// auto kernel = getStructuringElement(MORPH_RECT, Size(3, 3));
 			// morphologyEx(mask, mask, MORPH_OPEN, kernel, Point(-1, -1), 1);
@@ -353,11 +377,11 @@ int main(int argc, char **argv) {
 			// medianBlur(mask, mask, 9);
 
 			// dilate(mask, mask, kernel, Point(-1, -1), 1);
-			// threshold(mask, mask, 127, 255, THRESH_BINARY);
 			// medianBlur(mask, mask, 21);
 			// const int size = 100;
 			// blur(mask, mask, Size(size, size));
 			// blur(mask, mask, Size(size, size));
+			threshold(mask, mask, 0, 255, THRESH_BINARY);
 
 #ifdef PC
 			imshow("mask2", mask);
@@ -371,8 +395,11 @@ int main(int argc, char **argv) {
 						 CHAIN_APPROX_SIMPLE, Point(0, 0));
 
 			int nbMovements = contours.size();
-			if (nbMovements > 9) {
+			if (nbMovements >= MAX_MOVEMENTS) {
 				outputVideo << inputFrame;
+#ifdef PC
+				imshow("drawing", inputFrame);
+#endif
 				continue;
 			}
 			std::vector<std::vector<Point>> contours_poly(nbMovements);
@@ -394,7 +421,9 @@ int main(int argc, char **argv) {
 			}
 
 			// ------------------- FIND PREVIOUS OBJECTS POSITIONS
-			bool movFound[nbMovements] = {0};
+			for (int i = 0; i < MAX_MOVEMENTS; ++i) {
+				movsFound[i] = 0;
+			}
 			std::set<Object> newObjects;
 
 			std::set<Object>::iterator it = objects.begin();
@@ -404,7 +433,7 @@ int main(int argc, char **argv) {
 				int iMov = -1;
 				int distMovMin = MAX_ERROR_DIST_FOR_NEW_POS_OBJECT;
 				for (int i = 0; i < nbMovements; ++i) {
-					if (!movFound[i]) {
+					if (!movsFound[i]) {
 						double density = 3.0 * fmax(obj.density, mu[i].m00) /
 										 fmin(obj.density, mu[i].m00);
 
@@ -430,7 +459,6 @@ int main(int argc, char **argv) {
 					if (obj.age < MIN_MOV_YEARS_TO_SAVE_OBJECT) {
 						tombs.push_back({obj.pos, obj.color});
 
-
 					}
 					// save position of no moved object
 					else {
@@ -444,21 +472,27 @@ int main(int argc, char **argv) {
 				}
 				// object moved
 				else {
-					movFound[iMov] = true;
+					movsFound[iMov] = true;
 
 					Point2i tl = boundRect[iMov].tl();
 					Point2i tr = tl + Point2i(boundRect[iMov].width + 5, 10);
 
-					Capture cap{Mat(inputFrame, boundRect[iMov]).clone(),
-								Mat(mask, boundRect[iMov]).clone(),
-								contours[iMov], boundRect[iMov],
-								static_cast<int>(mu[iMov].m00)};
-
-
-					obj.trace.emplace_back(cap);
+					// std::vector<std::vector<Point>> contours
+					// {contours[iMov]};
+					const Rect &rect{boundRect[iMov]};
+					// std::cout << "rect : " << rect << std::endl;
+					int density = mu[iMov].m00;
+					assert(!inputFrame.empty());
+					assert(!rect.empty());
+					Mat img = Mat(inputFrame, rect).clone();
+					Mat m = Mat(mask, rect).clone();
+					// NColors colors = Capture::getPrimaryColors(img, m);
+					Capture cap(std::move(img), std::move(m), contours[iMov],
+								rect, mc[iMov].x, mc[iMov].y, rect.width,
+								rect.height, density);
 
 					// if found best trace
-					if (mu[iMov].m00 > obj.trace[obj.bestCapture].density) {
+					if (mu[iMov].m00 > obj.trace[obj.bestCapture].m_density) {
 						obj.bestCapture = obj.trace.size() - 1;
 					}
 					obj.speedVector = mc[iMov] - obj.pos;
@@ -492,25 +526,36 @@ int main(int argc, char **argv) {
 						 Scalar(0, 0, 255), 1, LineTypes::LINE_AA);
 
 					if (recon && objects.size() <= 10) {
+						// if (obj.age > MIN_MOV_YEARS_TO_SAVE_OBJECT) {
 						if (!obj.name.compare("")) {
-							Triplet triplet =
-								getPrimaryColor(cap.img, cap.mask);
-							putText(drawing, std::string(triplet),
-									tr + Point(0, -20), FONT_HERSHEY_DUPLEX,
-									0.5, obj.color, 1);
+							cap.buildNColors();
+							// Triplet triplet =
+							// 	getPrimaryColor(cap.img, cap.mask);
+							// putText(drawing, std::string(triplet),
+							// 		tr + Point(0, -20), FONT_HERSHEY_DUPLEX,
+							// 		0.5, obj.color, 1);
+							// cap.getPrimaryColors();
 
 							std::string bestPath = "";
 							double bestDist = 640 * 480;
 							for (const auto &pair : boxes) {
 								std::string path = pair.first;
-								std::tuple<Point3f, Point3f, Point3f> bound =
-									pair.second;
-								const Point3f &Min = std::get<0>(bound);
-								const Point3f &Mean = std::get<1>(bound);
-								const Point3f &Max = std::get<2>(bound);
+								auto box = pair.second;
+								// std::tuple<Identity, Identity, Identity>
+								// bound = pair.second;
+								// const Identity &Min = std::get<0>(bound);
+								// const Identity &Mean = std::get<1>(bound);
+								// const Identity &Max = std::get<2>(bound);
 
-								if (triplet.in(Min, Max)) {
-									double curDist = triplet.dist(Mean);
+								// const Identity &cur{cap.m_id};
+								const Identity &cur = *cap.m_id;
+
+								// if (triplet.in(Min, Max)) {
+								if (box.in(cur)) {
+									// if (Min <= cur && cur <= Max) {
+									// double curDist = triplet.dist(Mean);
+									double curDist = cur - box.center();
+
 									if (curDist < bestDist) {
 										curDist = bestDist;
 										bestPath = path;
@@ -536,6 +581,7 @@ int main(int argc, char **argv) {
 						}
 					}
 
+					obj.trace.emplace_back(std::move(cap));
 					newObjects.insert(std::move(obj));
 				} // if (iMov != -1) {
 
@@ -544,31 +590,40 @@ int main(int argc, char **argv) {
 
 			objects = std::move(newObjects);
 
+			// non objects movements become new objects
 			for (int i = 0; i < nbMovements; ++i) {
 
 				int density = mu[i].m00;
 				// new object
-				if (!movFound[i] && density > NEW_OBJECT_MIN_DENSITY) {
+				if (!movsFound[i] && density > NEW_OBJECT_MIN_DENSITY) {
 					Scalar color =
 						Scalar(rng.uniform(0, 255), rng.uniform(0, 255),
 							   rng.uniform(0, 255));
 
-					Capture cap{Mat(inputFrame, boundRect[i]).clone(),
-								Mat(mask, boundRect[i]).clone(), contours[i],
-								boundRect[i], density};
+					const Rect &rect{boundRect[i]};
+					// std::cout << "rect : " << rect << std::endl;
+					assert(!inputFrame.empty());
+					assert(!rect.empty());
+					const Mat &img = Mat(inputFrame, rect).clone();
+					assert(!img.empty());
+					const Mat &m = Mat(mask, rect).clone();
+					assert(!m.empty());
+					// NColors colors = Capture::getPrimaryColors(img, m);
+					Capture cap(std::move(img), std::move(m), contours[i], rect,
+								mc[i].x, mc[i].y, rect.width, rect.height,
+								density);
 
 					std::vector<std::vector<Point>> contour{contours[i]};
 					drawContours(drawing, contour, 0, color, 2);
 
 					Object obj{0.0,   mc[i],	 density, Vec2f(0, 0),
 							   color, iNewObj++, 0,		  {std::move(cap)},
-							   mc[i], 0};
+							   mc[i], 0,		 "",	  {}};
 
 					objects.insert(std::move(obj));
 				}
 			}
 			nbObjects = objects.size();
-
 
 			putText(drawing, "nbObjs : " + std::to_string(nbObjects),
 					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 5);
@@ -603,6 +658,10 @@ int main(int argc, char **argv) {
 			outputVideo << drawing;
 
 		} // while (hasMovement())
+		auto end = std::chrono::high_resolution_clock::now();
+		auto duration =
+			std::chrono::duration_cast<std::chrono::seconds>(end - start)
+				.count();
 		vCap.release();
 
 		std::string trainingPath = trainDir + getDay() + "_" + motionId;
@@ -613,34 +672,39 @@ int main(int argc, char **argv) {
 			// if (obj.distance > MIN_MOV_DIST_TO_SAVE_OBJECT) {
 			if (obj.age > MIN_MOV_YEARS_TO_SAVE_OBJECT) {
 
+				// assert(obj.trace[obj.bestCapture] != nullptr);
 				const Capture &bestCapture = obj.trace[obj.bestCapture];
-				const Mat &m = bestCapture.img;
+				// const Mat &img = bestCapture.m_img;
 
-				if (bestCapture.rect.empty()) {
-					assert(!bestCapture.img.empty());
-					imshow("bestCapture", bestCapture.img);
-					waitKey(0);
-					continue;
-				}
-				assert(!bestCapture.rect.empty());
-				assert(!bestCapture.mask.empty());
-				assert(bestCapture.rect.size() == bestCapture.mask.size());
+				assert(!bestCapture.m_rect.empty());
+				// if (bestCapture.m_rect.empty()) {
+				// 	assert(!bestCapture.m_img.empty());
+				// 	imshow("bestCapture", bestCapture.m_img);
+				// 	waitKey(0);
+				// 	continue;
+				// }
+				// assert(!bestCapture.m_rect.empty());
+				assert(!bestCapture.m_mask.empty());
+				assert(bestCapture.m_rect.size() == bestCapture.m_mask.size());
 
-				m.copyTo(Mat(drawing, bestCapture.rect), bestCapture.mask);
-				std::vector<std::vector<Point>> contours{bestCapture.contour};
+				bestCapture.m_img.copyTo(Mat(drawing, bestCapture.m_rect),
+										 bestCapture.m_mask);
+				std::vector<std::vector<Point>> contours{bestCapture.m_contour};
 				drawContours(drawing, contours, 0, obj.color, 2);
 				++nbRealObjects;
 
 				if (training) {
 					std::string newTrainingFile =
-						trainingPath +
-						"_" + std::to_string(obj.id) + "_";
+						trainingPath + "_" + std::to_string(obj.id) + "_";
 
-					Mat a;
+					// Mat a;
 					for (size_t i = 0; i < obj.trace.size(); ++i) {
-						const Capture &cap{obj.trace[i]};
-						const Mat &img{cap.img};
-						const Mat &mask{cap.mask};
+						const Capture &cap = obj.trace[i];
+						if (cap.m_id == nullptr) {
+							cap.buildNColors();
+						}
+						// const Mat &img{cap.m_img};
+						// const Mat &m{cap.m_mask};
 
 						const std::string dir =
 							newTrainingFile + std::to_string(i) + "/";
@@ -650,19 +714,53 @@ int main(int argc, char **argv) {
 						cmd = "mkdir -p " + dir;
 						system(cmd.c_str());
 
-						img.copyTo(a, cap.mask);
+						assert(cap.m_img.size == cap.m_mask.size);
+						assert(cap.m_img.dims == cap.m_mask.dims);
+						// Mat a(cap.m_width, cap.m_height, CV_8UC3,
+						// 	  Scalar(255, 0, 0));
+
+						Mat a(cap.m_mask.size(), CV_8UC3, Scalar(255, 0, 255));
+
+						// a.copyTo(cap.m_img, cap.m_mask);
+						// bestCapture.m_img.copyTo(Mat(drawing,
+						// bestCapture.m_rect), 						 bestCapture.m_mask);
+						cap.m_img.copyTo(a, cap.m_mask);
+						// cap.m_img.copyTo(a);
+
+						// cap.m_mask.copyTo(a);
+						assert(cap.m_id != nullptr);
+						Identity &id = *cap.m_id;
+						// rectangle(a, Rect(0, 0, 20, 20), Scalar(first.r(),
+						// first.g(), first.b()));
+
+						int w = cap.m_width;
+						int h = cap.m_height;
+						int hStep = w / 5;
+						int vStep = h / 5;
+						// Scalar scalar(id[0]);
+                        // rectangle(a, Rect(0, 0, hStep * 3, vStep +2), Scalar(0, 255, 0), -1);
+						for (int j = 0; j < 3; ++j) {
+							const Color col = id(j);
+							rectangle(a, Rect(hStep * j, 0, hStep, vStep),
+									  Scalar(col.m_r, col.m_g, col.m_b),
+									  -1);
+						}
+
 						imwrite(dir + "image.jpg", a);
+						// imwrite(dir + "image.jpg", cap.m_img);
+						// continue;
 
-						Mat histImg;
-						Triplet triplet = hsvHist(img, mask, histImg);
-						imwrite(dir + "hist.jpg", histImg);
+						// Mat histImg;
+						// Triplet triplet = hsvHist(img, mask, histImg);
+						// imwrite(dir + "hist.jpg", histImg);
+						// cap.getPrimaryColors();
+						cap.m_id->write(dir);
 
-						triplet.write(dir + "primary.txt");
+						// triplet.write(dir + "primary.txt");
 					}
 				}
 			}
 		}
-
 
 		outputVideo << drawing;
 		outputVideo.release();
@@ -696,9 +794,13 @@ int main(int argc, char **argv) {
 			gpioSetValue(lightGpio, 0);
 		}
 
+		std::cout << "recording fps : " << static_cast<double>(iCap) / duration
+				  << std::endl;
+
 		if (streamFinished) {
 			return 0;
 		}
+		return 0;
 	} // while (1)
 
 	return 0;

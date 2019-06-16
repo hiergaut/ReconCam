@@ -37,69 +37,69 @@
 //        qDebug() << "expand " << view->model()->data(index);
 //    }
 //}
-QVector3D MainWindow::vec3ReadFromBig(QString path)
-{
-    QVector3D vec3;
+//QVector3D MainWindow::vec3ReadFromBig(QString path)
+//{
+//    QVector3D vec3;
 
-    QFile file(path);
+//    QFile file(path);
 
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qDebug() << "cannot open file : " << file;
-    }
+//    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+//        qDebug() << "cannot open file : " << file;
+//    }
 
-    QTextStream in(&file);
-    for (int i = 0; i < 3; ++i) {
-        QString line = in.readLine();
+//    QTextStream in(&file);
+//    for (int i = 0; i < 3; ++i) {
+//        QString line = in.readLine();
 
-        const QRegExp rx("[ ]");
-        QStringList list = line.split(rx);
+//        const QRegExp rx("[ ]");
+//        QStringList list = line.split(rx);
 
-        Q_ASSERT(list.size() == 3);
-        float h = list[0].toFloat();
-        Q_ASSERT(-1.0f <= h && h <= 1.0f);
+//        Q_ASSERT(list.size() == 3);
+//        float h = list[0].toFloat();
+//        Q_ASSERT(-1.0f <= h && h <= 1.0f);
 
-        vec3[i] = h;
-    }
-    file.close();
-    return vec3;
-}
+//        vec3[i] = h;
+//    }
+//    file.close();
+//    return vec3;
+//}
 
-QVector3D MainWindow::vec3Read(QString path)
-{
-    QVector3D vec3;
+//QVector3D MainWindow::vec3Read(QString path)
+//{
+//    QVector3D vec3;
 
-    QFile file(path);
+//    QFile file(path);
 
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qDebug() << "cannot open file : " << file;
-    }
+//    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+//        qDebug() << "cannot open file : " << file;
+//    }
 
-    QTextStream in(&file);
-    QString line = in.readLine();
+//    QTextStream in(&file);
+//    QString line = in.readLine();
 
-    const QRegExp rx("[ ]");
-    QStringList list = line.split(rx);
-    Q_ASSERT(list.size() == 3);
+//    const QRegExp rx("[ ]");
+//    QStringList list = line.split(rx);
+//    Q_ASSERT(list.size() == 3);
 
-    for (int i = 0; i < 3; ++i) {
-        float h = list[i].toFloat();
-        Q_ASSERT(-1.0f <= h && h <= 1.0f);
+//    for (int i = 0; i < 3; ++i) {
+//        float h = list[i].toFloat();
+//        Q_ASSERT(-1.0f <= h && h <= 1.0f);
 
-        vec3[i] = h;
-    }
-    file.close();
-    return vec3;
-}
+//        vec3[i] = h;
+//    }
+//    file.close();
+//    return vec3;
+//}
 
-void vec3Save(QVector3D vec3, QString path)
-{
-    QFile file(path);
-    file.open(QIODevice::WriteOnly);
-    QTextStream out(&file);
+//void vec3Save(QVector3D vec3, QString path)
+//{
+//    QFile file(path);
+//    file.open(QIODevice::WriteOnly);
+//    QTextStream out(&file);
 
-    out << vec3.x() << " " << vec3.y() << " " << vec3.z() << "\n";
-    file.close();
-}
+//    out << vec3.x() << " " << vec3.y() << " " << vec3.z() << "\n";
+//    file.close();
+//}
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -153,8 +153,8 @@ MainWindow::MainWindow(QWidget* parent)
     ui->listView_newEvent->setRootIndex(_model->index(str_newEventDir));
     ui->listView_newEvent->setItemDelegate(new QStyledItemDelegateThumbnail(_model, ui->listView_newEvent));
 
-    ui->listView_newEvent->setText(ui->textEdit_hist);
-    ui->listView_newEvent->setLabel(ui->label_hist);
+//    ui->listView_newEvent->setText(ui->textEdit_hist);
+//    ui->listView_newEvent->setLabel(ui->label_hist);
     //        ui->listView_newEvent->setSelectionMode(QAbstractItemView::ExtendedSelection);
     connect(ui->listView_newEvent, &QListViewNewEvent::enterPressed, this, &MainWindow::on_moveNewEventSelectedToKnown);
     connect(ui->listView_newEvent, &QListViewNewEvent::deletePressed, this, &MainWindow::on_deleteNewEventSelected);
@@ -197,9 +197,9 @@ MainWindow::MainWindow(QWidget* parent)
     ui->listView_knownEvent->setModel(_model);
     ui->listView_knownEvent->setRootIndex(_model->index(str_learningRootDir + "empty/"));
     ui->listView_knownEvent->setItemDelegate(new QStyledItemDelegateThumbnailDown(_model, ui->listView_knownEvent, ui->listView_knownEvent));
-    ui->listView_knownEvent->setLabel(ui->label_hist);
+//    ui->listView_knownEvent->setLabel(ui->label_hist);
     ui->listView_knownEvent->setKnown(ui->listView_known);
-    ui->listView_knownEvent->setText(ui->textEdit_hist);
+//    ui->listView_knownEvent->setText(ui->textEdit_hist);
 
     connect(ui->listView_knownEvent, &QListViewKnownEvent::spacePressed, this, &MainWindow::on_moveKnownEventSelectedToNewEvent);
     connect(ui->listView_knownEvent, &QListViewKnownEvent::deletePressed, this, &MainWindow::on_deleteKnownEventSelected);
@@ -229,31 +229,31 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::on_pushButton_up_clicked()
-{
-    on_moveKnownEventSelectedToNewEvent();
-}
+//void MainWindow::on_pushButton_up_clicked()
+//{
+//    on_moveKnownEventSelectedToNewEvent();
+//}
 
-void MainWindow::on_pushButton_down_clicked()
-{
-    on_moveNewEventSelectedToKnown();
-}
+//void MainWindow::on_pushButton_down_clicked()
+//{
+//    on_moveNewEventSelectedToKnown();
+//}
 
-void MainWindow::on_pushButton_deleteAllNewEvent_clicked()
-{
-    //    QDir newEventDir(str_newEventDir);
-    //    newEventDir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
-    //    for (const QString& file : newEventDir.entryList()) {
-    //        newEventDir.remove(file);
-    //    }
+//void MainWindow::on_pushButton_deleteAllNewEvent_clicked()
+//{
+//    //    QDir newEventDir(str_newEventDir);
+//    //    newEventDir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
+//    //    for (const QString& file : newEventDir.entryList()) {
+//    //        newEventDir.remove(file);
+//    //    }
 
-    QDir dir(str_newEventDir);
-    Q_ASSERT(dir.exists());
-    if (!dir.removeRecursively()) {
-        qDebug() << "unable to remove dir : " << str_newEventDir;
-    }
-    dir.mkpath(".");
-}
+//    QDir dir(str_newEventDir);
+//    Q_ASSERT(dir.exists());
+//    if (!dir.removeRecursively()) {
+//        qDebug() << "unable to remove dir : " << str_newEventDir;
+//    }
+//    dir.mkpath(".");
+//}
 
 void MainWindow::on_moveNewEventSelectedToKnown()
 {
@@ -431,6 +431,7 @@ void MainWindow::on_deleteKnownEventSelected()
 
 void MainWindow::on_modelChanged()
 {
+    return;
     //    using vec3 = std::vector<float>;
     std::vector<float> points;
 
@@ -476,6 +477,7 @@ void MainWindow::on_modelChanged()
 
         for (const QString& dirName : dir.entryList()) {
             //            points.insert(points.end(), point.begin(), point.end());
+
             QVector3D vec3 = vec3ReadFromBig(pathDir + dirName + "/primary.txt");
             std::vector<float> point({ vec3.x(), vec3.y(), vec3.z() });
             points.insert(points.end(), point.begin(), point.end());
@@ -532,7 +534,7 @@ void MainWindow::on_modelChanged()
 
     //    qDebug() << boxes;
 
-    ui->openGLWidget->setPoints(points, nbPoints, boxes.size() / (7 * 2 * 12));
+//    ui->openGLWidget->setPoints(points, nbPoints, boxes.size() / (7 * 2 * 12));
 }
 
 void MainWindow::updateKnownBestPicture()
@@ -566,18 +568,18 @@ void MainWindow::updateKnownBestPicture()
             best = cur;
         }
 
-        QVector3D vec3 = vec3ReadFromBig(path + "primary.txt");
-        for (int i = 0; i < 3; ++i) {
-            min[i] = qMin(min[i], vec3[i]);
-            max[i] = qMax(max[i], vec3[i]);
-        }
-        sum += vec3;
+//        QVector3D vec3 = vec3ReadFromBig(path + "primary.txt");
+//        for (int i = 0; i < 3; ++i) {
+//            min[i] = qMin(min[i], vec3[i]);
+//            max[i] = qMax(max[i], vec3[i]);
+//        }
+//        sum += vec3;
         ++cpt;
     }
 
-    vec3Save(min, str_knownDir + knownSelected + "min.txt");
-    vec3Save(max, str_knownDir + knownSelected + "max.txt");
-    vec3Save(sum / cpt, str_knownDir + knownSelected + "mean.txt");
+//    vec3Save(min, str_knownDir + knownSelected + "min.txt");
+//    vec3Save(max, str_knownDir + knownSelected + "max.txt");
+//    vec3Save(sum / cpt, str_knownDir + knownSelected + "mean.txt");
 
     //    QString knownEventDir = _model->data(knownEventSelected.first()).toString() + "/";
     best.save(str_knownDir + knownSelected + "best.jpg");

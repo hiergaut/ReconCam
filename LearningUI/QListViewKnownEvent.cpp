@@ -43,17 +43,17 @@ bool QListViewKnownEvent::eventFilter(QObject* watched, QEvent* event)
 //                    qDebug() << itemText;
         QToolTip::showText(helpEvent->globalPos(), itemText, this);
 
-        QString path = str_knownDir + known->getSelected() + itemText + "/";
-        QPixmap pix(path + "hist.jpg");
-        QFile file(path + "primary.txt");
-        file.open(QFile::ReadOnly | QFile::Text);
-        QTextStream in (&file);
+//        QString path = str_knownDir + known->getSelected() + itemText + "/";
+//        QPixmap pix(path + "hist.jpg");
+//        QFile file(path + "primary.txt");
+//        file.open(QFile::ReadOnly | QFile::Text);
+//        QTextStream in (&file);
 
-        QString data = in.readAll();
-//        qDebug() << data;
-        text->setText(data);
+//        QString data = in.readAll();
+////        qDebug() << data;
+//        text->setText(data);
 
-        label->setPixmap(pix);
+//        label->setPixmap(pix);
 //        label->setToolTip()
 
 //        QPixmap pix(str_kn)
@@ -80,15 +80,15 @@ bool QListViewKnownEvent::eventFilter(QObject* watched, QEvent* event)
     return QListView::eventFilter(watched, event);
 }
 
-void QListViewKnownEvent::setText(QTextEdit *value)
-{
-    text = value;
-}
+//void QListViewKnownEvent::setText(QTextEdit *value)
+//{
+//    text = value;
+//}
 
-void QListViewKnownEvent::setLabel(QLabel *value)
-{
-    label = value;
-}
+//void QListViewKnownEvent::setLabel(QLabel *value)
+//{
+//    label = value;
+//}
 
 void QListViewKnownEvent::setKnown(QListViewKnown *value)
 {

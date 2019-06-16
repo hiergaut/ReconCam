@@ -13,9 +13,9 @@ class QListViewNewEvent : public QListView {
 public:
     QListViewNewEvent(QWidget* parent);
 
-    void setLabel(QLabel *value);
+//    void setLabel(QLabel *value);
 
-    void setText(QTextEdit *value);
+//    void setText(QTextEdit *value);
 
 signals:
     void enterPressed();
@@ -26,8 +26,8 @@ protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
 
 private:
-    QLabel * label;
-    QTextEdit * text;
+//    QLabel * label;
+//    QTextEdit * text;
 
 };
 

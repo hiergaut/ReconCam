@@ -68,3 +68,5 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 RESOURCES += \
     OpenGL/Resources.qrc
+
+#INCLUDEPATH += /usr/include/opencv4/

@@ -8,6 +8,7 @@
 #include <QItemSelection>
 #include <QStandardItemModel>
 
+
 namespace Ui {
 class MainWindow;
 }
@@ -23,10 +24,9 @@ public:
     QVector3D vec3Read(QString path);
 
 private slots:
-    void on_pushButton_up_clicked();
-    void on_pushButton_down_clicked();
-
-    void on_pushButton_deleteAllNewEvent_clicked();
+//    void on_pushButton_up_clicked();
+//    void on_pushButton_down_clicked();
+//    void on_pushButton_deleteAllNewEvent_clicked();
 
 public slots:
     void on_moveNewEventSelectedToKnown();

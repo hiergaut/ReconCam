@@ -19,9 +19,10 @@
 			"type": "shell",
 			// "command": "make && ./a.out 10 -remote=/srv/http/motion/",
 			// "command": "rm -fr motion && make CFLAGS=\"-D PC\" && ./a.out --sensor=10 --training=true --recon=true --script=true",
-			// "command": "rm -fr motion && make CFLAGS=\"-D PC\" && ./a.out --sensor=10",
-			"command": "rm -fr motion && make CFLAGS=\"-D PC\" && i3-msg workspace 8 && ./a.out --sensor=10 --stream=video.avi && i3-msg workspace 0",
-			// "command": "rm -fr motion && make CFLAGS=\"-D PC\" &&  ./a.out --sensor=10 --stream=video.avi",
+			// "command": "rm -fr motion && make CFLAGS=\"-D PC\" && ./a.out --sensor=10 --training=true",
+			// "command": "rm -fr motion && make CFLAGS=\"-D PC\" && i3-msg workspace 8 && ./a.out --sensor=10 --stream=video.avi && i3-msg workspace 0",
+			// "command": "rm -fr motion learningFile && make CFLAGS=\"-D PC\" && i3-msg workspace 8 && ./a.out --sensor=10 --stream=video.avi --training=true && i3-msg workspace 0",
+			"command": "rm -fr motion learningFile && make CFLAGS=\"-D PC\" && i3-msg workspace 8 && ./a.out --sensor=10 --training=true && i3-msg workspace 0",
 			// "command": "g++ *.cpp && ./a.out",
 			"problemMatcher": "$gcc",
 		}

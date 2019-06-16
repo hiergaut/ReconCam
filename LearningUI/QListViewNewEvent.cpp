@@ -39,25 +39,25 @@ bool QListViewNewEvent::eventFilter(QObject* watched, QEvent* event)
         QToolTip::showText(helpEvent->globalPos(), itemText, this);
 
         QString path = str_newEventDir + itemText + "/";
-        QPixmap pix(path + "hist.jpg");
-        QFile file(path + "primary.txt");
-        file.open(QFile::ReadOnly | QFile::Text);
-        QTextStream in (&file);
+//        QPixmap pix(path + "hist.jpg");
+//        QFile file(path + "primary.txt");
+//        file.open(QFile::ReadOnly | QFile::Text);
+//        QTextStream in (&file);
 
-        QString data;
-        QRegExp reg("[ ]");
-        while (! in.atEnd()) {
-            QString line = in.readLine();
-            QStringList list = line.split(reg);
-            for (int i =0; i <3; ++i) {
-                data += list[i] + "\n";
-            }
-            data += "\n";
-        }
-        file.close();
+//        QString data;
+//        QRegExp reg("[ ]");
+//        while (! in.atEnd()) {
+//            QString line = in.readLine();
+//            QStringList list = line.split(reg);
+//            for (int i =0; i <3; ++i) {
+//                data += list[i] + "\n";
+//            }
+//            data += "\n";
+//        }
+//        file.close();
 //        QString data = in.readAll();
-        text->setText(data);
-        label->setPixmap(pix);
+//        text->setText(data);
+//        label->setPixmap(pix);
         return true;
     } else if (event->type() == QEvent::KeyPress) {
 //        qDebug() << "key pressed";
@@ -79,15 +79,15 @@ bool QListViewNewEvent::eventFilter(QObject* watched, QEvent* event)
     //    }
 }
 
-void QListViewNewEvent::setText(QTextEdit *value)
-{
-    text = value;
-}
+//void QListViewNewEvent::setText(QTextEdit *value)
+//{
+//    text = value;
+//}
 
-void QListViewNewEvent::setLabel(QLabel *value)
-{
-    label = value;
-}
+//void QListViewNewEvent::setLabel(QLabel *value)
+//{
+//    label = value;
+//}
 
 //bool QListViewNewEvent::event(QEvent *event)
 //{

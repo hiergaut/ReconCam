@@ -229,6 +229,15 @@ class Identity {
         m_colors.expandMax(right.m_colors);
     }
 
+    friend std::ostream & operator<<(std::ostream & out, const Identity & id) {
+        out << id.m_x << " " << id.m_y << " " << id.m_width << " " << id.m_height << " " << id.m_density << std::endl;
+        for (int i =0; i <3; ++i) {
+            out << id.m_colors(i) << std::endl;
+        }
+        return out;
+        // out << m_colors;
+    }
+
 	// const NColors &colors() { return m_colors; }
 
   private:

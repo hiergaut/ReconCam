@@ -45,9 +45,10 @@ class Capture {
 		  m_y{y}, m_width{width}, m_height{height}, m_density{density} {}
 
     ~Capture() {
-        if (m_id != nullptr) {
-            delete m_id;
-        }
+        // if (m_id != nullptr) {
+        //     delete m_id;
+        //     m_id = nullptr;
+        // }
     }
 
 	//   private:
@@ -61,8 +62,9 @@ class Capture {
 	int m_height;
 	int m_density;
 
-	mutable Identity * m_id = nullptr;
-    // mutable bool m_build {false};
+	// mutable Identity * m_id = nullptr;
+    mutable Identity m_id;
+    mutable bool m_build {false};
 };
 
 typedef struct s_object {

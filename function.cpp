@@ -113,6 +113,8 @@ void Capture::buildNColors() const {
 	std::vector<Color> firstThree;
 
 	// id.colors.clear();
+    assert(colors.size() >= 3);
+
 	int cpt = 1;
 	for (const ColorSorted &c : colors) {
 		// std::cout << c.intensity << " " << c.h << " " << c.s << std::endl;
@@ -128,7 +130,9 @@ void Capture::buildNColors() const {
 	}
     // m_build = true;
 
-    m_id = new Identity(m_x, m_y, m_width, m_height, m_density, firstThree);
+    NColors col(firstThree);
+    m_id = Identity(m_x, m_y, m_width, m_height, m_density, col);
+    m_build = true;
 
 	// return firstThree;
 	// id.set_colors(firstThree);

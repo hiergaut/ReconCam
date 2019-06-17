@@ -384,6 +384,12 @@ void MainWindow::on_deleteNewEventSelected()
     QModelIndexList newEventSelected = ui->listView_newEvent->selectionModel()->selectedIndexes();
     for (const auto& index : newEventSelected) {
         QString filename = _model->data(index).toString();
+//        qDebug() << filename;
+        QFile file(str_newEventDir + filename + "/identity.txt");
+        if (! file.exists())
+            continue;
+//        if (! filename.compare("Folder"))
+//            continue;
         QDir newEvent(str_newEventDir + filename);
         Q_ASSERT(newEvent.exists());
         if (newEvent.removeRecursively()) {
@@ -413,7 +419,7 @@ void MainWindow::on_deleteKnownSelected()
     if (!knownDir.removeRecursively()) {
         qDebug() << "unable to remove dir : " << filename;
     }
-    m_colors.erase(str_knownDir + filename);
+    m_colors.erase(str_knownDir + filename + "/");
 
     on_modelChanged();
 }
@@ -523,6 +529,8 @@ void MainWindow::on_modelChanged()
     for (const auto& pair : m_colors) {
         //    for (QString pathDir : pathDirs) {
         QString pathDir = pair.first;
+//        qDebug() << "pathDir = " << pathDir;
+
         QColor color = pair.second;
         std::vector<float> colors({ (float)color.redF(), (float)color.greenF(), (float)color.blueF(), (float)color.alphaF() });
 

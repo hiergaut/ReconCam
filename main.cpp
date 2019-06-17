@@ -199,6 +199,7 @@ int main(int argc, char **argv) {
 			// boxes[filename] = {Min, Mean, Max};
 			// auto tuple = std::make_tuple(Min, Mean, Max);
 			boxes.insert(std::make_pair(filename, std::move(box)));
+            std::cout << "boxes : insert " << filename << std::endl;
 			// boxes[filename] = box;
 		}
 	}
@@ -528,8 +529,15 @@ int main(int argc, char **argv) {
 
 					if (recon && objects.size() <= 10) {
 						// if (obj.age > MIN_MOV_YEARS_TO_SAVE_OBJECT) {
+                            // std::cout << "recon object " << std::endl;
 						if (!obj.name.compare("")) {
-							cap.buildNColors();
+                            if (! cap.m_build) {
+                                cap.buildNColors();
+                            }
+                            assert(cap.m_build);
+
+                            // std::cout << "build done " << std::endl;
+                            // std::cout <<  std::flush;
 							// Triplet triplet =
 							// 	getPrimaryColor(cap.img, cap.mask);
 							// putText(drawing, std::string(triplet),
@@ -538,9 +546,11 @@ int main(int argc, char **argv) {
 							// cap.getPrimaryColors();
 
 							std::string bestPath = "";
-							double bestDist = 640 * 480;
+							double bestDist = 100000000;
+                            // assert(boxes.size() == 0);
 							for (const auto &pair : boxes) {
 								std::string path = pair.first;
+                                // std::cout << "path : " << path << std::endl;
 								auto box = pair.second;
 								// std::tuple<Identity, Identity, Identity>
 								// bound = pair.second;
@@ -549,11 +559,13 @@ int main(int argc, char **argv) {
 								// const Identity &Max = std::get<2>(bound);
 
 								// const Identity &cur{cap.m_id};
-                                assert(cap.m_id != nullptr);
-								const Identity &cur = *cap.m_id;
+                                // assert(cap.m_build);
+								const Identity &cur = cap.m_id;
+                                // std::cout << "id : " << cur  << std::endl;
 
 								// if (triplet.in(Min, Max)) {
 								if (box.in(cur)) {
+                                    // std::cout << "boxin " << path << std::endl;
 									// if (Min <= cur && cur <= Max) {
 									// double curDist = triplet.dist(Mean);
 									double curDist = cur - box.center();
@@ -566,6 +578,7 @@ int main(int argc, char **argv) {
 							}
 
 							if (bestPath.compare("")) {
+                                std::cout << "find object : " << bestPath << std::endl;
 
 								imwrite("alert.jpg", drawing);
 								if (script) {
@@ -584,6 +597,7 @@ int main(int argc, char **argv) {
 					}
 
 					obj.trace.emplace_back(std::move(cap));
+					// obj.trace.emplace_back(cap);
 					newObjects.insert(std::move(obj));
 				} // if (iMov != -1) {
 
@@ -716,7 +730,7 @@ int main(int argc, char **argv) {
 					// Mat a;
 					for (size_t i = 0; i < obj.trace.size(); ++i) {
 						const Capture &cap = obj.trace[i];
-						if (cap.m_id == nullptr) {
+						if (! cap.m_build) {
 							cap.buildNColors();
 						}
 						// const Mat &img{cap.m_img};
@@ -746,8 +760,8 @@ int main(int argc, char **argv) {
 						// cap.m_img.copyTo(a);
 
 						// cap.m_mask.copyTo(a);
-						assert(cap.m_id != nullptr);
-						Identity &id = *cap.m_id;
+						assert(cap.m_build);
+						Identity &id = cap.m_id;
 						// rectangle(a, Rect(0, 0, 20, 20), Scalar(first.r(),
 						// first.g(), first.b()));
 
@@ -772,7 +786,7 @@ int main(int argc, char **argv) {
 						// Triplet triplet = hsvHist(img, mask, histImg);
 						// imwrite(dir + "hist.jpg", histImg);
 						// cap.getPrimaryColors();
-						cap.m_id->write(dir + "identity.txt");
+						cap.m_id.write(dir + "identity.txt");
 
 						// triplet.write(dir + "primary.txt");
 					}

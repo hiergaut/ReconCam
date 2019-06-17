@@ -18,7 +18,7 @@
 #include <QOpenGLFunctions_3_3_Core>
 //#include <QOpenGLFunctions_4_5_Core>
 
-#define BUFF_MAX 7000
+#define BUFF_MAX 70000
 
 class QOpenGLWidgetCluster : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core {
     Q_OBJECT

@@ -548,7 +548,7 @@ void MainWindow::on_modelChanged()
             densities.insert(densities.end(), colors.begin(), colors.end());
 
             for (int i = 0; i < 3; ++i) {
-                std::vector<float> rgb = id[i];
+                std::vector<float> rgb = id.rgbs(i);
                 rgbs[i].insert(rgbs[i].end(), rgb.begin(), rgb.end());
                 rgbs[i].insert(rgbs[i].end(), colors.begin(), colors.end());
             }
@@ -562,20 +562,20 @@ void MainWindow::on_modelChanged()
 
         //        int pointsSize = poses.size();
 
-//    std::vector<float> boxPoses;
-//    std::vector<float> boxDensities;
-//    std::vector<float> boxRgbs[3];
+        //    std::vector<float> boxPoses;
+        //    std::vector<float> boxDensities;
+        //    std::vector<float> boxRgbs[3];
         if (pathDir != str_newEventDir) {
             Box box(pathDir.toStdString());
 
             std::vector<float> boxPos = box.pos(colors);
             boxPoses.insert(boxPoses.end(), boxPos.begin(), boxPos.end());
-//            boxPoses.insert(boxPoses.end(), colors.begin(), colors.end());
+            //            boxPoses.insert(boxPoses.end(), colors.begin(), colors.end());
 
             std::vector<float> boxDensity = box.density(colors);
             boxDensities.insert(boxDensities.end(), boxDensity.begin(), boxDensity.end());
-//            boxDensities.insert(boxDensities.end(), colors.begin(), colors.end());
-            for (int i =0; i <3; ++i) {
+            //            boxDensities.insert(boxDensities.end(), colors.begin(), colors.end());
+            for (int i = 0; i < 3; ++i) {
                 std::vector<float> boxRgb = box.rgb(colors, i);
                 boxRgbs[i].insert(boxRgbs[i].end(), boxRgb.begin(), boxRgb.end());
             }
@@ -650,11 +650,11 @@ void MainWindow::updateKnownBestPicture()
     //    QString path_best = str_knownDir + knownEventDir + "best.jpg";
     QPixmap best;
     //    QVector3D min(1.0, 1.0, 1.0), max(-1.0, -1.0, -1.0), sum(0.0, 0.0, 0.0);
-    //    Identity min(641, 481, 641, 481, 640 * 480, NColors({ Color(256, 256, 256), Color(256, 256, 256), Color(256, 256, 256) }));
+    Identity min(641, 481, 641, 481, 640 * 480, NColors({ Color(256, 256, 256), Color(256, 256, 256), Color(256, 256, 256) }));
     Identity sum(0, 0, 0, 0, 0, NColors({ Color(0, 0, 0), Color(0, 0, 0), Color(0, 0, 0) }));
-    //    Identity max(-1, -1, -1, -1, -1, NColors({ Color(-1, -1, -1), Color(-1, -1, -1), Color(-1, -1, -1) }));
+    Identity max(-1, -1, -1, -1, -1, NColors({ Color(-1, -1, -1), Color(-1, -1, -1), Color(-1, -1, -1) }));
 
-    Box box;
+    Box box(min, sum, max);
 
     //    if (QFile::exists(path_best)) {
     //        best.load(path_best);

@@ -754,7 +754,7 @@ int main(int argc, char **argv) {
 						// Triplet triplet = hsvHist(img, mask, histImg);
 						// imwrite(dir + "hist.jpg", histImg);
 						// cap.getPrimaryColors();
-						cap.m_id->write(dir);
+						cap.m_id->write(dir + "identity.txt");
 
 						// triplet.write(dir + "primary.txt");
 					}

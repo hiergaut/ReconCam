@@ -18,7 +18,7 @@
 			"label": "echo",
 			"type": "shell",
 			// "command": "make && ./a.out 10 -remote=/srv/http/motion/",
-			"command": "rm -fr motion && make CFLAGS=\"-D PC\" && ./a.out --sensor=10 --recon=true",
+			"command": "rm -fr motion && make CFLAGS=\"-D PC\" && ./a.out --sensor=10 --recon=true --script=remote.sh",
 			// "command": "rm -fr motion && make CFLAGS=\"-D PC\" && ./a.out --sensor=10 --stream=video.avi",
 			// "command": "rm -fr motion && make CFLAGS=\"-D PC\" && ./a.out --sensor=10 --recon=true --training=true",
 			// "command": "rm -fr motion && make CFLAGS=\"-D PC\" && ./a.out --sensor=10 --training=true",

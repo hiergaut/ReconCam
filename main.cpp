@@ -586,10 +586,10 @@ int main(int argc, char **argv) {
 									cmd = "./" + script + " " + bestPath + " &";
 									system(cmd.c_str());
 								}
-								std::thread thread(
-									thread_alert,
-									std::string("alert/" + bestPath));
-								thread.detach();
+								// std::thread thread(
+								// 	thread_alert,
+								// 	std::string("alert/" + bestPath));
+								// thread.detach();
 
 								obj.name = bestPath;
 								boxes.erase(bestPath);

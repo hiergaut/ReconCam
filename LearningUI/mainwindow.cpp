@@ -145,7 +145,7 @@ MainWindow::MainWindow(QWidget* parent)
     ui->openGLWidget_density->setObject(object);
     normalize.setToIdentity();
     normalize.translate(-1, -1, +1);
-    normalize.scale(2.0f / 640.0f, 2.0f / 480.0f, 10.0f / (640 * 480));
+    normalize.scale(2.0f / 640.0f, 2.0f / 480.0f, 20.0f / (640 * 480));
     //    normalize.scale(1.0, 1.0, -1.0);
     ui->openGLWidget_density->setNormalize(normalize);
     ui->openGLWidget_density->setArea(m_box, m_boxEbo);
@@ -411,6 +411,7 @@ void MainWindow::on_deleteKnownSelected()
     if (!knownDir.removeRecursively()) {
         qDebug() << "unable to remove dir : " << filename;
     }
+    m_colors.erase(str_knownDir + filename);
 }
 
 void MainWindow::on_changeKnownSelected(QItemSelection item)
@@ -467,10 +468,11 @@ void MainWindow::on_deleteKnownEventSelected()
     QModelIndexList knownEventSelected = ui->listView_knownEvent->selectionModel()->selectedIndexes();
     for (const auto& index : knownEventSelected) {
         QString filename = _model->data(index).toString();
-        QFile newEvent(str_knownDir + knownEventDir + filename);
+        qDebug() << "delete known event : " << str_knownDir + knownEventDir + filename;
+        QDir dir(str_knownDir + knownEventDir + filename);
 
-        Q_ASSERT(newEvent.exists());
-        if (newEvent.remove()) {
+        Q_ASSERT(dir.exists());
+        if (dir.removeRecursively()) {
             qDebug() << "cannot remove new event selected file : " << filename;
         }
     }
@@ -648,11 +650,15 @@ void MainWindow::updateKnownBestPicture()
     //    qDebug() << "knownSelected " << knownSelected;
     //    QString knownEventDir = _model->data(knownEventSelected.first()).toString();
     //    QString path_best = str_knownDir + knownEventDir + "best.jpg";
-    QPixmap best;
+    QPixmap best(1, 1);
+    best.fill(QColor("white"));
     //    QVector3D min(1.0, 1.0, 1.0), max(-1.0, -1.0, -1.0), sum(0.0, 0.0, 0.0);
-    Identity min(641, 481, 641, 481, 640 * 480, NColors({ Color(256, 256, 256), Color(256, 256, 256), Color(256, 256, 256) }));
-    Identity sum(0, 0, 0, 0, 0, NColors({ Color(0, 0, 0), Color(0, 0, 0), Color(0, 0, 0) }));
-    Identity max(-1, -1, -1, -1, -1, NColors({ Color(-1, -1, -1), Color(-1, -1, -1), Color(-1, -1, -1) }));
+    Identity min(640 -1, 480 -1, 640, 480, 640 * 480, NColors({ Color(256 -1, 256 -1, 256 -1), Color(256 -1, 256 -1, 256 -1), Color(256 -1, 256 -1, 256 -1) }));
+//    min +=-1;
+//    Identity sum(0, 0, 0, 0, 0, NColors({ Color(0, 0, 0), Color(0, 0, 0), Color(0, 0, 0) }));
+    Identity sum(0, 0, 0, 0, 0, NColors());
+    Identity max(0, 0, 0, 0, 0, NColors({ Color(0, 0, 0), Color(0, 0, 0), Color(0, 0, 0) }));
+//    max -=1;
 
     Box box(min, sum, max);
 

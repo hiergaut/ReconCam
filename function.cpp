@@ -3,7 +3,7 @@
 
 #include <set>
 
-const int side = 8;
+const int side = 16;
 const int rbins = side;
 const int gbins = side;
 const int bbins = side;

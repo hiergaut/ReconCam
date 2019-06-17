@@ -719,7 +719,7 @@ int main(int argc, char **argv) {
 						// Mat a(cap.m_width, cap.m_height, CV_8UC3,
 						// 	  Scalar(255, 0, 0));
 
-						Mat a(cap.m_mask.size(), CV_8UC3, Scalar(255, 0, 255));
+						Mat a(cap.m_mask.size(), CV_8UC3, Scalar(255, 255, 255));
 
 						// a.copyTo(cap.m_img, cap.m_mask);
 						// bestCapture.m_img.copyTo(Mat(drawing,
@@ -794,6 +794,7 @@ int main(int argc, char **argv) {
 			gpioSetValue(lightGpio, 0);
 		}
 
+        std::cout << "object detected : " << nbRealObjects << std::endl;
 		std::cout << "recording fps : " << static_cast<double>(iCap) / duration
 				  << std::endl;
 

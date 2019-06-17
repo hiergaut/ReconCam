@@ -28,15 +28,20 @@ Identity::Identity(std::string path) {
 		sscanf(line.c_str(), "%d %d %d", &r, &g, &b);
 
 		colors.push_back(Color(r, g, b));
+        assert(0 <= r && r < 256);
+        assert(0 <= g && g < 256);
+        assert(0 <= b && b < 256);
 	}
 	file.close();
 
 	m_colors = colors;
 
 	// return std::move(Point3f(h, h2, h3));
-    assert(0 <= m_x && m_x <= 640);
-    assert(0 <= m_y && m_y <= 480);
-
+    assert(0 <= m_x && m_x < 640);
+    assert(0 <= m_y && m_y < 480);
+    assert(0 <= m_width && m_width <= 640);
+    assert(0 <= m_height && m_height <= 480);
+    assert(0 <= m_density && m_density <= 640 * 480);
 }
 
 Identity::Identity(int x, int y, int width, int height, int density,

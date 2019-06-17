@@ -10,7 +10,7 @@
 #define MAX_DOTS 10000
 
 static const char* vertexshader_source[] = {
-        "#version 330 core\n\
+    "#version 330 core\n\
         layout (location = 0) in vec3 vertex;\n\
         out vec4 ourColor;\n\
         uniform mat4 object;\n\
@@ -31,7 +31,7 @@ static const char* vertexshader_source[] = {
             ourColor =   vec4(vertex, 1.0f);\n\
         }\n",
 
-        "#version 330 core\n\
+    "#version 330 core\n\
         layout (location = 0) in vec3 vertex;\n\
         layout (location = 1) in vec4 color;\n\
         out vec4 ourColor;\n\
@@ -48,7 +48,7 @@ static const char* vertexshader_source[] = {
 };
 
 static const char* fragmentshader_source[] = {
-        "#version 330 core\n\
+    "#version 330 core\n\
         in vec4 ourColor;\n\
         out vec4 color;\n\
         void main()\n\
@@ -57,7 +57,7 @@ static const char* fragmentshader_source[] = {
           color = ourColor;\n\
         }\n",
 
-        "#version 330 core\n\
+    "#version 330 core\n\
         in vec4 ourColor;\n\
         out vec4 color;\n\
         void main()\n\
@@ -80,7 +80,7 @@ QOpenGLWidgetCluster::~QOpenGLWidgetCluster()
     glDeleteBuffers(2, m_vbo);
 }
 
-void QOpenGLWidgetCluster::render(const std::vector<float> points, const std::vector<float>boxes)
+void QOpenGLWidgetCluster::render(const std::vector<float> points, const std::vector<float> boxes)
 {
 
     Q_ASSERT(points.size() % 7 == 0);
@@ -100,7 +100,7 @@ void QOpenGLWidgetCluster::render(const std::vector<float> points, const std::ve
     //    m_dots = points;
     //    std::copy(m_dots.begin(), points.begin(), points.end());
 
-    //    qDebug() << "rendered " << points.size() / 7 << " points";
+    qDebug() << "rendered " << (m_vbo_dataLen[1] + m_boxesLen) / 7 << " points";
 
     glBindVertexArray(m_vao[1]);
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo[1]);
@@ -115,7 +115,7 @@ void QOpenGLWidgetCluster::render(const std::vector<float> points, const std::ve
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-            update();
+    update();
 }
 
 void QOpenGLWidgetCluster::setArea(std::vector<float> vbo_data, std::vector<uint> ebo_data)
@@ -145,7 +145,7 @@ void QOpenGLWidgetCluster::setArea(std::vector<float> vbo_data, std::vector<uint
     memcpy(&m_ebo_data[0], ebo_data.data(), ebo_data.size() * sizeof(uint));
     m_ebo_dataLen[0] = ebo_data.size();
 
-    //    qDebug() << "set area " << vbo_data.size() / 3 << " points";
+    qDebug() << "set area " << vbo_data.size() / 3 << " points";
     //    glGenVertexArrays(1, &m_vao[0]);
 
     //    doneCurrent();
@@ -361,7 +361,7 @@ void QOpenGLWidgetCluster::paintGL()
     //    qDebug() << "draw dots, nb dot = " << m_dots.size() / 6;
     //    qDebug() << "dots = " << m_dots;
     glDrawArrays(GL_POINTS, 0, m_vbo_dataLen[1] / 7);
-//    glDrawArrays(GL_LINES, m_nbDots, m_nbBoxes * 2 * 12);
+    //    glDrawArrays(GL_LINES, m_nbDots, m_nbBoxes * 2 * 12);
     glDrawArrays(GL_LINES, m_vbo_dataLen[1] / 7, m_boxesLen / 7);
     //    qDebug() << m_nbBoxes;
 

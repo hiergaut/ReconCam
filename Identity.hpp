@@ -292,10 +292,10 @@ class Box {
 		std::vector<float> c({max[0], max[1], min[2]});
 		std::vector<float> d({min[0], max[1], min[2]});
 
-		std::vector<float> e({min[0], min[1], min[2]});
-		std::vector<float> f({max[0], min[1], min[2]});
-		std::vector<float> g({max[0], max[1], min[2]});
-		std::vector<float> h({min[0], max[1], min[2]});
+		std::vector<float> e({min[0], min[1], max[2]});
+		std::vector<float> f({max[0], min[1], max[2]});
+		std::vector<float> g({max[0], max[1], max[2]});
+		std::vector<float> h({min[0], max[1], max[2]});
 
 		std::vector<std::pair<std::vector<float> &, std::vector<float> &>>
 			indices = {{a, b}, {b, c}, {c, d}, {d, a}, {e, f}, {f, g},

@@ -59,7 +59,7 @@ bool QListViewKnownEvent::eventFilter(QObject* watched, QEvent* event)
 //        QPixmap pix(str_kn)
         return true;
     } else if (event->type() == QEvent::KeyPress) {
-        //        qDebug() << "key pressed";
+//                qDebug() << "key pressed";
         QKeyEvent* key = static_cast<QKeyEvent*>(event);
         //        qDebug() << key;
         if (key->key() == Qt::Key_Space) {
@@ -68,6 +68,7 @@ bool QListViewKnownEvent::eventFilter(QObject* watched, QEvent* event)
             //            emit enterPressede();
             return true;
         } else if (key->key() == Qt::Key_Delete) {
+//            qDebug() << "delete";
             emit deletePressed();
             return true;
         }

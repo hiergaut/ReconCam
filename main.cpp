@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
 		// "{v vegetation  | false     | outside camera}"
 		"{training      | false     | save movement capture for learning}"
 		"{recon         | false     | recon event}"
-		"{script        | false     | launch script on recognize}"
+		"{script        |           | launch script on recognize}"
 		// "{onlyRec       | false     | record video without treatment}"
 		"{help h        |           | help message}");
 
@@ -87,7 +87,8 @@ int main(int argc, char **argv) {
 	// bool hasVegetation = parser.get<bool>("vegetation");
 	bool training = parser.get<bool>("training");
 	bool recon = parser.get<bool>("recon");
-	bool script = parser.get<bool>("script");
+	std::string script = parser.get<std::string>("script");
+    bool hasScript = ! script.empty();
 	bool hasStream = !stream.empty();
 	// bool onlyRec = parser.get<bool>("onlyRec");
 	if (!parser.check()) {
@@ -581,8 +582,8 @@ int main(int argc, char **argv) {
                                 std::cout << "find object : " << bestPath << std::endl;
 
 								imwrite("alert.jpg", drawing);
-								if (script) {
-									cmd = "./script.sh " + bestPath + " &";
+								if (hasScript) {
+									cmd = "./" + script + " " + bestPath + " &";
 									system(cmd.c_str());
 								}
 								std::thread thread(

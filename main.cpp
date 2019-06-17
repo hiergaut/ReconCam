@@ -549,6 +549,7 @@ int main(int argc, char **argv) {
 								// const Identity &Max = std::get<2>(bound);
 
 								// const Identity &cur{cap.m_id};
+                                assert(cap.m_id != nullptr);
 								const Identity &cur = *cap.m_id;
 
 								// if (triplet.in(Min, Max)) {

@@ -45,6 +45,6 @@ yesterdayMotion/
 build*
 learningFile/
 alertSong/
-script.sh
+# script.sh
 videoTest/
-
+alert/*

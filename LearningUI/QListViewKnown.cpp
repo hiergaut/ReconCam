@@ -38,7 +38,7 @@ bool QListViewKnown::eventFilter(QObject *watched, QEvent *event)
         QToolTip::showText(helpEvent->globalPos(), itemText, this);
         return true;
     } else if (event->type() == QEvent::KeyPress) {
-        qDebug() << "key pressed";
+//        qDebug() << "key pressed";
         QKeyEvent* key = static_cast<QKeyEvent*>(event);
 //        qDebug() << key;
         if (key->key() == Qt::Key_Delete) {

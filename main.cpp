@@ -312,6 +312,7 @@ int main(int argc, char **argv) {
 		auto start = std::chrono::high_resolution_clock::now();
 		// ----------------------- WHILE HAS MOVEMENT
 		while (hasMovement()) {
+			auto start2 = std::chrono::high_resolution_clock::now();
 			++iCap;
 			int nbObjects = objects.size();
 
@@ -636,6 +637,20 @@ int main(int argc, char **argv) {
 			putText(drawing, "frame : " + std::to_string(iCap), Point(0, 60),
 					FONT_HERSHEY_DUPLEX, 1, Scalar(255, 255, 255), 1);
 
+			auto end2 = std::chrono::high_resolution_clock::now();
+			double duration2 = 1000000.0 /
+				std::chrono::duration_cast<std::chrono::microseconds>(end2 - start2)
+					.count();
+			// std::cout << "recording fps : " << static_cast<double>(iCap) /
+			// duration
+			//   << std::endl;
+            std::ostringstream duration2Str;
+            duration2Str << std::fixed << std::setprecision(2) << duration2;
+			putText(drawing, "fps : " + duration2Str.str(),
+					Point(0, 90), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 5);
+			putText(drawing, "fps : " + duration2Str.str(),
+					Point(0, 90), FONT_HERSHEY_DUPLEX, 1, Scalar(255, 255, 255), 1);
+
 			for (auto &obj : objects) {
 				for (auto &l : obj.lines) {
 					line(drawing, l.p, l.p2, obj.color, 2);
@@ -719,11 +734,13 @@ int main(int argc, char **argv) {
 						// Mat a(cap.m_width, cap.m_height, CV_8UC3,
 						// 	  Scalar(255, 0, 0));
 
-						Mat a(cap.m_mask.size(), CV_8UC3, Scalar(255, 255, 255));
+						Mat a(cap.m_mask.size(), CV_8UC3,
+							  Scalar(255, 255, 255));
 
 						// a.copyTo(cap.m_img, cap.m_mask);
 						// bestCapture.m_img.copyTo(Mat(drawing,
-						// bestCapture.m_rect), 						 bestCapture.m_mask);
+						// bestCapture.m_rect),
+						// bestCapture.m_mask);
 						cap.m_img.copyTo(a, cap.m_mask);
 						// cap.m_img.copyTo(a);
 
@@ -738,12 +755,12 @@ int main(int argc, char **argv) {
 						int hStep = w / 5;
 						int vStep = h / 5;
 						// Scalar scalar(id[0]);
-                        // rectangle(a, Rect(0, 0, hStep * 3, vStep +2), Scalar(0, 255, 0), -1);
+						// rectangle(a, Rect(0, 0, hStep * 3, vStep +2),
+						// Scalar(0, 255, 0), -1);
 						for (int j = 0; j < 3; ++j) {
 							const Color col = id(j);
 							rectangle(a, Rect(hStep * j, 0, hStep, vStep),
-									  Scalar(col.m_r, col.m_g, col.m_b),
-									  -1);
+									  Scalar(col.m_r, col.m_g, col.m_b), -1);
 						}
 
 						imwrite(dir + "image.jpg", a);
@@ -794,7 +811,7 @@ int main(int argc, char **argv) {
 			gpioSetValue(lightGpio, 0);
 		}
 
-        std::cout << "object detected : " << nbRealObjects << std::endl;
+		std::cout << "object detected : " << nbRealObjects << std::endl;
 		std::cout << "recording fps : " << static_cast<double>(iCap) / duration
 				  << std::endl;
 

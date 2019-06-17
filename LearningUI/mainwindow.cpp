@@ -384,12 +384,14 @@ void MainWindow::on_deleteNewEventSelected()
     QModelIndexList newEventSelected = ui->listView_newEvent->selectionModel()->selectedIndexes();
     for (const auto& index : newEventSelected) {
         QString filename = _model->data(index).toString();
-        QFile newEvent(str_newEventDir + filename);
+        QDir newEvent(str_newEventDir + filename);
         Q_ASSERT(newEvent.exists());
-        if (newEvent.remove()) {
+        if (newEvent.removeRecursively()) {
             qDebug() << "cannot remove new event selected file : " << filename;
         }
     }
+
+    on_modelChanged();
 }
 
 void MainWindow::on_deleteKnownSelected()
@@ -412,6 +414,8 @@ void MainWindow::on_deleteKnownSelected()
         qDebug() << "unable to remove dir : " << filename;
     }
     m_colors.erase(str_knownDir + filename);
+
+    on_modelChanged();
 }
 
 void MainWindow::on_changeKnownSelected(QItemSelection item)
@@ -468,7 +472,7 @@ void MainWindow::on_deleteKnownEventSelected()
     QModelIndexList knownEventSelected = ui->listView_knownEvent->selectionModel()->selectedIndexes();
     for (const auto& index : knownEventSelected) {
         QString filename = _model->data(index).toString();
-        qDebug() << "delete known event : " << str_knownDir + knownEventDir + filename;
+//        qDebug() << "delete known event : " << str_knownDir + knownEventDir + filename;
         QDir dir(str_knownDir + knownEventDir + filename);
 
         Q_ASSERT(dir.exists());

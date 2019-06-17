@@ -6,9 +6,9 @@
 Identity::Identity(std::string path) {
 
 	// std::ifstream file("learningFile/known/" + filename + "/min.txt");
-	std::ifstream file(path + "identity.txt");
+	std::ifstream file(path);
 	if (!file.is_open()) {
-		std::cout << "cannot open file : " << path + "identity.txt" << std::endl;
+		std::cout << "cannot open file : " << path << std::endl;
 		exit(1);
 	}
 
@@ -50,7 +50,7 @@ Identity::Identity(int x, int y, int width, int height, int density,
 
 void Identity::write(const std::string &path) const {
 	std::ofstream out;
-	out.open(path + "identity.txt");
+	out.open(path);
 
 	// std::string line;
 	char line[256];
@@ -66,4 +66,10 @@ void Identity::write(const std::string &path) const {
 	// out << colors[1] << std::endl;
 	// out << colors[2] << std::endl;
 	out.close();
+}
+
+void Box::write(const std::string & path) const {
+    m_min.write(path + "min.txt");
+    m_mean.write(path + "mean.txt");
+    m_max.write(path + "max.txt");
 }

@@ -80,7 +80,7 @@ QOpenGLWidgetCluster::~QOpenGLWidgetCluster()
     glDeleteBuffers(2, m_vbo);
 }
 
-void QOpenGLWidgetCluster::render(const std::vector<float> points)
+void QOpenGLWidgetCluster::render(const std::vector<float> points, const std::vector<float>boxes)
 {
 
     Q_ASSERT(points.size() % 7 == 0);
@@ -94,6 +94,9 @@ void QOpenGLWidgetCluster::render(const std::vector<float> points)
     //    m_dots.assign(triangle, triangle + sizeof(triangle) / sizeof(float));
     memcpy(&m_vbo_data[1], points.data(), points.size() * sizeof(float));
     m_vbo_dataLen[1] = points.size();
+
+    memcpy(&m_vbo_data[1][points.size()], boxes.data(), boxes.size() * sizeof(float));
+    m_boxesLen = boxes.size();
     //    m_dots = points;
     //    std::copy(m_dots.begin(), points.begin(), points.end());
 
@@ -101,7 +104,7 @@ void QOpenGLWidgetCluster::render(const std::vector<float> points)
 
     glBindVertexArray(m_vao[1]);
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo[1]);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, m_vbo_dataLen[1] * sizeof(float), m_vbo_data[1]);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, (m_vbo_dataLen[1] + m_boxesLen) * sizeof(float), m_vbo_data[1]);
 
     //    glBufferData(GL_ARRAY_BUFFER, sizeof(m_vbo_data[1]), m_vbo_data[1], GL_DYNAMIC_DRAW);
     //    m_dots.assign(m_vertices, m_vertices + sizeof(m_vertices) / sizeof(float));
@@ -358,7 +361,8 @@ void QOpenGLWidgetCluster::paintGL()
     //    qDebug() << "draw dots, nb dot = " << m_dots.size() / 6;
     //    qDebug() << "dots = " << m_dots;
     glDrawArrays(GL_POINTS, 0, m_vbo_dataLen[1] / 7);
-    //    glDrawArrays(GL_LINES, m_nbDots, m_nbBoxes * 2 * 12);
+//    glDrawArrays(GL_LINES, m_nbDots, m_nbBoxes * 2 * 12);
+    glDrawArrays(GL_LINES, m_vbo_dataLen[1] / 7, m_boxesLen / 7);
     //    qDebug() << m_nbBoxes;
 
     //

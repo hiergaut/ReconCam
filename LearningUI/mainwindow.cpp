@@ -122,9 +122,9 @@ MainWindow::MainWindow(QWidget* parent)
 
     QMatrix4x4 object;
     object.setToIdentity();
-//    object.rotate(180, QVector3D(1.0, 0, 0));
+    //    object.rotate(180, QVector3D(1.0, 0, 0));
     object.scale(1.0, -1.0, 1.0);
-//    object.translate(-1, -1, 0);
+    //    object.translate(-1, -1, 0);
     ui->openGLWidget_pos->setObject(object);
     QMatrix4x4 normalize;
     normalize.setToIdentity();
@@ -141,7 +141,7 @@ MainWindow::MainWindow(QWidget* parent)
     //    normalize.rotate(90, QVector3D(1.0, 0, 0));
     object.setToIdentity();
     object.scale(1.0, 1.0, -1.0);
-//    object.translate(-1, -1, +1);
+    //    object.translate(-1, -1, +1);
     ui->openGLWidget_density->setObject(object);
     normalize.setToIdentity();
     normalize.translate(-1, -1, +1);
@@ -150,8 +150,8 @@ MainWindow::MainWindow(QWidget* parent)
     ui->openGLWidget_density->setNormalize(normalize);
     ui->openGLWidget_density->setArea(m_box, m_boxEbo);
 
-//    object.setToIdentity();
-//    object.translate(-1, -1, -1);
+    //    object.setToIdentity();
+    //    object.translate(-1, -1, -1);
     ui->openGLWidget_first->setObject(object);
     normalize.setToIdentity();
     normalize.translate(-1, -1, +1);
@@ -488,6 +488,10 @@ void MainWindow::on_modelChanged()
     //    std::vector<float> firsts;
     std::vector<float> rgbs[3];
 
+    std::vector<float> boxPoses;
+    std::vector<float> boxDensities;
+    std::vector<float> boxRgbs[3];
+
     //    std::vector<float> boxes;
     //    std::vector<float> color(3);
     //    std::vector<float> color;
@@ -531,7 +535,7 @@ void MainWindow::on_modelChanged()
         for (const QString& dirName : dir.entryList()) {
             QString filename = pathDir + dirName + "/";
             //            points.insert(points.end(), point.begin(), point.end());
-            Identity id(filename.toStdString());
+            Identity id(filename.toStdString() + "identity.txt");
 
             //            QVector3D vec3 = vec3ReadFromBig(pathDir + dirName + "/primary.txt");
             //            std::vector<float> point({ vec3.x(), vec3.y(), vec3.z() });
@@ -556,39 +560,62 @@ void MainWindow::on_modelChanged()
             //            file.close();
         }
 
+        //        int pointsSize = poses.size();
+
+//    std::vector<float> boxPoses;
+//    std::vector<float> boxDensities;
+//    std::vector<float> boxRgbs[3];
+        if (pathDir != str_newEventDir) {
+            Box box(pathDir.toStdString());
+
+            std::vector<float> boxPos = box.pos(colors);
+            boxPoses.insert(boxPoses.end(), boxPos.begin(), boxPos.end());
+//            boxPoses.insert(boxPoses.end(), colors.begin(), colors.end());
+
+            std::vector<float> boxDensity = box.density(colors);
+            boxDensities.insert(boxDensities.end(), boxDensity.begin(), boxDensity.end());
+//            boxDensities.insert(boxDensities.end(), colors.begin(), colors.end());
+            for (int i =0; i <3; ++i) {
+                std::vector<float> boxRgb = box.rgb(colors, i);
+                boxRgbs[i].insert(boxRgbs[i].end(), boxRgb.begin(), boxRgb.end());
+            }
+        }
+
+        //        std::vector<float> boxPoses;
+
         //        if (pathDir != str_newEventDir) {
         //            QVector3D min = vec3Read(pathDir + "/min.txt");
         //            QVector3D max = vec3Read(pathDir + "/max.txt");
 
-        //            std::vector<float> a({ min.x(), min.y(), min.z() });
-        //            std::vector<float> b({ max.x(), min.y(), min.z() });
-        //            std::vector<float> c({ max.x(), max.y(), min.z() });
-        //            std::vector<float> d({ min.x(), max.y(), min.z() });
+        //                    std::vector<float> a({ min.x(), min.y(), min.z() });
+        //                    std::vector<float> b({ max.x(), min.y(), min.z() });
+        //                    std::vector<float> c({ max.x(), max.y(), min.z() });
+        //                    std::vector<float> d({ min.x(), max.y(), min.z() });
 
-        //            std::vector<float> e({ min.x(), min.y(), max.z() });
-        //            std::vector<float> f({ max.x(), min.y(), max.z() });
-        //            std::vector<float> g({ max.x(), max.y(), max.z() });
-        //            std::vector<float> h({ min.x(), max.y(), max.z() });
+        //                    std::vector<float> e({ min.x(), min.y(), max.z() });
+        //                    std::vector<float> f({ max.x(), min.y(), max.z() });
+        //                    std::vector<float> g({ max.x(), max.y(), max.z() });
+        //                    std::vector<float> h({ min.x(), max.y(), max.z() });
 
-        //            //            std::vector<float> box({ min.x(), min.y(), min.z() });
-        //            //            std::vector<float> boxes;
-        //            std::vector<std::pair<std::vector<float>&, std::vector<float>&>> indices = { { a, b }, { b, c }, { c, d }, { d, a }, { e, f }, { f, g }, { g, h }, { h, e }, { a, e }, { b, f }, { c, g }, { d, h } };
-        //            for (int i = 0; i < 12; ++i) {
-        //                std::vector<float>& first = indices[i].first;
-        //                std::vector<float>& second = indices[i].second;
+        //                    //            std::vector<float> box({ min.x(), min.y(), min.z() });
+        //                    //            std::vector<float> boxes;
+        //                    std::vector<std::pair<std::vector<float>&, std::vector<float>&>> indices = { { a, b }, { b, c }, { c, d }, { d, a }, { e, f }, { f, g }, { g, h }, { h, e }, { a, e }, { b, f }, { c, g }, { d, h } };
+        //                    for (int i = 0; i < 12; ++i) {
+        //                        std::vector<float>& first = indices[i].first;
+        //                        std::vector<float>& second = indices[i].second;
 
-        //                //                qDebug() << first << second;
-        //                boxes.insert(boxes.end(), first.begin(), first.end());
-        //                boxes.insert(boxes.end(), colors.begin(), colors.end());
-        //                boxes.insert(boxes.end(), second.begin(), second.end());
-        //                boxes.insert(boxes.end(), colors.begin(), colors.end());
-        //            }
+        //                        //                qDebug() << first << second;
+        //                        boxes.insert(boxes.end(), first.begin(), first.end());
+        //                        boxes.insert(boxes.end(), colors.begin(), colors.end());
+        //                        boxes.insert(boxes.end(), second.begin(), second.end());
+        //                        boxes.insert(boxes.end(), colors.begin(), colors.end());
+        //                    }
 
-        //            //            boxes.insert(boxes.end(), box.begin(), box.end());
-        //            //            boxes.insert(boxes.end(), colors.begin(), colors.end());
+        //            boxes.insert(boxes.end(), box.begin(), box.end());
+        //            boxes.insert(boxes.end(), colors.begin(), colors.end());
 
-        //            //            box = { max.x(), max.y(), max.z() };
-        //            //            boxes.insert(boxes.end(), box.begin(), box.end());
+        //            box = { max.x(), max.y(), max.z() };
+        //            boxes.insert(boxes.end(), box.begin(), box.end());
         //            //            boxes.insert(boxes.end(), colors.begin(), colors.end());
         //        }
     }
@@ -605,11 +632,12 @@ void MainWindow::on_modelChanged()
     //    qDebug() << boxes;
 
     //    ui->openGLWidget->setPoints(points, nbPoints, boxes.size() / (7 * 2 * 12));
-    ui->openGLWidget_pos->render(poses);
-    ui->openGLWidget_density->render(densities);
-    ui->openGLWidget_first->render(rgbs[0]);
-    ui->openGLWidget_second->render(rgbs[1]);
-    ui->openGLWidget_third->render(rgbs[2]);
+    ui->openGLWidget_pos->render(poses, boxPoses);
+    ui->openGLWidget_density->render(densities, boxDensities);
+    ui->openGLWidget_first->render(rgbs[0], boxRgbs[0]);
+    ui->openGLWidget_second->render(rgbs[1], boxRgbs[1]);
+    ui->openGLWidget_third->render(rgbs[2], boxRgbs[2]);
+
     //    ui->openGLWidget_pos->render(m_triangle);
     //    ui->openGLWidget_pos->render(m_triangle);
 }
@@ -621,7 +649,12 @@ void MainWindow::updateKnownBestPicture()
     //    QString knownEventDir = _model->data(knownEventSelected.first()).toString();
     //    QString path_best = str_knownDir + knownEventDir + "best.jpg";
     QPixmap best;
-    QVector3D min(1.0, 1.0, 1.0), max(-1.0, -1.0, -1.0), sum(0.0, 0.0, 0.0);
+    //    QVector3D min(1.0, 1.0, 1.0), max(-1.0, -1.0, -1.0), sum(0.0, 0.0, 0.0);
+    //    Identity min(641, 481, 641, 481, 640 * 480, NColors({ Color(256, 256, 256), Color(256, 256, 256), Color(256, 256, 256) }));
+    Identity sum(0, 0, 0, 0, 0, NColors({ Color(0, 0, 0), Color(0, 0, 0), Color(0, 0, 0) }));
+    //    Identity max(-1, -1, -1, -1, -1, NColors({ Color(-1, -1, -1), Color(-1, -1, -1), Color(-1, -1, -1) }));
+
+    Box box;
 
     //    if (QFile::exists(path_best)) {
     //        best.load(path_best);
@@ -630,6 +663,7 @@ void MainWindow::updateKnownBestPicture()
     //    }
     QDir knownDir(str_knownDir + knownSelected);
     knownDir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
+    //    if (!knownDir.isEmpty()) {
     int cpt = 0;
     for (const QString& file : knownDir.entryList()) {
         //        qDebug() << "file " << file;
@@ -651,9 +685,18 @@ void MainWindow::updateKnownBestPicture()
         //            max[i] = qMax(max[i], vec3[i]);
         //        }
         //        sum += vec3;
+        Identity id(path.toStdString() + "identity.txt");
+
+        sum += id;
+        box += id;
+
         ++cpt;
     }
-
+    if (cpt != 0) {
+        box.set_mean(sum / cpt);
+    }
+    //    }
+    box.write((str_knownDir + knownSelected).toStdString());
     //    vec3Save(min, str_knownDir + knownSelected + "min.txt");
     //    vec3Save(max, str_knownDir + knownSelected + "max.txt");
     //    vec3Save(sum / cpt, str_knownDir + knownSelected + "mean.txt");

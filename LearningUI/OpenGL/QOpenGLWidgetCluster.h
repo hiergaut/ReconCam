@@ -27,7 +27,7 @@ public:
     ~QOpenGLWidgetCluster();
 
 //    void setPoints(const std::vector<float> points, int nbDots, int nbBoxes);
-    void render(const std::vector<float> points);
+    void render(const std::vector<float> points, const std::vector<float> boxes);
     void setArea(std::vector<float> vbo, std::vector<uint> ebo);
 
     void setNormalize(const QMatrix4x4 &normalize);
@@ -60,6 +60,7 @@ private:
     uint m_vbo[2];
     float m_vbo_data[2][BUFF_MAX];
     int m_vbo_dataLen[2] = {0};
+    int m_boxesLen = 0;
 //    QOpenGLBuffer m_vbo;
 //    QOpenGLBuffer m_vbo2;
 //    QOpenGLBuffer m_ebo;

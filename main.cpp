@@ -314,7 +314,7 @@ int main(int argc, char **argv) {
 		// outputVideo << inputFrame;
 		outputVideoRec << inputFrame;
 		drawing = inputFrame.clone();
-		rectangle(drawing, Rect(640 - 50, 0, 50, 50), Scalar(0, 0, 255), -1);
+		rectangle(drawing, Rect(640 - 50, 0, 50, 50), Scalar(255, 0, 0), -1);
 
 		// ----------------------- WHILE HAS MOVEMENT
 		while (1) {
@@ -375,9 +375,9 @@ int main(int argc, char **argv) {
 			if (quit) {
 				break;
 			}
-            if (! hasMovement()) {
-                break;
-            }
+			if (!hasMovement()) {
+				break;
+			}
 
 			// ------------------------ START
 			start2 = std::chrono::high_resolution_clock::now();

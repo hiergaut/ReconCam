@@ -317,17 +317,7 @@ int main(int argc, char **argv) {
 		rectangle(drawing, Rect(640 - 50, 0, 50, 50), Scalar(0, 0, 255), -1);
 
 		// ----------------------- WHILE HAS MOVEMENT
-		while (hasMovement()) {
-			for (auto &obj : objects) {
-				for (auto &l : obj.lines) {
-					line(drawing, l.p, l.p2, obj.color, 2);
-				}
-			}
-
-			for (DeadObj obj : tombs) {
-				putText(drawing, "x", obj.p + Point(-9, 9), FONT_HERSHEY_DUPLEX,
-						1, obj.color, 1);
-			}
+		while (1) {
 
 			putText(drawing, "nbObjs : " + std::to_string(nbObjects),
 					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 5);
@@ -385,6 +375,9 @@ int main(int argc, char **argv) {
 			if (quit) {
 				break;
 			}
+            if (! hasMovement()) {
+                break;
+            }
 
 			// ------------------------ START
 			start2 = std::chrono::high_resolution_clock::now();
@@ -403,7 +396,7 @@ int main(int argc, char **argv) {
 				// #ifdef PC
 				// putText(drawing, "auto brightness mode", Point(480, 30),
 				// FONT_HERSHEY_DUPLEX, 1, Scalar(255, 255, 255), 1);
-				rectangle(drawing, Rect(640 - 50, 0, 50, 50), Scalar(0, 0, 255),
+				rectangle(drawing, Rect(640 - 50, 0, 50, 50), Scalar(255, 0, 0),
 						  -1);
 				// 				imshow("drawing", drawing);
 				// #endif
@@ -482,7 +475,9 @@ int main(int argc, char **argv) {
 
 			int nbMovements = contours.size();
 			if (nbMovements >= MAX_MOVEMENTS) {
-				outputVideo << inputFrame;
+				rectangle(drawing, Rect(640 - 50, 0, 50, 50), Scalar(0, 0, 255),
+						  -1);
+				// outputVideo << inputFrame;
 				// #ifdef PC
 				// 				imshow("drawing", drawing);
 				// #endif
@@ -729,6 +724,16 @@ int main(int argc, char **argv) {
 			}
 			nbObjects = objects.size();
 
+			for (auto &obj : objects) {
+				for (auto &l : obj.lines) {
+					line(drawing, l.p, l.p2, obj.color, 2);
+				}
+			}
+
+			for (DeadObj obj : tombs) {
+				putText(drawing, "x", obj.p + Point(-9, 9), FONT_HERSHEY_DUPLEX,
+						1, obj.color, 1);
+			}
 			// putText(drawing, "nbObjs : " + std::to_string(nbObjects),
 			// 		Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 5);
 			// putText(drawing, "nbObjs : " + std::to_string(nbObjects),

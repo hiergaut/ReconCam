@@ -206,6 +206,7 @@ int main(int argc, char **argv) {
 	}
 
 	bool movsFound[MAX_MOVEMENTS];
+	bool quit = false;
 
 	// --------------------------- INFINITE LOOP ------------------------------
 	while (1) {
@@ -297,26 +298,98 @@ int main(int argc, char **argv) {
 			return 6;
 		}
 
-		vCap >> inputFrame;
-		outputVideo << inputFrame;
-		outputVideoRec << inputFrame;
-
 		iNewObj = 0;
 		iCap = 0;
 		tombs.clear();
 		objects.clear();
 
-		// auto model = createBackgroundSubtractorKNN();
 		auto model = createBackgroundSubtractorMOG2();
+		// auto model = createBackgroundSubtractorKNN();
 		// auto model = createBackgroundSubtractorGMG();
 		bool streamFinished = false;
-		drawing = inputFrame;
+		int nbObjects = 0;
+
+		auto start2 = std::chrono::high_resolution_clock::now();
+		vCap >> inputFrame;
+		// outputVideo << inputFrame;
+		outputVideoRec << inputFrame;
+		drawing = inputFrame.clone();
+		rectangle(drawing, Rect(640 - 50, 0, 50, 50), Scalar(0, 0, 255), -1);
 
 		// ----------------------- WHILE HAS MOVEMENT
 		while (hasMovement()) {
-			auto start2 = std::chrono::high_resolution_clock::now();
+			for (auto &obj : objects) {
+				for (auto &l : obj.lines) {
+					line(drawing, l.p, l.p2, obj.color, 2);
+				}
+			}
+
+			for (DeadObj obj : tombs) {
+				putText(drawing, "x", obj.p + Point(-9, 9), FONT_HERSHEY_DUPLEX,
+						1, obj.color, 1);
+			}
+
+			putText(drawing, "nbObjs : " + std::to_string(nbObjects),
+					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 5);
+			putText(drawing, "nbObjs : " + std::to_string(nbObjects),
+					Point(0, 30), FONT_HERSHEY_DUPLEX, 1,
+					Scalar(255, 255, 255));
+
+			putText(drawing, "frame : " + std::to_string(iCap), Point(0, 60),
+					FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 5);
+			putText(drawing, "frame : " + std::to_string(iCap), Point(0, 60),
+					FONT_HERSHEY_DUPLEX, 1, Scalar(255, 255, 255), 1);
+
+			// auto end2 = std::chrono::high_resolution_clock::now();
+			// double duration2 =
+			// 	1000.0 /
+			// 	std::chrono::duration_cast<std::chrono::milliseconds>(end2 -
+			// 														  start2)
+			// 		.count();
+			auto end2 = std::chrono::high_resolution_clock::now();
+			double duration2;
+			if (quit) {
+				duration2 =
+					std::chrono::duration_cast<std::chrono::microseconds>(end2 -
+																		  start)
+						.count() /
+					(1000000.0 * iCap);
+			} else {
+				duration2 =
+					std::chrono::duration_cast<std::chrono::microseconds>(
+						end2 - start2)
+						.count() /
+					1000000.0;
+			}
+			// std::cout << "recording fps : " << static_cast<double>(iCap) /
+			// std::cout << "duration2 : " << duration2 << std::endl;
+			// double fps = duration2;
+			// std::cout << "fps : " << fps << std::endl;
+			// duration
+			//   << std::endl;
+			// putText(drawing, "fps : " + std::to_string(fps), Point(0, 90),
+			// 		FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 5);
+			// putText(drawing, "fps : " + std::to_string(fps), Point(0, 90),
+			// 		FONT_HERSHEY_DUPLEX, 1, Scalar(255, 255, 255), 1);
+			std::ostringstream fps;
+			fps << std::fixed << std::setprecision(2) << 1.0 / duration2;
+			putText(drawing, "fps : " + fps.str(), Point(0, 90),
+					FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 5);
+			putText(drawing, "fps : " + fps.str(), Point(0, 90),
+					FONT_HERSHEY_DUPLEX, 1, Scalar(255, 255, 255), 1);
+
+#ifdef PC
+			imshow("drawing", drawing);
+#endif
+			outputVideo << drawing;
+			if (quit) {
+				break;
+			}
+
+			// ------------------------ START
+			start2 = std::chrono::high_resolution_clock::now();
 			++iCap;
-			int nbObjects = objects.size();
+			// int nbObjects = objects.size();
 
 			vCap >> inputFrame;
 			if (inputFrame.empty()) {
@@ -325,10 +398,15 @@ int main(int argc, char **argv) {
 				break;
 			}
 			outputVideoRec << inputFrame;
+			drawing = inputFrame.clone();
 			if (iCap <= NB_CAP_FOCUS_BRIGHTNESS) {
-#ifdef PC
-				imshow("drawing", inputFrame);
-#endif
+				// #ifdef PC
+				// putText(drawing, "auto brightness mode", Point(480, 30),
+				// FONT_HERSHEY_DUPLEX, 1, Scalar(255, 255, 255), 1);
+				rectangle(drawing, Rect(640 - 50, 0, 50, 50), Scalar(0, 0, 255),
+						  -1);
+				// 				imshow("drawing", drawing);
+				// #endif
 				continue;
 			}
 
@@ -347,7 +425,8 @@ int main(int argc, char **argv) {
 			model->apply(inputFrame, mask);
 #ifdef PC
 			if (waitKey(100) == 'q') {
-				break;
+				quit = true;
+				continue;
 				// return 0;
 			}
 			imshow("mask", mask);
@@ -355,11 +434,13 @@ int main(int argc, char **argv) {
 
 			if (iCap <= NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST) {
 				// if (iCap < NB_CAP_FOCUS_BRIGHTNESS) {
-#ifdef PC
-				// imshow("mask", mask);
-				imshow("drawing", inputFrame);
-#endif
-				outputVideo << inputFrame;
+				// #ifdef PC
+				// 				// imshow("mask", mask);
+				// 				imshow("drawing", drawing);
+				rectangle(drawing, Rect(640 - 50, 0, 50, 50), Scalar(0, 255, 0),
+						  -1);
+				// #endif
+				// outputVideo << inputFrame;
 				continue;
 			}
 
@@ -402,9 +483,9 @@ int main(int argc, char **argv) {
 			int nbMovements = contours.size();
 			if (nbMovements >= MAX_MOVEMENTS) {
 				outputVideo << inputFrame;
-#ifdef PC
-				imshow("drawing", inputFrame);
-#endif
+				// #ifdef PC
+				// 				imshow("drawing", drawing);
+				// #endif
 				continue;
 			}
 			std::vector<std::vector<Point>> contours_poly(nbMovements);
@@ -419,7 +500,7 @@ int main(int argc, char **argv) {
 				mu[i] = moments(contours[i], true);
 			}
 
-			drawing = inputFrame.clone();
+			// drawing = inputFrame.clone();
 			std::vector<Point2f> mc(nbMovements);
 			for (int i = 0; i < nbMovements; ++i) {
 				mc[i] = Point2f(mu[i].m10 / mu[i].m00, mu[i].m01 / mu[i].m00);
@@ -648,69 +729,74 @@ int main(int argc, char **argv) {
 			}
 			nbObjects = objects.size();
 
-			putText(drawing, "nbObjs : " + std::to_string(nbObjects),
-					Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 5);
-			putText(drawing, "nbObjs : " + std::to_string(nbObjects),
-					Point(0, 30), FONT_HERSHEY_DUPLEX, 1,
-					Scalar(255, 255, 255));
+			// putText(drawing, "nbObjs : " + std::to_string(nbObjects),
+			// 		Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 5);
+			// putText(drawing, "nbObjs : " + std::to_string(nbObjects),
+			// 		Point(0, 30), FONT_HERSHEY_DUPLEX, 1,
+			// 		Scalar(255, 255, 255));
 
-			putText(drawing, "frame : " + std::to_string(iCap), Point(0, 60),
-					FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 5);
-			putText(drawing, "frame : " + std::to_string(iCap), Point(0, 60),
-					FONT_HERSHEY_DUPLEX, 1, Scalar(255, 255, 255), 1);
-
-			// auto end2 = std::chrono::high_resolution_clock::now();
-			// double duration2 =
-			// 	1000.0 /
-			// 	std::chrono::duration_cast<std::chrono::milliseconds>(end2 -
-			// 														  start2)
-			// 		.count();
-		auto end2 = std::chrono::high_resolution_clock::now();
-		auto duration2 =
-			std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2)
-				.count() / 1000.0;
-			// std::cout << "recording fps : " << static_cast<double>(iCap) /
-            double fps = 1.0 / duration2;
-			// duration
-			//   << std::endl;
-			putText(drawing, "fps : " + std::to_string(fps), Point(0, 90),
-					FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 5);
-			putText(drawing, "fps : " + std::to_string(fps), Point(0, 90),
-					FONT_HERSHEY_DUPLEX, 1, Scalar(255, 255, 255), 1);
-			// std::ostringstream fps;
-			// fps << std::fixed << std::setprecision(2) << 1.0 / duration2;
-			// putText(drawing, "fps : " + fps.str(), Point(0, 90),
+			// putText(drawing, "frame : " + std::to_string(iCap), Point(0, 60),
 			// 		FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 5);
-			// putText(drawing, "fps : " + fps.str(), Point(0, 90),
+			// putText(drawing, "frame : " + std::to_string(iCap), Point(0, 60),
 			// 		FONT_HERSHEY_DUPLEX, 1, Scalar(255, 255, 255), 1);
 
-			for (auto &obj : objects) {
-				for (auto &l : obj.lines) {
-					line(drawing, l.p, l.p2, obj.color, 2);
-				}
-			}
+			// // auto end2 = std::chrono::high_resolution_clock::now();
+			// // double duration2 =
+			// // 	1000.0 /
+			// // 	std::chrono::duration_cast<std::chrono::milliseconds>(end2 -
+			// // start2)
+			// // 		.count();
+			// auto end2 = std::chrono::high_resolution_clock::now();
+			// auto duration2 =
+			// 	std::chrono::duration_cast<std::chrono::milliseconds>(end2 -
+			// 														  start2)
+			// 		.count() /
+			// 	1000.0;
+			// // std::cout << "recording fps : " << static_cast<double>(iCap) /
+			// std::cout << "duration2 : " << duration2 << std::endl;
+			// double fps = 1.0 / duration2;
+			// std::cout << "fps : " << fps << std::endl;
+			// // duration
+			// //   << std::endl;
+			// putText(drawing, "fps : " + std::to_string(fps), Point(0, 90),
+			// 		FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 5);
+			// putText(drawing, "fps : " + std::to_string(fps), Point(0, 90),
+			// 		FONT_HERSHEY_DUPLEX, 1, Scalar(255, 255, 255), 1);
+			// // std::ostringstream fps;
+			// // fps << std::fixed << std::setprecision(2) << 1.0 / duration2;
+			// // putText(drawing, "fps : " + fps.str(), Point(0, 90),
+			// // 		FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 5);
+			// // putText(drawing, "fps : " + fps.str(), Point(0, 90),
+			// // 		FONT_HERSHEY_DUPLEX, 1, Scalar(255, 255, 255), 1);
 
-			for (DeadObj obj : tombs) {
-				putText(drawing, "x", obj.p + Point(-9, 9), FONT_HERSHEY_DUPLEX,
-						1, obj.color, 1);
-			}
+			// for (auto &obj : objects) {
+			// 	for (auto &l : obj.lines) {
+			// 		line(drawing, l.p, l.p2, obj.color, 2);
+			// 	}
+			// }
 
-#ifdef PC
-			imshow("drawing", drawing);
-			// imshow("mask", mask);
-			// imshow("grey", grey);
-			// if (waitKey(300) == 'q')
-			// break;
-#endif
+			// for (DeadObj obj : tombs) {
+			// 	putText(drawing, "x", obj.p + Point(-9, 9), FONT_HERSHEY_DUPLEX,
+			// 			1, obj.color, 1);
+			// }
 
-			outputVideo << drawing;
+			// #ifdef PC
+			// 			imshow("drawing", drawing);
+			// 			// imshow("mask", mask);
+			// 			// imshow("grey", grey);
+			// 			// if (waitKey(300) == 'q')
+			// 			// break;
+			// #endif
+
+			// outputVideo << drawing;
 
 		} // while (hasMovement())
 		vCap.release();
 		auto end = std::chrono::high_resolution_clock::now();
 		auto duration =
 			std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-				.count() / 1000.0;
+				.count() /
+			1000.0;
 
 		std::string trainingPath = trainDir + getDay() + "_" + motionId;
 
@@ -845,12 +931,12 @@ int main(int argc, char **argv) {
 		}
 
 		std::cout << "object detected : " << nbRealObjects << std::endl;
-        std::cout << "duration : " << duration << std::endl;
-        std::cout << "nb capture : " << iCap << std::endl;
+		std::cout << "duration : " << duration << std::endl;
+		std::cout << "nb capture : " << iCap << std::endl;
 		std::cout << "recording fps : " << static_cast<double>(iCap) / duration
 				  << std::endl;
 
-		if (streamFinished) {
+		if (streamFinished || quit) {
 			return 0;
 		}
 		// return 0;

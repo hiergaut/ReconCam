@@ -37,7 +37,7 @@
         function notifyMe(event) {
             // audio.play();
 
-            new Audio('alert.mp3').play(
+            new Audio('alert.mp3').play;
             // Notification.requestPermission().then(function(result) {
             //     if (result === 'denied') {
             //         console.log('Permission wasn\'t granted. Allow a retry.');

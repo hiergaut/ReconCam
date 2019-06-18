@@ -273,6 +273,7 @@ int main(int argc, char **argv) {
 		cmd = "mkdir -p " + newMotionDir;
 		system(cmd.c_str());
 
+		auto start = std::chrono::high_resolution_clock::now();
 		vCap.open(stream);
 		if (!vCap.isOpened()) {
 			std::cout << "device not found";
@@ -311,7 +312,6 @@ int main(int argc, char **argv) {
 		bool streamFinished = false;
 		drawing = inputFrame;
 
-		auto start = std::chrono::high_resolution_clock::now();
 		// ----------------------- WHILE HAS MOVEMENT
 		while (hasMovement()) {
 			auto start2 = std::chrono::high_resolution_clock::now();
@@ -697,11 +697,11 @@ int main(int argc, char **argv) {
 			outputVideo << drawing;
 
 		} // while (hasMovement())
+		vCap.release();
 		auto end = std::chrono::high_resolution_clock::now();
 		auto duration =
-			std::chrono::duration_cast<std::chrono::seconds>(end - start)
-				.count();
-		vCap.release();
+			std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+				.count() / 1000.0;
 
 		std::string trainingPath = trainDir + getDay() + "_" + motionId;
 
@@ -836,6 +836,8 @@ int main(int argc, char **argv) {
 		}
 
 		std::cout << "object detected : " << nbRealObjects << std::endl;
+        std::cout << "duration : " << duration << std::endl;
+        std::cout << "nb capture : " << iCap << std::endl;
 		std::cout << "recording fps : " << static_cast<double>(iCap) / duration
 				  << std::endl;
 

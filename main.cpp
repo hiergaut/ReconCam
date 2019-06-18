@@ -661,8 +661,8 @@ int main(int argc, char **argv) {
 
 			auto end2 = std::chrono::high_resolution_clock::now();
 			double duration2 =
-				1000000.0 /
-				std::chrono::duration_cast<std::chrono::microseconds>(end2 -
+				1000.0 /
+				std::chrono::duration_cast<std::chrono::milliseconds>(end2 -
 																	  start2)
 					.count();
 			// std::cout << "recording fps : " << static_cast<double>(iCap) /

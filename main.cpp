@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
 	bool training = parser.get<bool>("training");
 	bool recon = parser.get<bool>("recon");
 	std::string script = parser.get<std::string>("script");
-    bool hasScript = ! script.empty();
+	bool hasScript = !script.empty();
 	bool hasStream = !stream.empty();
 	// bool onlyRec = parser.get<bool>("onlyRec");
 	if (!parser.check()) {
@@ -200,7 +200,7 @@ int main(int argc, char **argv) {
 			// boxes[filename] = {Min, Mean, Max};
 			// auto tuple = std::make_tuple(Min, Mean, Max);
 			boxes.insert(std::make_pair(filename, std::move(box)));
-            std::cout << "boxes : insert " << filename << std::endl;
+			std::cout << "boxes : insert " << filename << std::endl;
 			// boxes[filename] = box;
 		}
 	}
@@ -326,7 +326,9 @@ int main(int argc, char **argv) {
 			}
 			outputVideoRec << inputFrame;
 			if (iCap <= NB_CAP_FOCUS_BRIGHTNESS) {
+#ifdef PC
 				imshow("drawing", inputFrame);
+#endif
 				continue;
 			}
 
@@ -530,15 +532,15 @@ int main(int argc, char **argv) {
 
 					if (recon && objects.size() <= 10) {
 						// if (obj.age > MIN_MOV_YEARS_TO_SAVE_OBJECT) {
-                            // std::cout << "recon object " << std::endl;
+						// std::cout << "recon object " << std::endl;
 						if (!obj.name.compare("")) {
-                            if (! cap.m_build) {
-                                cap.buildNColors();
-                            }
-                            assert(cap.m_build);
+							if (!cap.m_build) {
+								cap.buildNColors();
+							}
+							assert(cap.m_build);
 
-                            // std::cout << "build done " << std::endl;
-                            // std::cout <<  std::flush;
+							// std::cout << "build done " << std::endl;
+							// std::cout <<  std::flush;
 							// Triplet triplet =
 							// 	getPrimaryColor(cap.img, cap.mask);
 							// putText(drawing, std::string(triplet),
@@ -548,10 +550,10 @@ int main(int argc, char **argv) {
 
 							std::string bestPath = "";
 							double bestDist = 100000000;
-                            // assert(boxes.size() == 0);
+							// assert(boxes.size() == 0);
 							for (const auto &pair : boxes) {
 								std::string path = pair.first;
-                                // std::cout << "path : " << path << std::endl;
+								// std::cout << "path : " << path << std::endl;
 								auto box = pair.second;
 								// std::tuple<Identity, Identity, Identity>
 								// bound = pair.second;
@@ -560,15 +562,15 @@ int main(int argc, char **argv) {
 								// const Identity &Max = std::get<2>(bound);
 
 								// const Identity &cur{cap.m_id};
-                                // assert(cap.m_build);
+								// assert(cap.m_build);
 								const Identity &cur = cap.m_id;
-                                // std::cout << "id : " << cur  << std::endl;
+								// std::cout << "id : " << cur  << std::endl;
 
 								// if (triplet.in(Min, Max)) {
 								if (box.in(cur)) {
-                                    // std::cout << "boxin " << path << std::endl;
-									// if (Min <= cur && cur <= Max) {
-									// double curDist = triplet.dist(Mean);
+									// std::cout << "boxin " << path <<
+									// std::endl; if (Min <= cur && cur <= Max)
+									// { double curDist = triplet.dist(Mean);
 									double curDist = cur - box.center();
 
 									if (curDist < bestDist) {
@@ -579,7 +581,8 @@ int main(int argc, char **argv) {
 							}
 
 							if (bestPath.compare("")) {
-                                std::cout << "find object : " << bestPath << std::endl;
+								std::cout << "find object : " << bestPath
+										  << std::endl;
 
 								imwrite("alert.jpg", drawing);
 								if (hasScript) {
@@ -654,18 +657,20 @@ int main(int argc, char **argv) {
 					FONT_HERSHEY_DUPLEX, 1, Scalar(255, 255, 255), 1);
 
 			auto end2 = std::chrono::high_resolution_clock::now();
-			double duration2 = 1000000.0 /
-				std::chrono::duration_cast<std::chrono::microseconds>(end2 - start2)
+			double duration2 =
+				1000000.0 /
+				std::chrono::duration_cast<std::chrono::microseconds>(end2 -
+																	  start2)
 					.count();
 			// std::cout << "recording fps : " << static_cast<double>(iCap) /
 			// duration
 			//   << std::endl;
-            std::ostringstream duration2Str;
-            duration2Str << std::fixed << std::setprecision(2) << duration2;
-			putText(drawing, "fps : " + duration2Str.str(),
-					Point(0, 90), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 5);
-			putText(drawing, "fps : " + duration2Str.str(),
-					Point(0, 90), FONT_HERSHEY_DUPLEX, 1, Scalar(255, 255, 255), 1);
+			std::ostringstream duration2Str;
+			duration2Str << std::fixed << std::setprecision(2) << duration2;
+			putText(drawing, "fps : " + duration2Str.str(), Point(0, 90),
+					FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 5);
+			putText(drawing, "fps : " + duration2Str.str(), Point(0, 90),
+					FONT_HERSHEY_DUPLEX, 1, Scalar(255, 255, 255), 1);
 
 			for (auto &obj : objects) {
 				for (auto &l : obj.lines) {
@@ -731,7 +736,7 @@ int main(int argc, char **argv) {
 					// Mat a;
 					for (size_t i = 0; i < obj.trace.size(); ++i) {
 						const Capture &cap = obj.trace[i];
-						if (! cap.m_build) {
+						if (!cap.m_build) {
 							cap.buildNColors();
 						}
 						// const Mat &img{cap.m_img};

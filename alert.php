@@ -22,8 +22,8 @@
         // song.play();
         // // audio.play();
 
-        var audio = new Audio('alert.mp3');
-        audio.load();
+        // var audio = new Audio('alert.mp3');
+        // audio.load();
 
         const title = 'Simple title';
         const options = {
@@ -35,8 +35,9 @@
         };
 
         function notifyMe(event) {
-            audio.play();
+            // audio.play();
 
+            new Audio('alert.mp3').play(
             // Notification.requestPermission().then(function(result) {
             //     if (result === 'denied') {
             //         console.log('Permission wasn\'t granted. Allow a retry.');

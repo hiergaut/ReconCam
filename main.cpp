@@ -659,20 +659,25 @@ int main(int argc, char **argv) {
 			putText(drawing, "frame : " + std::to_string(iCap), Point(0, 60),
 					FONT_HERSHEY_DUPLEX, 1, Scalar(255, 255, 255), 1);
 
-			auto end2 = std::chrono::high_resolution_clock::now();
-			double duration2 =
-				1000.0 /
-				std::chrono::duration_cast<std::chrono::milliseconds>(end2 -
-																	  start2)
-					.count();
+			// auto end2 = std::chrono::high_resolution_clock::now();
+			// double duration2 =
+			// 	1000.0 /
+			// 	std::chrono::duration_cast<std::chrono::milliseconds>(end2 -
+			// 														  start2)
+			// 		.count();
+		auto end2 = std::chrono::high_resolution_clock::now();
+		auto duration2 =
+			std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2)
+				.count() / 1000.0;
 			// std::cout << "recording fps : " << static_cast<double>(iCap) /
+            // double fps = 1.0 / duration2;
 			// duration
 			//   << std::endl;
-			std::ostringstream duration2Str;
-			duration2Str << std::fixed << std::setprecision(2) << duration2;
-			putText(drawing, "fps : " + duration2Str.str(), Point(0, 90),
+			std::ostringstream fps;
+			fps << std::fixed << std::setprecision(2) << 1.0 / duration2;
+			putText(drawing, "fps : " + fps.str(), Point(0, 90),
 					FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 5);
-			putText(drawing, "fps : " + duration2Str.str(), Point(0, 90),
+			putText(drawing, "fps : " + fps.str(), Point(0, 90),
 					FONT_HERSHEY_DUPLEX, 1, Scalar(255, 255, 255), 1);
 
 			for (auto &obj : objects) {

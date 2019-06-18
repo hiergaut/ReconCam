@@ -15,7 +15,7 @@ class Color {
 		return m_r <= right.m_r && m_g <= right.m_g && m_b <= right.m_b;
 	}
 
-	double operator-(const Color &right) const {
+	int operator-(const Color &right) const {
 		return abs(m_r - right.m_r) + abs(m_g - right.m_g) +
 			   abs(m_b - right.m_b);
 	}
@@ -79,8 +79,8 @@ class NColors {
 		return ret;
 	}
 
-	double operator-(const NColors &right) const {
-		double sum = 0.0;
+	int operator-(const NColors &right) const {
+		int sum = 0;
 		for (int i = 0; i < 3; ++i) {
 			sum += m_colors[i] - right.m_colors[i];
 		}
@@ -156,8 +156,8 @@ class Identity {
 			   m_density <= right.m_density && m_colors <= right.m_colors;
 	}
 
-	double operator-(const Identity &right) const {
-		double sum = 0.0;
+	int operator-(const Identity &right) const {
+		int sum = 0;
 		sum += abs(m_x - right.m_x);
 		sum += abs(m_y - right.m_y);
 		sum += abs(m_width - right.m_width);

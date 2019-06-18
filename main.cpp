@@ -549,7 +549,8 @@ int main(int argc, char **argv) {
 							// cap.getPrimaryColors();
 
 							std::string bestPath = "";
-							double bestDist = 100000000;
+							const double maxDist = 100000000;
+							double bestDist = maxDist;
 							// assert(boxes.size() == 0);
 							for (const auto &pair : boxes) {
 								std::string path = pair.first;
@@ -572,6 +573,7 @@ int main(int argc, char **argv) {
 									// std::endl; if (Min <= cur && cur <= Max)
 									// { double curDist = triplet.dist(Mean);
 									double curDist = cur - box.center();
+									assert(curDist < 100000000);
 
 									if (curDist < bestDist) {
 										curDist = bestDist;
@@ -580,7 +582,8 @@ int main(int argc, char **argv) {
 								}
 							}
 
-							if (bestPath.compare("")) {
+							// if (bestPath.compare("")) {
+							if (bestDist != maxDist) {
 								std::cout << "find object : " << bestPath
 										  << std::endl;
 
@@ -839,7 +842,7 @@ int main(int argc, char **argv) {
 		if (streamFinished) {
 			return 0;
 		}
-		return 0;
+		// return 0;
 	} // while (1)
 
 	return 0;

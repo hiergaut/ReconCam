@@ -670,15 +670,19 @@ int main(int argc, char **argv) {
 			std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2)
 				.count() / 1000.0;
 			// std::cout << "recording fps : " << static_cast<double>(iCap) /
-            // double fps = 1.0 / duration2;
+            double fps = 1.0 / duration2;
 			// duration
 			//   << std::endl;
-			std::ostringstream fps;
-			fps << std::fixed << std::setprecision(2) << 1.0 / duration2;
-			putText(drawing, "fps : " + fps.str(), Point(0, 90),
+			putText(drawing, "fps : " + std::to_string(fps), Point(0, 90),
 					FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 5);
-			putText(drawing, "fps : " + fps.str(), Point(0, 90),
+			putText(drawing, "fps : " + std::to_string(fps), Point(0, 90),
 					FONT_HERSHEY_DUPLEX, 1, Scalar(255, 255, 255), 1);
+			// std::ostringstream fps;
+			// fps << std::fixed << std::setprecision(2) << 1.0 / duration2;
+			// putText(drawing, "fps : " + fps.str(), Point(0, 90),
+			// 		FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 5);
+			// putText(drawing, "fps : " + fps.str(), Point(0, 90),
+			// 		FONT_HERSHEY_DUPLEX, 1, Scalar(255, 255, 255), 1);
 
 			for (auto &obj : objects) {
 				for (auto &l : obj.lines) {

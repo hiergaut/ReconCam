@@ -200,7 +200,7 @@ int main(int argc, char **argv) {
 			// boxes[filename] = {Min, Mean, Max};
 			// auto tuple = std::make_tuple(Min, Mean, Max);
 			boxes.insert(std::make_pair(filename, std::move(box)));
-			std::cout << "boxes : insert " << filename << std::endl;
+			std::cout << "[RECON] boxes : insert " << filename << std::endl;
 			// boxes[filename] = box;
 		}
 	}
@@ -660,13 +660,15 @@ int main(int argc, char **argv) {
 
 							// if (bestPath.compare("")) {
 							if (bestDist != maxDist) {
-								std::cout << "find object : " << bestPath
+								std::cout << "[RECON] find object : " << bestPath
 										  << std::endl;
 
 								imwrite("alert.jpg", drawing);
 								if (hasScript) {
 									cmd = "./" + script + " " + bestPath + " &";
 									system(cmd.c_str());
+
+                                    std::cout << "[SCRIPT] run : " << cmd << std::endl;
 								}
 								// std::thread thread(
 								// 	thread_alert,
@@ -847,7 +849,7 @@ int main(int argc, char **argv) {
 
 						const std::string dir =
 							newTrainingFile + std::to_string(i) + "/";
-						std::cout << "new training event '" << dir << "'"
+						std::cout << "[TRAINING] new training event '" << dir << "'"
 								  << std::endl;
 
 						cmd = "mkdir -p " + dir;
@@ -906,14 +908,14 @@ int main(int argc, char **argv) {
 		outputVideo << drawing;
 		outputVideo.release();
 		outputVideoRec.release();
-		std::cout << "save video '" << outputVideoFile << "'" << std::endl;
+		// std::cout << "save video '" << outputVideoFile << "'" << std::endl;
 
 		// if (iCap >= NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST +
 		// 				NB_CAP_MIN_FOR_REAL_MOTION) {
 
 		imwrite(newMotionDir + "/trace.jpg", drawing);
-		std::cout << "save trace file '" << newMotionDir + "/trace.jpg'"
-				  << std::endl;
+		// std::cout << "save trace file '" << newMotionDir + "/trace.jpg'"
+				//   << std::endl;
 
 		if (hasRemoteDir) {
 			if (port == -1) {

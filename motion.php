@@ -5,6 +5,8 @@
 <body>
 
     <?php
+    exec("cat /var/log/apache2/error.log | grep auth_basic:error");
+
     // $user_agent = $_SERVER['HTTP_USER_AGENT'];
     // $os_array     = array(
     //     '/windows nt 10/i'      =>  'Windows 10',

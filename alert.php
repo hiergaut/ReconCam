@@ -25,16 +25,16 @@
         // var audio = new Audio('alert.mp3');
         // audio.load();
 
-        const title = 'Simple title';
-        const options = {
-            // body: 'Simple body',
-            image: 'alert.jpg',
-            // icon: 'alert.jpg'
-            // sound: "alert.mp3"
-            // silent: "false"
-        };
 
         function notifyMe(event) {
+            const title = 'Simple title';
+            const options = {
+                // body: 'Simple body',
+                image: 'alert.jpg',
+                // icon: 'alert.jpg'
+                // sound: "alert.mp3"
+                // silent: "false"
+            };
             // audio.play();
 
             new Audio('alert.mp3').play();
@@ -72,7 +72,8 @@
                 Notification.requestPermission(function(permission) {
                     // If the user accepts, let's create a notification
                     if (permission === "granted") {
-                        var notification = new Notification("Hi there!");
+                        // var notification = new Notification("Hi there!");
+                        var notification = new Notification(event, options);
                     }
                 });
             }
@@ -106,7 +107,6 @@
 
 <body>
 
-    <img src="alert.jpg" />
 
     <?php
     // $user_agent = $_SERVER['HTTP_USER_AGENT'];
@@ -149,6 +149,7 @@
             // audio.play(); </script>";
             // rm('alert/fuck');
             echo "<script> notifyMe(\"$file\"); </script>";
+            echo "<img src=\"alert.jpg\" />";
             // unlink("$dir/$file");
         }
     }

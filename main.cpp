@@ -919,7 +919,8 @@ int main(int argc, char **argv) {
 		// std::cout << "save trace file '" << newMotionDir + "/trace.jpg'"
 		//   << std::endl;
 		if (nbRealObjects > 0) {
-			cmd = "touch -v" + newMotionDir + "/objectDetected.var";
+			cmd = "touch " + newMotionDir + "/objectDetected.var";
+            std::cout << cmd << std::endl;
 			system(cmd.c_str());
 		}
 

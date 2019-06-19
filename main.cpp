@@ -660,15 +660,17 @@ int main(int argc, char **argv) {
 
 							// if (bestPath.compare("")) {
 							if (bestDist != maxDist) {
-								std::cout << "[RECON] find object : " << bestPath
-										  << std::endl;
+								std::cout
+									<< "[RECON] find object : " << bestPath
+									<< std::endl;
 
 								imwrite("alert.jpg", drawing);
 								if (hasScript) {
 									cmd = "./" + script + " " + bestPath + " &";
 									system(cmd.c_str());
 
-                                    std::cout << "[SCRIPT] run : " << cmd << std::endl;
+									std::cout << "[SCRIPT] run : " << cmd
+											  << std::endl;
 								}
 								// std::thread thread(
 								// 	thread_alert,
@@ -849,8 +851,8 @@ int main(int argc, char **argv) {
 
 						const std::string dir =
 							newTrainingFile + std::to_string(i) + "/";
-						std::cout << "[TRAINING] new training event '" << dir << "'"
-								  << std::endl;
+						std::cout << "[TRAINING] new training event '" << dir
+								  << "'" << std::endl;
 
 						cmd = "mkdir -p " + dir;
 						system(cmd.c_str());
@@ -915,7 +917,11 @@ int main(int argc, char **argv) {
 
 		imwrite(newMotionDir + "/trace.jpg", drawing);
 		// std::cout << "save trace file '" << newMotionDir + "/trace.jpg'"
-				//   << std::endl;
+		//   << std::endl;
+		if (nbRealObjects > 0) {
+			cmd = "touch " + newMotionDir + "/objectDetected.var";
+			system(cmd.c_str());
+		}
 
 		if (hasRemoteDir) {
 			if (port == -1) {

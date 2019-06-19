@@ -148,8 +148,8 @@
             // echo "<script> let audio = new Audio('alert.mp3');
             // audio.play(); </script>";
             // rm('alert/fuck');
-            echo "<script> notifyMe(\"$file\"); </script>";
-            echo "<img src=\"alert.jpg\" />";
+            echo "<script> notifyMe(\"$file\"); </script>\n";
+            echo "<img src=\"alert.jpg\" />\n";
             // unlink("$dir/$file");
         }
     }

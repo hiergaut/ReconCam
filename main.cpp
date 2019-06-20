@@ -664,8 +664,9 @@ int main(int argc, char **argv) {
 									<< "[RECON] find object : " << bestPath
 									<< std::endl;
 
-								imwrite("alert.jpg", drawing);
 								if (hasScript) {
+                                    imwrite("alert.jpg", drawing);
+
 									cmd = "./" + script + " " + bestPath + " &";
 									system(cmd.c_str());
 

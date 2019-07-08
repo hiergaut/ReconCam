@@ -606,7 +606,8 @@ int main(int argc, char **argv) {
 					line(drawing, obj.pos, obj.pos + obj.speedVector,
 						 Scalar(0, 0, 255), 1, LineTypes::LINE_AA);
 
-					if (recon && objects.size() <= 10) {
+					// if (recon && objects.size() <= 10) {
+					if (recon) {
 						// if (obj.age > MIN_MOV_YEARS_TO_SAVE_OBJECT) {
 						// std::cout << "recon object " << std::endl;
 						if (!obj.name.compare("")) {
@@ -808,6 +809,10 @@ int main(int argc, char **argv) {
 				.count() /
 			1000.0;
 
+		if (lightGpio != -1) {
+			gpioSetValue(lightGpio, 0);
+		}
+
 		std::string trainingPath = trainDir + getDay() + "_" + motionId;
 
 		int nbRealObjects = 0;
@@ -913,6 +918,7 @@ int main(int argc, char **argv) {
 		outputVideoRec.release();
 		// std::cout << "save video '" << outputVideoFile << "'" << std::endl;
 
+
 		// if (iCap >= NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST +
 		// 				NB_CAP_MIN_FOR_REAL_MOTION) {
 
@@ -941,9 +947,6 @@ int main(int argc, char **argv) {
 		destroyAllWindows();
 #endif
 
-		if (lightGpio != -1) {
-			gpioSetValue(lightGpio, 0);
-		}
 
 		std::cout << "object detected : " << nbRealObjects << std::endl;
 		std::cout << "duration : " << duration << std::endl;

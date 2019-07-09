@@ -653,7 +653,7 @@ int main(int argc, char **argv) {
 									assert(curDist < 100000000);
 
 									if (curDist < bestDist) {
-										curDist = bestDist;
+                                        bestDist = curDist;
 										bestPath = path;
 									}
 								}

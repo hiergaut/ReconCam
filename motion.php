@@ -3,11 +3,17 @@
 
 
 <body>
-    <div>
+    <!-- <div>
         <p><?php include('log.txt'); ?></p>
-    </div>
+    </div> -->
+
+    <object width="1700" height="50" type="text/plain" data="log.txt" border="0" >
+    </object>
+    <br>
 
     <?php
+
+    // echo file_get_contents('log.txt');
 
 
     // include('log.txt');

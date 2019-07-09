@@ -893,8 +893,27 @@ int main(int argc, char **argv) {
 						// Scalar(0, 255, 0), -1);
 						for (int j = 0; j < 3; ++j) {
 							const Color col = id(j);
+                            Vec3b hsv(col.m_r, col.m_g, col.m_b);
+                            Mat3b hsvMat(hsv);
+                            // Vec3b bgr;
+                            Mat3b bgrMat;
+                            cvtColor(hsvMat, bgrMat, COLOR_HSV2BGR);
+                            Vec3b bgr(bgrMat.at<Vec3b>(0, 0));
+
+
 							rectangle(a, Rect(hStep * j, 0, hStep, vStep),
-									  Scalar(col.m_r, col.m_g, col.m_b), -1);
+									  bgr, -1);
+							// rectangle(a, Rect(hStep * j, 0, hStep, vStep),
+									//   Scalar(col.m_r, col.m_g, col.m_b), -1);
+                            Vec3b hsv2(col.m_r, 255, 255);
+                            Mat3b hsvMat2(hsv2);
+                            // Vec3b bgr;
+                            Mat3b bgrMat2;
+                            cvtColor(hsvMat2, bgrMat2, COLOR_HSV2BGR);
+                            Vec3b bgr2(bgrMat2.at<Vec3b>(0, 0));
+
+							rectangle(a, Rect(hStep * j, vStep, hStep, vStep),
+									  bgr2, -1);
 						}
 
 						imwrite(dir + "image.jpg", a);

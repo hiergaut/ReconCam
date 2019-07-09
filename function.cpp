@@ -3,7 +3,7 @@
 
 #include <set>
 
-const int side = 8;
+const int side = 16;
 const int rbins = side;
 const int gbins = side;
 const int bbins = side;
@@ -17,7 +17,7 @@ const int histSize[] = {rbins, gbins, bbins};
 // // saturation varies from 0 (black-gray-white) to
 // const float sranges[] = {0, 256};
 // const int sStep = (sranges[1] - sranges[0]) / sbins;
-const float rRanges[] = {0, 256};
+const float rRanges[] = {0, 180};
 const float gRanges[] = {0, 256};
 const float bRanges[] = {0, 256};
 
@@ -57,11 +57,11 @@ typedef struct s_colorSorted {
 
 void Capture::buildNColors() const {
 
-	// Mat hsv;
-	// cvtColor(img, hsv, COLOR_BGR2HSV);
+	Mat hsv;
+	cvtColor(m_img, hsv, COLOR_BGR2HSV);
 
 	MatND hist;
-	calcHist(&m_img, 1, channels, m_mask, // do not use mask
+	calcHist(&hsv, 1, channels, m_mask, // do not use mask
 			 hist, 3, histSize, ranges,
 			 true, // the histogram is uniform
 			 false);

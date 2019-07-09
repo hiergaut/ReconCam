@@ -3,9 +3,9 @@
 
 
 <body>
-    <!-- <div>
-        <p><?php include('log.txt'); ?></p>
-    </div> -->
+    <!-- <div> -->
+        <!-- <p><php include('log.txt'); ?></p> -->
+    <!-- </div> -->
 
     <object width="1700" height="50" type="text/plain" data="log.txt" border="0" >
     </object>

@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html>
 
-<script>
+<!-- <script>
     function refreshPage() {
         window.location.reload();
     }
-</script>
+</script> -->
 
 <body>
 

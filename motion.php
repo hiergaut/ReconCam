@@ -101,78 +101,80 @@
             if (!fnmatch("timelapse_*", $file)) {
                 // echo "$file";
                 // if (file_exists("$dir/$file/complete.var")) {
-                if (file_exists("$dir/$file/objectDetected.var")) {
-                    $heure = exec("echo $file | cut -c1-2");
-                    // $heure = exec("echo $file | cut -d_ -f2 | cut -c1-2");
-                    #$fileName =exec("echo $file | awk -F. '{print $1}'");
 
-                    if ($heure != $previousHeure) {
-                        $previousHeure = $heure;
+                // if (file_exists("$dir/$file/objectDetected.var")) {
 
-                        echo "<hr>";
-                        echo "<div align =center><font size=6pt>$heure h</font><br</div>";
-                        echo "<hr>";
-                    }
+                $heure = exec("echo $file | cut -c1-2");
+                // $heure = exec("echo $file | cut -d_ -f2 | cut -c1-2");
+                #$fileName =exec("echo $file | awk -F. '{print $1}'");
 
-                    // $video =exec("echo $file | cut -d: -f2,3");
-                    // $video = "$dir/$file/clip.gif";
-                    // $video ="$video.mp4";
+                if ($heure != $previousHeure) {
+                    $previousHeure = $heure;
 
-                    #			echo "
-                    #			<video controls src=\"motion/$video\" poster=\"$file\" </video>
-                    #			";
-                    #				<source src=\"motion/$fileName.mp4\" type=\"video/mp4\" />
-                    #				<source src=\"motion/$fileName.avi\" type=\"video/avi\" />
-                    #			</video>
-                    #			";
+                    echo "<hr>";
+                    echo "<div align =center><font size=6pt>$heure h</font><br</div>";
+                    echo "<hr>";
+                }
+
+                // $video =exec("echo $file | cut -d: -f2,3");
+                // $video = "$dir/$file/clip.gif";
+                // $video ="$video.mp4";
+
+                #			echo "
+                #			<video controls src=\"motion/$video\" poster=\"$file\" </video>
+                #			";
+                #				<source src=\"motion/$fileName.mp4\" type=\"video/mp4\" />
+                #				<source src=\"motion/$fileName.avi\" type=\"video/avi\" />
+                #			</video>
+                #			";
 
 
-                    // $style = "";
-                    // $nbPhoto = exec("ls $dir/$file/cap_* | wc -l");
-                    // // echo "$nbPhoto";
-                    // if ($nbPhoto <= 4) {
-                    //     $style = "$style border-bottom:2px solid blue;";
-                    // }
+                // $style = "";
+                // $nbPhoto = exec("ls $dir/$file/cap_* | wc -l");
+                // // echo "$nbPhoto";
+                // if ($nbPhoto <= 4) {
+                //     $style = "$style border-bottom:2px solid blue;";
+                // }
 
-                    // if (file_exists("$dir/$file/nand.var")) {
-                    //     $style = "$style border-right:2px solid red;";
-                    // }
+                // if (file_exists("$dir/$file/nand.var")) {
+                //     $style = "$style border-right:2px solid red;";
+                // }
 
-                    // if (file_exists("$dir/$file/cap_1.jpg")) {
-                    //         if ($os_platform == "Android") {
-                    //             echo "
-                    // <a href=\"display.php?dir=$file\" >
-                    //     <img style=\"$style\" src=\"$dir/$file/diffMax.jpg\" width=320 height=240 />
-                    // </a>
-                    // ";
-                    //         } else {
-                    //     echo "
-                    // <a href=\"$video\" >
-                    //     <img style=\"$style\" src=\"$dir/$file/trace.jpeg\" width=320 height=240 />
-                    // </a>
-                    // ";
-                    // if (file_exists("$dir/$file/trace.jpg")) {
+                // if (file_exists("$dir/$file/cap_1.jpg")) {
+                //         if ($os_platform == "Android") {
+                //             echo "
+                // <a href=\"display.php?dir=$file\" >
+                //     <img style=\"$style\" src=\"$dir/$file/diffMax.jpg\" width=320 height=240 />
+                // </a>
+                // ";
+                //         } else {
+                //     echo "
+                // <a href=\"$video\" >
+                //     <img style=\"$style\" src=\"$dir/$file/trace.jpeg\" width=320 height=240 />
+                // </a>
+                // ";
+                // if (file_exists("$dir/$file/trace.jpg")) {
 
-                    // echo "
-                    //     <a href=\"displayAll.php?dir=$file\" >
-                    //         <img src=\"$dir/$file/trace.jpg\" width=320 height=240 />
-                    //     </a>
-                    //     ";
+                // echo "
+                //     <a href=\"displayAll.php?dir=$file\" >
+                //         <img src=\"$dir/$file/trace.jpg\" width=320 height=240 />
+                //     </a>
+                //     ";
 
-                    echo "
+                echo "
                     <a href=\"$dir/$file/video.webm\" >
                         <img src=\"$dir/$file/trace.jpg\" width=320 height=240 />
                     </a>
                     ";
-                    // }
-                    // }
-                    //         } else {
-                    //             echo "
-                    // <a href=\"$dir/$file/cap_0.jpg\" >
-                    //     <img src=\"$dir/$file/cap_0.jpg\" width=320 height=240 />
-                    // </a>
-                    // ";
-                }
+                // }
+                // }
+                //         } else {
+                //             echo "
+                // <a href=\"$dir/$file/cap_0.jpg\" >
+                //     <img src=\"$dir/$file/cap_0.jpg\" width=320 height=240 />
+                // </a>
+                // ";
+                // }
             }
         }
     }

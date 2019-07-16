@@ -311,6 +311,9 @@ int main(int argc, char **argv) {
 
 		auto start2 = std::chrono::high_resolution_clock::now();
 		vCap >> inputFrame;
+        if (flip180) {
+            flip(inputFrame, inputFrame, -1);
+        }
 		// outputVideo << inputFrame;
 		outputVideoRec << inputFrame;
 		drawing = inputFrame.clone();
@@ -390,6 +393,9 @@ int main(int argc, char **argv) {
 				streamFinished = true;
 				break;
 			}
+            if (flip180) {
+                flip(inputFrame, inputFrame, -1);
+            }
 			outputVideoRec << inputFrame;
 			drawing = inputFrame.clone();
 			if (iCap <= NB_CAP_FOCUS_BRIGHTNESS) {

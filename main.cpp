@@ -225,7 +225,7 @@ int main(int argc, char **argv) {
 					std::cout << "device not found";
 					return 1;
 				}
-				for (int i = 0; i < NB_CAP_FOCUS_BRIGHTNESS; ++i) {
+				for (int i = 0; i < NB_CAP_FOCUS_BRIGHTNESS + 10; ++i) {
 					vCap >> inputFrame;
 				}
 

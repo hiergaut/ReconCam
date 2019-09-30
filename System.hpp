@@ -93,7 +93,8 @@ std::vector<std::string> forEachFileInDir(std::string dirPath) {
 	}
 	closedir(dp);
 
-	return std::move(files);
+	return files;
+	// return std::move(files);
 }
 
 bool emptyDir(std::string dirPath) {

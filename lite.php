@@ -10,6 +10,11 @@
 <body>
 
     <?php
+    if (0 != filesize("log.txt")) {
+        echo ("<object width=\"1700\" height=\"100\" type=\"text/plain\" data=\"log.txt\" border=\"0\" >
+        </object>
+        <br>");
+    }
     // $user_agent = $_SERVER['HTTP_USER_AGENT'];
     // $os_array     = array(
     //     '/windows nt 10/i'      =>  'Windows 10',

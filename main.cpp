@@ -29,7 +29,7 @@
 // #include "LearningUI/Capture.h"
 
 #ifdef PC
-#define TIMELAPSE_INTERVAL 30 // 30 sec
+#define TIMELAPSE_INTERVAL 20 // 30 sec
 #else
 // #define TIMELAPSE_INTERVAL 1800 // 30 min
 // #define TIMELAPSE_INTERVAL 1200 // 20 min
@@ -155,7 +155,7 @@ int main(int argc, char **argv) {
 	int iNewObj;
 	int iCap;
 
-	int tickTimeLapse = 1; // take picture immediately
+	// int tickTimeLapse = 1; // take picture immediately
 
 	vCap.open(stream);
 	if (!vCap.isOpened()) {
@@ -209,17 +209,34 @@ int main(int argc, char **argv) {
 	bool movsFound[MAX_MOVEMENTS];
 	bool quit = false;
 
+    const auto timelapseStart = std::chrono::high_resolution_clock::now();
+    int timelapseCounter = 0;
+
+		// auto end = std::chrono::high_resolution_clock::now();
+		// auto duration =
+		// 	std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+		// 		.count() /
+		// 	1000.0;
+
 	// --------------------------- INFINITE LOOP ------------------------------
 	while (1) {
+        auto timelapseEnd = std::chrono::high_resolution_clock::now();
+        auto timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f - timelapseCounter * TIMELAPSE_INTERVAL;
+		// std::cout << "[TIMELAPSE] wait new motion, future lapse at "
+				//   << tickTimeLapse << " sec " << std::endl;
 		std::cout << "[TIMELAPSE] wait new motion, future lapse at "
-				  << tickTimeLapse << " sec " << std::endl;
+				  << TIMELAPSE_INTERVAL - timelapseDuration << " sec " << std::endl;
 		while (!hasMovement()) {
 
 			std::cout << "." << std::flush;
 			usleep(CLOCKS_PER_SEC);
-			--tickTimeLapse;
+			// --tickTimeLapse;
 
-			if (tickTimeLapse == 0) {
+            timelapseEnd = std::chrono::high_resolution_clock::now();
+            // timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f;
+            timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f - timelapseCounter * TIMELAPSE_INTERVAL;
+            if (timelapseDuration > TIMELAPSE_INTERVAL) {
+			// if (tickTimeLapse == 0) {
 				std::cout << std::endl;
 				vCap.open(stream);
 				if (!vCap.isOpened()) {
@@ -258,8 +275,15 @@ int main(int argc, char **argv) {
 					system(cmd.c_str());
 				}
 
-				tickTimeLapse = TIMELAPSE_INTERVAL;
-				std::cout << "[TIMELAPSE] future lapse at " << tickTimeLapse
+				// tickTimeLapse = TIMELAPSE_INTERVAL;
+				// std::cout << "[TIMELAPSE] future lapse at " << tickTimeLapse
+						//   << " sec " << std::endl;
+                
+                // timelapseStart = timelapseEnd = std::chrono::high_resolution_clock::now();
+                // timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f;
+                ++timelapseCounter;
+                timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f - timelapseCounter * TIMELAPSE_INTERVAL;
+				std::cout << "[TIMELAPSE] future lapse at " << TIMELAPSE_INTERVAL - timelapseDuration
 						  << " sec " << std::endl;
 			}
 		} // while (!hasMovement())

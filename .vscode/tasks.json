@@ -7,7 +7,8 @@
 			"label": "build",
 			"type": "shell",
 			// "command": "make",
-			"command": "rm -fr motion && make CFLAGS=\"-D PC\" && ./a.out --sensor=10 --training=true",
+			// "command": "rm -fr motion && make CFLAGS=\"-D PC\" && ./a.out --sensor=10 --training=true",
+			"command": "make CFLAGS=\"-D PC\"",
 			"problemMatcher": "$gcc",
 			"group": {
 				"kind": "build",

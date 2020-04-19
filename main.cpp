@@ -358,6 +358,8 @@ int main(int argc, char **argv) {
 			putText(drawing, "frame : " + std::to_string(iCap), Point(0, 60),
 					FONT_HERSHEY_DUPLEX, 1, Scalar(255, 255, 255), 1);
 
+			std::cout << "frame : " << iCap << "\r" << std::flush;
+			// std::cout << "+" << std::flush;
 			// auto end2 = std::chrono::high_resolution_clock::now();
 			// double duration2 =
 			// 	1000.0 /

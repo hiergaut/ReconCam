@@ -8,7 +8,8 @@
 
     $files = scandir("$dir");
 
-    foreach ($files as $file) {
+    // foreach ($files as $file) {
+    foreach (array_reverse($files) as $file) {
         if (fnmatch("*.jpg", $file)) {
             echo "
                 <a href=\"$dir/$file\" >

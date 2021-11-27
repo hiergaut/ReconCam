@@ -1,3 +1,4 @@
+#include "opencv2/opencv.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/video.hpp" // model
@@ -49,11 +50,28 @@
 // #define DELTA_DIFF_MAX_DENSITY 2000
 
 using namespace cv;
+using namespace std;
 
 RNG rng(29791);
 
 // ------------------------------- MAIN ---------------------------------------
+
 int main(int argc, char **argv) {
+
+	cout << "OpenCV version : " << CV_VERSION << endl;
+	cout << "Major version : " << CV_MAJOR_VERSION << endl;
+	cout << "Minor version : " << CV_MINOR_VERSION << endl;
+	cout << "Subminor version : " << CV_SUBMINOR_VERSION << endl;
+
+	if ( CV_MAJOR_VERSION < 3)
+	{
+	  // Old OpenCV 2 code goes here.
+	} else
+	{
+	  // New OpenCV 3 code goes here.
+	}
+	return 0;
+
 	std::cout << std::fixed << std::setprecision(3);
 
 	CommandLineParser parser(

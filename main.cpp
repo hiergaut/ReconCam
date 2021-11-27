@@ -34,7 +34,7 @@
 #else
 // #define TIMELAPSE_INTERVAL 1800 // 30 min
 // #define TIMELAPSE_INTERVAL 1200 // 20 min
-#define TIMELAPSE_INTERVAL 600 // 10 min
+#define TIMELAPSE_INTERVAL 60 // 10 min
 #endif
 
 #define NB_CAP_LEARNING_MODEL_FIRST 5
@@ -57,20 +57,22 @@ RNG rng(29791);
 // ------------------------------- MAIN ---------------------------------------
 
 int main(int argc, char **argv) {
+	// (void)argc;
+	// (void)argv;
 
 	cout << "OpenCV version : " << CV_VERSION << endl;
 	cout << "Major version : " << CV_MAJOR_VERSION << endl;
 	cout << "Minor version : " << CV_MINOR_VERSION << endl;
 	cout << "Subminor version : " << CV_SUBMINOR_VERSION << endl;
 
-	if ( CV_MAJOR_VERSION < 3)
-	{
-	  // Old OpenCV 2 code goes here.
-	} else
-	{
-	  // New OpenCV 3 code goes here.
-	}
-	return 0;
+	// if ( CV_MAJOR_VERSION < 3)
+	// {
+	//   // Old OpenCV 2 code goes here.
+	// } else
+	// {
+	//   // New OpenCV 3 code goes here.
+	// }
+	// return 0;
 
 	std::cout << std::fixed << std::setprecision(3);
 
@@ -227,8 +229,8 @@ int main(int argc, char **argv) {
 	bool movsFound[MAX_MOVEMENTS];
 	bool quit = false;
 
-    const auto timelapseStart = std::chrono::high_resolution_clock::now();
-    int timelapseCounter = 0;
+	const auto timelapseStart = std::chrono::high_resolution_clock::now();
+	int timelapseCounter = 0;
 
 		// auto end = std::chrono::high_resolution_clock::now();
 		// auto duration =
@@ -238,8 +240,8 @@ int main(int argc, char **argv) {
 
 	// --------------------------- INFINITE LOOP ------------------------------
 	while (1) {
-        auto timelapseEnd = std::chrono::high_resolution_clock::now();
-        auto timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f - timelapseCounter * TIMELAPSE_INTERVAL;
+		auto timelapseEnd = std::chrono::high_resolution_clock::now();
+		auto timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f - timelapseCounter * TIMELAPSE_INTERVAL;
 		// std::cout << "[TIMELAPSE] wait new motion, future lapse at "
 				//   << tickTimeLapse << " sec " << std::endl;
 		std::cout << "[TIMELAPSE] wait new motion, future lapse at "
@@ -250,10 +252,10 @@ int main(int argc, char **argv) {
 			usleep(CLOCKS_PER_SEC);
 			// --tickTimeLapse;
 
-            timelapseEnd = std::chrono::high_resolution_clock::now();
-            // timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f;
-            timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f - timelapseCounter * TIMELAPSE_INTERVAL;
-            if (timelapseDuration > TIMELAPSE_INTERVAL) {
+			timelapseEnd = std::chrono::high_resolution_clock::now();
+			// timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f;
+			timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f - timelapseCounter * TIMELAPSE_INTERVAL;
+			if (timelapseDuration > TIMELAPSE_INTERVAL) {
 			// if (tickTimeLapse == 0) {
 				std::cout << std::endl;
 				vCap.open(stream);
@@ -296,11 +298,11 @@ int main(int argc, char **argv) {
 				// tickTimeLapse = TIMELAPSE_INTERVAL;
 				// std::cout << "[TIMELAPSE] future lapse at " << tickTimeLapse
 						//   << " sec " << std::endl;
-                
-                // timelapseStart = timelapseEnd = std::chrono::high_resolution_clock::now();
-                // timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f;
-                ++timelapseCounter;
-                timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f - timelapseCounter * TIMELAPSE_INTERVAL;
+
+				// timelapseStart = timelapseEnd = std::chrono::high_resolution_clock::now();
+				// timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f;
+				++timelapseCounter;
+				timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f - timelapseCounter * TIMELAPSE_INTERVAL;
 				std::cout << "[TIMELAPSE] future lapse at " << TIMELAPSE_INTERVAL - timelapseDuration
 						  << " sec " << std::endl;
 			}
@@ -354,9 +356,9 @@ int main(int argc, char **argv) {
 
 		auto start2 = std::chrono::high_resolution_clock::now();
 		vCap >> inputFrame;
-        if (flip180) {
-            flip(inputFrame, inputFrame, -1);
-        }
+		if (flip180) {
+			flip(inputFrame, inputFrame, -1);
+		}
 		// outputVideo << inputFrame;
 		outputVideoRec << inputFrame;
 		drawing = inputFrame.clone();
@@ -438,9 +440,9 @@ int main(int argc, char **argv) {
 				streamFinished = true;
 				break;
 			}
-            if (flip180) {
-                flip(inputFrame, inputFrame, -1);
-            }
+			if (flip180) {
+				flip(inputFrame, inputFrame, -1);
+			}
 			outputVideoRec << inputFrame;
 			drawing = inputFrame.clone();
 			if (iCap <= NB_CAP_FOCUS_BRIGHTNESS) {
@@ -704,7 +706,7 @@ int main(int argc, char **argv) {
 									assert(curDist < 100000000);
 
 									if (curDist < bestDist) {
-                                        bestDist = curDist;
+										bestDist = curDist;
 										bestPath = path;
 									}
 								}
@@ -717,7 +719,7 @@ int main(int argc, char **argv) {
 									<< std::endl;
 
 								if (hasScript) {
-                                    imwrite("alert.jpg", drawing);
+									imwrite("alert.jpg", drawing);
 
 									cmd = "./" + script + " " + bestPath + " &";
 									system(cmd.c_str());
@@ -944,24 +946,24 @@ int main(int argc, char **argv) {
 						// Scalar(0, 255, 0), -1);
 						for (int j = 0; j < 3; ++j) {
 							const Color col = id(j);
-                            Vec3b hsv(col.m_r, col.m_g, col.m_b);
-                            Mat3b hsvMat(hsv);
-                            // Vec3b bgr;
-                            Mat3b bgrMat;
-                            cvtColor(hsvMat, bgrMat, COLOR_HSV2BGR);
-                            Vec3b bgr(bgrMat.at<Vec3b>(0, 0));
+							Vec3b hsv(col.m_r, col.m_g, col.m_b);
+							Mat3b hsvMat(hsv);
+							// Vec3b bgr;
+							Mat3b bgrMat;
+							cvtColor(hsvMat, bgrMat, COLOR_HSV2BGR);
+							Vec3b bgr(bgrMat.at<Vec3b>(0, 0));
 
 
 							rectangle(a, Rect(hStep * j, 0, hStep, vStep),
 									  bgr, -1);
 							// rectangle(a, Rect(hStep * j, 0, hStep, vStep),
 									//   Scalar(col.m_r, col.m_g, col.m_b), -1);
-                            Vec3b hsv2(col.m_r, 255, 255);
-                            Mat3b hsvMat2(hsv2);
-                            // Vec3b bgr;
-                            Mat3b bgrMat2;
-                            cvtColor(hsvMat2, bgrMat2, COLOR_HSV2BGR);
-                            Vec3b bgr2(bgrMat2.at<Vec3b>(0, 0));
+							Vec3b hsv2(col.m_r, 255, 255);
+							Mat3b hsvMat2(hsv2);
+							// Vec3b bgr;
+							Mat3b bgrMat2;
+							cvtColor(hsvMat2, bgrMat2, COLOR_HSV2BGR);
+							Vec3b bgr2(bgrMat2.at<Vec3b>(0, 0));
 
 							rectangle(a, Rect(hStep * j, vStep, hStep, vStep),
 									  bgr2, -1);
@@ -997,7 +999,7 @@ int main(int argc, char **argv) {
 		//   << std::endl;
 		if (nbRealObjects > 0) {
 			cmd = "touch " + newMotionDir + "/objectDetected.var";
-            std::cout << cmd << std::endl;
+			std::cout << cmd << std::endl;
 			system(cmd.c_str());
 		}
 

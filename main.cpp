@@ -34,7 +34,7 @@
 #else
 // #define TIMELAPSE_INTERVAL 1800 // 30 min
 // #define TIMELAPSE_INTERVAL 1200 // 20 min
-#define TIMELAPSE_INTERVAL 60 // 10 min
+#define TIMELAPSE_INTERVAL 300 // 5 min
 #endif
 
 #define NB_CAP_LEARNING_MODEL_FIRST 5
@@ -177,15 +177,46 @@ int main(int argc, char **argv) {
 
 	// int tickTimeLapse = 1; // take picture immediately
 
-	vCap.open(stream);
-	if (!vCap.isOpened()) {
-		std::cout << "device not found" << std::endl;
-		return 1;
-	}
-	int width = vCap.get(CAP_PROP_FRAME_WIDTH);
-	int height = vCap.get(CAP_PROP_FRAME_HEIGHT);
+	// vCap.open(stream);
+	// vCap.open(CAP_V4L2);
+	// if (!vCap.isOpened()) {
+	//     std::cout << "device not found" << std::endl;
+	//     return 1;
+	// }
+	int width = -1;
+	int height = -1;
+	// Size sizeScreen(width, height);
+	// vCap.release();
+
+	cout <<"check camera" << endl;
+    if(vCap.open(stream)) {
+	   vCap.set(cv::CAP_PROP_FRAME_WIDTH , 1920);
+	   vCap.set(cv::CAP_PROP_FRAME_HEIGHT ,1080);
+
+	   if((int)vCap.get(cv::CAP_PROP_FRAME_WIDTH) != 1920
+		   || (int)vCap.get(cv::CAP_PROP_FRAME_HEIGHT) != 1080)
+			std::cout << "Warning! Can not adjust video capture properties!" << std::endl;
+
+		width = vCap.get(cv::CAP_PROP_FRAME_WIDTH);
+		height = vCap.get(cv::CAP_PROP_FRAME_HEIGHT);
+
+       Mat meter_image;
+       if(vCap.read(meter_image)) {
+            imwrite("testImg.png", meter_image);
+            vCap.release();
+	        cout << "camera '" << stream << "' is ok" << endl;
+            // return 0;
+       } else {
+           vCap.release();
+	       cout << "could not read frame" << endl;
+           return -1; // can not read frame
+       }
+    } else {
+		 cout << "could not open video capture device " << stream << endl;
+         return -2; // can not open video capture device
+    }
+
 	Size sizeScreen(width, height);
-	vCap.release();
 
 	// Mat notGreen = Mat::zeros(Size(width, height), CV_8UC3);
 	// notGreen = Scalar(255, 0, 255);
@@ -259,6 +290,7 @@ int main(int argc, char **argv) {
 			// if (tickTimeLapse == 0) {
 				std::cout << std::endl;
 				vCap.open(stream);
+				// vCap.open(CAP_V4L2);
 				if (!vCap.isOpened()) {
 					std::cout << "device not found";
 					return 1;
@@ -321,6 +353,7 @@ int main(int argc, char **argv) {
 
 		auto start = std::chrono::high_resolution_clock::now();
 		vCap.open(stream);
+		// vCap.open(CAP_V4L2);
 		if (!vCap.isOpened()) {
 			std::cout << "device not found";
 			return 1;

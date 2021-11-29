@@ -48,6 +48,10 @@
 
 #define MAX_MOVEMENTS 20
 // #define DELTA_DIFF_MAX_DENSITY 2000
+// #define WIDTH 1024
+// #define HEIGHT 768
+#define WIDTH 640
+#define HEIGHT 480
 
 using namespace cv;
 using namespace std;
@@ -190,11 +194,11 @@ int main(int argc, char **argv) {
 
 	cout <<"check camera" << endl;
     if(vCap.open(stream)) {
-	   vCap.set(cv::CAP_PROP_FRAME_WIDTH , 1920);
-	   vCap.set(cv::CAP_PROP_FRAME_HEIGHT ,1080);
+	   vCap.set(cv::CAP_PROP_FRAME_WIDTH , WIDTH);
+	   vCap.set(cv::CAP_PROP_FRAME_HEIGHT ,HEIGHT);
 
-	   if((int)vCap.get(cv::CAP_PROP_FRAME_WIDTH) != 1920
-		   || (int)vCap.get(cv::CAP_PROP_FRAME_HEIGHT) != 1080)
+	   if((int)vCap.get(cv::CAP_PROP_FRAME_WIDTH) != WIDTH
+		   || (int)vCap.get(cv::CAP_PROP_FRAME_HEIGHT) != HEIGHT)
 			std::cout << "Warning! Can not adjust video capture properties!" << std::endl;
 
 		width = vCap.get(cv::CAP_PROP_FRAME_WIDTH);
@@ -202,7 +206,7 @@ int main(int argc, char **argv) {
 
        Mat meter_image;
        if(vCap.read(meter_image)) {
-            imwrite("testImg.png", meter_image);
+            imwrite("/tmp/reconCamStartupTest.jpg", meter_image);
             vCap.release();
 	        cout << "camera '" << stream << "' is ok" << endl;
             // return 0;
@@ -270,6 +274,7 @@ int main(int argc, char **argv) {
 		// 	1000.0;
 
 	// --------------------------- INFINITE LOOP ------------------------------
+	bool firstEntrance = true;
 	while (1) {
 		auto timelapseEnd = std::chrono::high_resolution_clock::now();
 		auto timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f - timelapseCounter * TIMELAPSE_INTERVAL;
@@ -286,10 +291,13 @@ int main(int argc, char **argv) {
 			timelapseEnd = std::chrono::high_resolution_clock::now();
 			// timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f;
 			timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f - timelapseCounter * TIMELAPSE_INTERVAL;
-			if (timelapseDuration > TIMELAPSE_INTERVAL) {
+			if (timelapseDuration > TIMELAPSE_INTERVAL || firstEntrance) {
 			// if (tickTimeLapse == 0) {
 				std::cout << std::endl;
 				vCap.open(stream);
+				vCap.set(cv::CAP_PROP_FRAME_WIDTH , WIDTH);
+				vCap.set(cv::CAP_PROP_FRAME_HEIGHT ,HEIGHT);
+				//
 				// vCap.open(CAP_V4L2);
 				if (!vCap.isOpened()) {
 					std::cout << "device not found";
@@ -333,7 +341,11 @@ int main(int argc, char **argv) {
 
 				// timelapseStart = timelapseEnd = std::chrono::high_resolution_clock::now();
 				// timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f;
-				++timelapseCounter;
+				if (firstEntrance) {
+					firstEntrance = false;
+				} else {
+					++timelapseCounter;
+				}
 				timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f - timelapseCounter * TIMELAPSE_INTERVAL;
 				std::cout << "[TIMELAPSE] future lapse at " << TIMELAPSE_INTERVAL - timelapseDuration
 						  << " sec " << std::endl;
@@ -353,6 +365,8 @@ int main(int argc, char **argv) {
 
 		auto start = std::chrono::high_resolution_clock::now();
 		vCap.open(stream);
+		vCap.set(cv::CAP_PROP_FRAME_WIDTH , WIDTH);
+		vCap.set(cv::CAP_PROP_FRAME_HEIGHT ,HEIGHT);
 		// vCap.open(CAP_V4L2);
 		if (!vCap.isOpened()) {
 			std::cout << "device not found";
@@ -363,6 +377,11 @@ int main(int argc, char **argv) {
 		VideoWriter outputVideo = VideoWriter(
 			outputVideoFile, cv::VideoWriter::fourcc('V', 'P', '8', '0'), 3,
 			sizeScreen, true);
+
+		// std::string outputVideoFile = newMotionDir + "/video.mp4";
+		// VideoWriter outputVideo = VideoWriter(
+		//     outputVideoFile, cv::VideoWriter::fourcc('M', 'P', '4', 'V'), 20,
+		//     sizeScreen, true);
 
 		std::string outputVideoFileRec;
 		VideoWriter outputVideoRec;

@@ -34,7 +34,8 @@
 #else
 // #define TIMELAPSE_INTERVAL 1800 // 30 min
 // #define TIMELAPSE_INTERVAL 1200 // 20 min
-#define TIMELAPSE_INTERVAL 300 // 5 min
+// #define TIMELAPSE_INTERVAL 300 // 5 min
+#define TIMELAPSE_INTERVAL 600 // 10 min
 #endif
 
 #define NB_CAP_LEARNING_MODEL_FIRST 5

@@ -88,5 +88,5 @@ bool isNight() {
 
 	int hour = now->tm_hour;
 
-	return 19 < hour && hour < 23;
+    return 19 <= hour && hour <= 7;
 }

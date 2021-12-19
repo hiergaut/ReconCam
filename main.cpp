@@ -18,6 +18,7 @@
 //#include <thread>
 #include <list>
 //#include <set>
+#include <set>
 #include <thread>
 #include <unistd.h>
 
@@ -55,12 +56,14 @@ RNG rng(29791);
 
 // ------------------------------- MAIN ---------------------------------------
 
+#define HEADER "[" << std::this_thread::get_id() << "] "
+
 int main(int argc, char** argv)
 {
-    cout << "OpenCV version : " << CV_VERSION << endl;
-    cout << "Major version : " << CV_MAJOR_VERSION << endl;
-    cout << "Minor version : " << CV_MINOR_VERSION << endl;
-    cout << "Subminor version : " << CV_SUBMINOR_VERSION << endl;
+    cout << HEADER "OpenCV version : " << CV_VERSION << endl;
+    cout << HEADER "Major version : " << CV_MAJOR_VERSION << endl;
+    cout << HEADER "Minor version : " << CV_MINOR_VERSION << endl;
+    cout << HEADER "Subminor version : " << CV_SUBMINOR_VERSION << endl;
 
     // if ( CV_MAJOR_VERSION < 3)
     // {
@@ -141,7 +144,8 @@ int main(int argc, char** argv)
 
     VideoCapture vCap;
 
-    std::string timelapseDir = motionDir + "timelapse_" + hostname + "_" + deviceName;
+    std::string timelapseDir = motionDir + getYear() + "/" + getMonth() + "/" + getDay() + "/timelapse_" + hostname + "_" + deviceName;
+    //    std::string timelapseDir = motionDir + "timelapse_" + hostname + "_" + deviceName;
     std::string cmd = "mkdir -p " + timelapseDir;
     system(cmd.c_str());
 
@@ -165,14 +169,14 @@ int main(int argc, char** argv)
     // Size sizeScreen(width, height);
     // vCap.release();
 
-    cout << "check camera" << endl;
+    cout << HEADER "check camera" << endl;
     if (vCap.open(stream)) {
         vCap.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
         vCap.set(cv::CAP_PROP_FRAME_HEIGHT, HEIGHT);
 
         if ((int)vCap.get(cv::CAP_PROP_FRAME_WIDTH) != WIDTH
             || (int)vCap.get(cv::CAP_PROP_FRAME_HEIGHT) != HEIGHT)
-            std::cout << "Warning! Can not adjust video capture properties!" << std::endl;
+            std::cout << HEADER "Warning! Can not adjust video capture properties!" << std::endl;
 
         width = vCap.get(cv::CAP_PROP_FRAME_WIDTH);
         height = vCap.get(cv::CAP_PROP_FRAME_HEIGHT);
@@ -181,15 +185,15 @@ int main(int argc, char** argv)
         if (vCap.read(meter_image)) {
             //            imwrite("/tmp/reconCamStartupTest.jpg", meter_image);
             vCap.release();
-            cout << "camera '" << stream << "' is ok" << endl;
+            cout << HEADER "camera '" << stream << "' is ok" << endl;
             // return 0;
         } else {
             vCap.release();
-            cout << "could not read frame" << endl;
+            cout << HEADER "could not read frame" << endl;
             return -1; // can not read frame
         }
     } else {
-        cout << "could not open video capture device " << stream << endl;
+        cout << HEADER "could not open video capture device " << stream << endl;
         return -2; // can not open video capture device
     }
 
@@ -219,7 +223,7 @@ int main(int argc, char** argv)
 #endif
 
     const auto timelapseStart = std::chrono::high_resolution_clock::now();
-    int timelapseCounter = 0;
+    int timelapseCounter = -1;
 
     // --------------------------- INFINITE LOOP ------------------------------
     while (1) {
@@ -227,7 +231,7 @@ int main(int argc, char** argv)
         auto timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f - timelapseCounter * TIMELAPSE_INTERVAL;
         // std::cout << "[TIMELAPSE] wait new motion, future lapse at "
         //   << tickTimeLapse << " sec " << std::endl;
-        std::cout << "[TIMELAPSE] wait new motion, future lapse at "
+        std::cout << HEADER "[TIMELAPSE] wait new motion, future lapse at "
                   << TIMELAPSE_INTERVAL - timelapseDuration << " sec " << std::endl;
 
         // if no movement, wait for timelapse photo
@@ -249,7 +253,7 @@ int main(int argc, char** argv)
                 //
                 // vCap.open(CAP_V4L2);
                 if (!vCap.isOpened()) {
-                    std::cout << "device not found";
+                    std::cout << HEADER "device not found";
                     return 1;
                 }
                 for (int i = 0; i < NB_CAP_FOCUS_BRIGHTNESS + 100; ++i) {
@@ -264,28 +268,32 @@ int main(int argc, char** argv)
                 std::string saveLapse = timelapseDir + "/" + getCurTime() + ".jpg";
                 imwrite(saveLapse, inputFrame);
                 imwrite(timelapseDir + "/latest.jpeg", inputFrame);
-                std::cout << "[TIMELAPSE] save lapse '" << saveLapse << "'"
+                std::cout << HEADER "[TIMELAPSE] save lapse '" << saveLapse << "'"
                           << std::endl;
 
                 cmd = "convert " + timelapseDir + "/*.jpg " + timelapseDir + "/timelapse.gif";
-                std::cout << "[TIMELAPSE] " << cmd << std::endl;
-                system(cmd.c_str());
+                std::cout << HEADER "[TIMELAPSE] " << cmd << std::endl;
+                //                system(cmd.c_str());
 
                 if (hasRemoteDir) {
                     if (port == -1) {
-                        cmd = "rsync -arv " + timelapseDir + " " + remoteDir;
+                        cmd += " && rsync -arv " + motionDir + " " + remoteDir;
                     } else {
-                        cmd = "rsync -arv -e 'ssh -p " + std::to_string(port) + "' " + timelapseDir + " " + remoteDir;
+                        cmd += " && rsync -arv -e 'ssh -p " + std::to_string(port) + "' " + motionDir + " " + remoteDir;
                     }
-                    std::cout << "[TIMELAPSE] " << cmd << std::endl;
-                    system(cmd.c_str());
+                    //                    std::thread t([cmd]() {
+                    //                        std::cout << HEADER "[TIMELAPSE] " << cmd << std::endl;
+                    //                        system(cmd.c_str());
+                    //                        return 0;
+                    //                    });
                 }
+                system(("(" + cmd + ") &").c_str());
 
                 // timelapseStart = timelapseEnd = std::chrono::high_resolution_clock::now();
                 // timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f;
                 ++timelapseCounter;
                 timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f - timelapseCounter * TIMELAPSE_INTERVAL;
-                std::cout << "[TIMELAPSE] future lapse at " << TIMELAPSE_INTERVAL - timelapseDuration
+                std::cout << HEADER "[TIMELAPSE] future lapse at " << TIMELAPSE_INTERVAL - timelapseDuration
                           << " sec " << std::endl;
             }
         } // while (!hasMovement())
@@ -298,8 +306,8 @@ int main(int argc, char** argv)
             gpioSetValue(lightGpio, 1);
         }
 
-        std::string motionId = getCurTime() + "_" + hostname + "_" + deviceName;
-        std::cout << "new event : " << motionId << std::endl;
+        std::string motionId = getYear() + "/" + getMonth() + "/" + getDay() + "/" + getCurTime() + "_" + hostname + "_" + deviceName;
+        std::cout << HEADER "new event : " << motionId << std::endl;
         std::string newMotionDir = motionDir + motionId;
         cmd = "mkdir -p " + newMotionDir;
         system(cmd.c_str());
@@ -310,7 +318,7 @@ int main(int argc, char** argv)
         //        vCap.set(cv::CAP_PROP_FPS, 60);
         // vCap.open(CAP_V4L2);
         if (!vCap.isOpened()) {
-            std::cout << "device not found";
+            std::cout << HEADER "device not found";
             return 1;
         }
 
@@ -333,7 +341,7 @@ int main(int argc, char** argv)
 
         if (!outputVideo.isOpened() || !outputVideoRec.isOpened()) {
             //        if (!outputVideo.isOpened()) {
-            std::cout << "failed to write video" << std::endl;
+            std::cout << HEADER "failed to write video" << std::endl;
             return 6;
         }
         auto videoStart = std::chrono::high_resolution_clock::now();
@@ -417,43 +425,45 @@ int main(int argc, char** argv)
 #endif
 
                     // ------------------- BOUNDING BOXING MOVEMENTS
-                    std::vector<std::vector<Point>> movCountours;
+                    std::vector<std::vector<Point>> movContours;
                     std::vector<Vec4i> hierarchy;
-                    findContours(mask, movCountours, hierarchy, RETR_TREE,
+                    findContours(mask, movContours, hierarchy, RETR_TREE,
                         CHAIN_APPROX_SIMPLE, Point(0, 0));
 
-                    nMovement = movCountours.size();
+                    nMovement = movContours.size();
                     // to many movements -> no detection
-                    if (nMovement >= MAX_MOVEMENTS) {
+                    if (nMovement > MAX_MOVEMENTS) {
                         rectangle(drawing, Rect(640 - 50, 0, 50, 50), Scalar(0, 0, 255),
                             -1);
 
                     } else {
-                        std::vector<std::vector<Point>> contours_poly(nMovement);
-                        std::vector<Rect> movBoundRect(nMovement);
-                        for (int i = 0; i < nMovement; ++i) {
-                            approxPolyDP(Mat(movCountours[i]), contours_poly[i], 3, true);
-                            movBoundRect[i] = boundingRect(Mat(contours_poly[i]));
-                        }
 
-                        std::vector<Moments> movMoments(nMovement);
-                        for (int i = 0; i < nMovement; ++i) {
-                            movMoments[i] = moments(movCountours[i], true);
-                        }
+                        std::set<Movement> movements;
+                        {
+                            std::vector<std::vector<Point>> contours_poly(nMovement);
+                            std::vector<Rect> movBoundRect(nMovement);
+                            for (int i = 0; i < nMovement; ++i) {
+                                approxPolyDP(Mat(movContours[i]), contours_poly[i], 3, true);
+                                movBoundRect[i] = boundingRect(Mat(contours_poly[i]));
+                            }
 
-                        // drawing = inputFrame.clone();
-                        std::vector<Point2f> movCenters(nMovement);
-                        for (int i = 0; i < nMovement; ++i) {
-                            movCenters[i] = Point2f(movMoments[i].m10 / movMoments[i].m00, movMoments[i].m01 / movMoments[i].m00);
+                            std::vector<Moments> movMoments(nMovement);
+                            for (int i = 0; i < nMovement; ++i) {
+                                movMoments[i] = moments(movContours[i], true);
+                            }
+
+                            // drawing = inputFrame.clone();
+                            std::vector<Point2f> movCenters(nMovement);
+                            for (int i = 0; i < nMovement; ++i) {
+                                movCenters[i] = Point2f(movMoments[i].m10 / movMoments[i].m00, movMoments[i].m01 / movMoments[i].m00);
+                            }
+
+                            for (int i = 0; i < nMovement; ++i) {
+                                movements.insert({ movCenters[i], movMoments[i].m00, false, movBoundRect[i], movContours[i] });
+                            }
                         }
 
                         // ------------------- FIND PREVIOUS OBJECTS POSITIONS
-                        //                        for (int i = 0; i < MAX_MOVEMENTS; ++i) {
-                        //                            movsFound[i] = 0;
-                        //                        }
-                        bool movsFound[MAX_MOVEMENTS] = { 0 };
-                        assert(movsFound[1] == 0);
-                        //                        std::set<Object> newObjects;
 
                         //                        std::set<Object>::iterator it = objects.begin();
                         auto it = objects.begin();
@@ -462,26 +472,31 @@ int main(int argc, char** argv)
                             //                            Object& obj = const_cast<Object&>(*it);
                             Object& obj = *it;
 
-                            int iMovNearest = -1;
+                            //                            int iMovNearest = -1;
+                            Movement* nearestMov = nullptr;
                             double distMovMin = MAX_ERROR_DIST_FOR_NEW_POS_OBJECT;
-                            for (int i = 0; i < nMovement; ++i) {
-                                if (!movsFound[i]) {
-                                    double density = 3.0 * fmax(obj.density, movMoments[i].m00) / fmin(obj.density, movMoments[i].m00);
+                            //                            for (int i = 0; i < nMovement; ++i) {
+                            for (const auto& mov : movements) {
+                                //                                if (!movsFound[i]) {
+                                if (!mov.found) {
+                                    if (3.0 * mov.density / obj.density > distMovMin) {
+                                        break;
+                                    }
+                                    double density = 3.0 * fmax(obj.density, mov.density) / fmin(obj.density, mov.density);
                                     //                                    double density = pow(obj.density - movMoments[i].m00, 2);
-
-                                    double distance = norm((obj.pos + obj.speedVector) - movCenters[i]);
-
+                                    double distance = norm(obj.pos + obj.speedVector - mov.center);
                                     double dist = distance + density;
 
-                                    if (dist < distMovMin) {
+                                    if (dist <= distMovMin) {
                                         distMovMin = dist;
-                                        iMovNearest = i;
+                                        //                                        iMovNearest = i;
+                                        nearestMov = const_cast<Movement*>(&mov);
                                     }
                                 }
                             }
 
                             // no event near object
-                            if (iMovNearest == -1) {
+                            if (nearestMov == nullptr) {
                                 // if (obj.distance < MIN_MOV_DIST_TO_SAVE_OBJECT) {
                                 if (obj.age < MIN_MOV_YEARS_TO_SAVE_OBJECT) {
                                     tombs.push_back({ obj.pos, obj.color });
@@ -491,7 +506,7 @@ int main(int argc, char** argv)
                                 // save position of no moved object
                                 else {
                                     // std::cout << "object saved";
-                                    putText(drawing, "s", obj.pos + Point2f(-9, 9),
+                                    putText(drawing, "s", obj.pos + Point2i(-9, 9),
                                         FONT_HERSHEY_DUPLEX, 1, obj.color, 1);
                                     // ++it;
                                     //                                    newObjects.insert(std::move(obj));
@@ -500,41 +515,43 @@ int main(int argc, char** argv)
                             }
                             // object moved
                             else {
-                                movsFound[iMovNearest] = true;
+                                //                                movsFound[iMovNearest] = true;
+                                nearestMov->found = true;
 
-                                Point2i tl = movBoundRect[iMovNearest].tl();
-                                Point2i tr = tl + Point2i(movBoundRect[iMovNearest].width + 5, 10);
+                                Point2i tl = nearestMov->boundRect.tl();
+                                Point2i tr = tl + Point2i(nearestMov->boundRect.width + 5, 10);
 
-                                // std::vector<std::vector<Point>> movCountours
+                                // std::vector<std::vector<Point>> movContours
                                 // {movCountours[iMovNearest]};
-                                const Rect& rect { movBoundRect[iMovNearest] };
                                 // std::cout << "rect : " << rect << std::endl;
-                                int density = movMoments[iMovNearest].m00;
-                                assert(!inputFrame.empty());
-                                assert(!rect.empty());
-                                Mat img = Mat(inputFrame, rect).clone();
-                                Mat m = Mat(mask, rect).clone();
+                                //                                int density = nearestMov->density;
+                                //                                assert(!inputFrame.empty());
                                 // NColors colors = Capture::getPrimaryColors(img, m);
 
                                 // if found best trace
                                 //                                if (movMoments[iMovNearest].m00 > obj.trace[obj.bestCapture].m_density) {
-                                if (movMoments[iMovNearest].m00 > obj.biggestCapture.m_density) {
-                                    Capture cap(std::move(img), std::move(m), movCountours[iMovNearest],
-                                        rect, movCenters[iMovNearest].x, movCenters[iMovNearest].y, rect.width,
-                                        rect.height, density);
+                                if (nearestMov->density > obj.biggestCapture.m_density) {
+                                    const Rect& rect { nearestMov->boundRect };
+                                    assert(!rect.empty());
+                                    Mat img = Mat(inputFrame, rect).clone();
+                                    Mat m = Mat(mask, rect).clone();
+                                    obj.biggestCapture = { std::move(img), std::move(m), nearestMov->contours,
+                                        rect, nearestMov->boundRect.x, nearestMov->boundRect.y, rect.width,
+                                        rect.height, nearestMov->density };
                                     //                                    obj.bestCapture = obj.trace.size() - 1;
-                                    obj.biggestCapture = cap;
+                                    //                                    obj.biggestCapture = cap;
                                 }
-                                obj.speedVector = movCenters[iMovNearest] - obj.pos;
+                                obj.speedVector = nearestMov->center - obj.pos;
 
-                                obj.distance += norm(movCenters[iMovNearest] - obj.firstPos);
+                                //                                obj.distance += norm(nearestMov->center - obj.firstPos);
+                                obj.distance += norm(obj.speedVector);
 
-                                obj.lines.push_back({ obj.pos, movCenters[iMovNearest], obj.color });
-                                obj.pos = movCenters[iMovNearest];
-                                obj.density = movMoments[iMovNearest].m00;
+                                obj.lines.emplace_back(obj.pos, nearestMov->center);
+                                obj.pos = nearestMov->center;
+                                obj.density = nearestMov->density;
                                 ++obj.age;
 
-                                rectangle(drawing, tl, movBoundRect[iMovNearest].br(), obj.color, 2);
+                                rectangle(drawing, tl, nearestMov->boundRect.br(), obj.color, 2);
 
                                 //                    if (obj.name.compare("")) {
                                 //                        putText(drawing, obj.name, tr + Point(0, 0),
@@ -569,15 +586,16 @@ int main(int argc, char** argv)
                         //                        objects = std::move(newObjects);
 
                         // non objects movements become new objects
-                        for (int i = 0; i < nMovement; ++i) {
+                        //                        for (int i = 0; i < nMovement; ++i) {
+                        for (const auto& mov : movements) {
 
-                            int density = movMoments[i].m00;
+                            //                            int density = mov.density;
                             // new object
-                            if (!movsFound[i] && density > NEW_OBJECT_MIN_DENSITY) {
+                            if (!mov.found && mov.density > NEW_OBJECT_MIN_DENSITY) {
                                 Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0, 255),
                                     rng.uniform(0, 255));
 
-                                const Rect& rect { movBoundRect[i] };
+                                const Rect& rect { mov.boundRect };
                                 // std::cout << "rect : " << rect << std::endl;
                                 assert(!inputFrame.empty());
                                 assert(!rect.empty());
@@ -586,26 +604,26 @@ int main(int argc, char** argv)
                                 const Mat& m = Mat(mask, rect).clone();
                                 assert(!m.empty());
                                 // NColors colors = Capture::getPrimaryColors(img, m);
-                                Capture cap(std::move(img), std::move(m), movCountours[i], rect,
-                                    movCenters[i].x, movCenters[i].y, rect.width, rect.height,
-                                    density);
+                                Capture cap({ std::move(img), std::move(m), mov.contours, rect,
+                                    mov.center.x, mov.center.y, rect.width, rect.height,
+                                    mov.density });
 
-                                std::vector<std::vector<Point>> contour { movCountours[i] };
+                                const std::vector<std::vector<Point>>& contour = { mov.contours };
                                 drawContours(drawing, contour, 0, color, 2);
 
-                                Object obj { 0.0, movCenters[i], density, Vec2f(0, 0),
+                                objects.emplace_back(Object { 0.0, mov.center, mov.density, Point2i(0, 0),
                                     color, iNewObj++, std::move(cap),
-                                    movCenters[i], 0, "", {} };
+                                    mov.center, 0u, {} });
 
                                 //                                objects.insert(std::move(obj));
-                                objects.emplace_back(std::move(obj));
+                                //                                objects.emplace_back(std::move(obj));
                             }
                         }
                         //            nbObjects = objects.size();
 
                         for (const auto& obj : objects) {
                             for (const auto& l : obj.lines) {
-                                line(drawing, l.p, l.p2, obj.color, 2);
+                                line(drawing, l.first, l.second, obj.color, 2);
                             }
                         }
 
@@ -706,18 +724,20 @@ int main(int argc, char** argv)
         //   << std::endl;
         if (nbRealObjects > 0) {
             cmd = "touch " + newMotionDir + "/objectDetected.var";
-            std::cout << cmd << std::endl;
+            std::cout << HEADER << cmd << std::endl;
             system(cmd.c_str());
         }
 
         if (hasRemoteDir) {
             if (port == -1) {
-                cmd = "rsync -arv " + newMotionDir + " " + remoteDir;
+                cmd = "rsync -arv " + motionDir + " " + remoteDir;
             } else {
-                cmd = "rsync -arv -e 'ssh -p " + std::to_string(port) + "' " + newMotionDir + " " + remoteDir;
+                cmd = "rsync -arv -e 'ssh -p " + std::to_string(port) + "' " + motionDir + " " + remoteDir;
             }
-            std::cout << cmd << std::endl;
-            system(cmd.c_str());
+            //            std::thread t([cmd]() {
+            std::cout << HEADER << cmd << std::endl;
+            system((cmd + " &").c_str());
+            //            });
         }
         // }
 
@@ -725,15 +745,18 @@ int main(int argc, char** argv)
         destroyAllWindows();
 #endif
 
-        std::cout << "object detected : " << nbRealObjects << std::endl;
-        std::cout << "duration : " << videoDuration << std::endl;
-        std::cout << "nb capture : " << iFrame << std::endl;
-        std::cout << "recording fps : " << static_cast<double>(iFrame) / videoDuration
+        std::cout << HEADER "object detected : " << nbRealObjects << std::endl;
+        std::cout << HEADER "duration : " << videoDuration << std::endl;
+        std::cout << HEADER "nb capture : " << iFrame << std::endl;
+        std::cout << HEADER "recording fps : " << static_cast<double>(iFrame) / videoDuration
                   << std::endl;
 
+#ifdef PC
         if (quit) {
+            std::this_thread::sleep_for(std::chrono::seconds(5)); // wait rsync
             return 0;
         }
+#endif
 
     } // while (1)
 

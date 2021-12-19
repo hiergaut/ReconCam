@@ -28,37 +28,38 @@
 
 //using namespace cv;
 
-typedef struct s_line {
-    cv::Point p;
-    cv::Point p2;
-    cv::Scalar color;
-} Line;
+//typedef struct s_line {
+//    cv::Point p;
+//    cv::Point p2;
+////    cv::Scalar color;
+//} Line;
+
 
 class Capture {
 public:
     //	void buildNColors() const;
 
-    Capture(cv::Mat img, cv::Mat mask, std::vector<cv::Point> contour, cv::Rect rect, int x,
-        int y, int width, int height, int density)
-        : m_img { img }
-        , m_mask { mask }
-        , m_contour { contour }
-        , m_rect { rect }
-        , m_x { x }
-        , m_y { y }
-        , m_width { width }
-        , m_height { height }
-        , m_density { density }
-    {
-    }
+//    Capture(cv::Mat img, cv::Mat mask, std::vector<cv::Point> contour, cv::Rect rect, int x,
+//        int y, int width, int height, int density)
+//        : m_img { img }
+//        , m_mask { mask }
+//        , m_contour { contour }
+//        , m_rect { rect }
+//        , m_x { x }
+//        , m_y { y }
+//        , m_width { width }
+//        , m_height { height }
+//        , m_density { density }
+//    {
+//    }
 
-    ~Capture()
-    {
-        // if (m_id != nullptr) {
-        //     delete m_id;
-        //     m_id = nullptr;
-        // }
-    }
+//    ~Capture()
+//    {
+//        // if (m_id != nullptr) {
+//        //     delete m_id;
+//        //     m_id = nullptr;
+//        // }
+//    }
 
     //       private:
     cv::Mat m_img;
@@ -69,44 +70,58 @@ public:
     int m_y;
     int m_width;
     int m_height;
-    int m_density;
+    double m_density;
 
     // mutable Identity * m_id = nullptr;
     //    mutable Identity m_id;
     //    mutable bool m_build {false};
 };
 
+class Movement {
+public:
+    bool operator<(const Movement & right) const {
+        return density < right.density;
+    }
+
+    cv::Point2i center;
+    double density;
+    bool found;
+    cv::Rect boundRect;
+    std::vector<cv::Point> contours;
+};
+
 //typedef struct s_object {
 class Object {
 public:
-    bool operator<(const Object & right) const
-    {
-        // return id < right.id;
-        if (age == 0 && right.age == 0) {
-            return density > right.density;
-        }
-        if (age == right.age) {
-            // 	return density > right.density;
-            return distance > right.distance;
-        }
-        return age > right.age;
-    }
+//    bool operator<(const Object & right) const
+//    {
+//        // return id < right.id;
+//        if (age == 0 && right.age == 0) {
+//            return density > right.density;
+//        }
+//        if (age == right.age) {
+//            // 	return density > right.density;
+//            return distance > right.distance;
+//        }
+//        return age > right.age;
+//    }
 
     double distance; // from first pos
-    cv::Point2f pos;
-    int density;
-    cv::Point2f speedVector;
+    cv::Point2i pos;
+    double density;
+    cv::Point2i speedVector;
     cv::Scalar color;
     int id;
     // Capture bestCapture;
 //    int bestCapture;
     Capture biggestCapture;
 //    std::vector<Capture> trace;
-    cv::Point2f firstPos;
+    cv::Point2i firstPos;
     uint age;
-    std::string name;
-    std::vector<Line> lines;
+//    std::string name;
+    std::vector<std::pair<cv::Point, cv::Point>> lines;
 };
+
 
 // struct s_ObjectCompare {
 // 	inline bool operator()(const Object &left, const Object &right) const {

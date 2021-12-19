@@ -32,13 +32,38 @@ std::string getDay() {
 	time_t t = time(0);
 	tm *now = localtime(&t);
 
-	int year = now->tm_year + 1900;
-	int month = now->tm_mon + 1;
-	int day = now->tm_mday;
+    int day = now->tm_mday;
+    std::string day_str = std::to_string(day);
+    if (day < 10)
+        day_str = "0" + day_str;
 
-	return std::to_string(year) + ":" + std::to_string(month) + ":" +
-		   std::to_string(day);
+    return day_str;
 }
+
+std::string getMonth() {
+    time_t t = time(0);
+    tm *now = localtime(&t);
+
+    int month = 1 + now->tm_mon;
+    std::string month_str = std::to_string(month);
+    if (month < 10)
+        month_str = "0" + month_str;
+
+    return month_str;
+}
+
+std::string getYear() {
+    time_t t = time(0);
+    tm *now = localtime(&t);
+
+    int year = 1900 + now->tm_year;
+    std::string year_str = std::to_string(year);
+    if (year < 10)
+        year_str = "0" + year_str;
+
+    return year_str;
+}
+
 
 std::string getHostname() {
 	std::string file = "/etc/hostname";

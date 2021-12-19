@@ -324,7 +324,7 @@ int main(int argc, char** argv)
 
         std::string outputVideoFile = newMotionDir + "/video.webm";
         VideoWriter outputVideo = VideoWriter(
-            outputVideoFile, cv::VideoWriter::fourcc('V', 'P', '8', '0'), 3,
+            outputVideoFile, cv::VideoWriter::fourcc('V', 'P', '8', '0'), 15,
             sizeScreen, true);
 
         //        std::string outputVideoFileRec = newMotionDir + "/video.mp4";

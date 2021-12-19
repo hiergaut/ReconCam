@@ -1,1 +1,1 @@
-<?php include('lite.php') ?>
+<?php include('motion.php') ?>

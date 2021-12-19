@@ -47,6 +47,11 @@
     //     if (preg_match($regex, $user_agent))
     // 	$os_platform = $value;
 
+	if (isset($_GET['lite'])) {
+		$lite=(string)$_GET['lite'];
+	} else {
+		$lite=false;
+	}
 
 	include("showDay.php");
 
@@ -54,7 +59,7 @@
 	$year = date('Y', $currentTime);
 	$month= date('m', $currentTime);
 	$day = date('d', $currentTime);
-	showDay($year, $month, $day);
+	showDay($year, $month, $day, $lite);
 
 
 	$yesterday = $currentTime - 60 * 60 * 24;
@@ -62,7 +67,7 @@
 	$year = date('Y', $yesterday);
 	$month= date('m', $yesterday);
 	$day = date('d', $yesterday);
-	showDay($year, $month, $day);
+	showDay($year, $month, $day, $lite);
 
 
 

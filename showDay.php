@@ -21,6 +21,7 @@
 
 		// --------------------------- TIMELAPSE
 		if (! $lite) {
+			echo "<div align=left>";
 			foreach ($files as $file) {
 				// if (fnmatch("*.jpg", $file)) {
 				if (fnmatch("timelapse_*", $file)) {
@@ -32,34 +33,30 @@
 					// $cur_dir =exec("echo $file | cut -d. -f1");
 					echo "
 					<a href=\"displayTimelapsePhotos.php?year=$year&month=$month&day=$day&file=$file\" >
-						<div align=left>
 						<img src=\"$dir/$file/timelapse.gif\" width=320 height=240 />
-						</div>
 					</a>
 					";
 				}
 			}
+			echo "</div>";
 		}
 
 		echo "<hr>";
 
+		echo "<div align=left>";
 		foreach ($files as $file) {
 			if (fnmatch("timelapse_*", $file)) {
 				// if (fnmatch("*.gif", $file)) {
 				if ($lite) {
 					echo "
 					<a href=\"displayTimelapsePhotos.php?year=$year&month=$month&day=$day&file=$file\" >
-						<div align=left>
 						<img src=\"$dir/$file/latest.jpeg\" width=320 height=240 />
-						</div>
 					</a>
 					";
 				} else {
 					echo "
 					<a href=\"$dir/$file/latest.jpeg\" >
-						<div align=left>
 						<img src=\"$dir/$file/latest.jpeg\" width=320 height=240 />
-						</div>
 					</a>
 					";
 
@@ -73,6 +70,7 @@
 				// 	    ";
 			}
 		}
+		echo "</div>";
 
 		// --------------------------- MOVEMENTS
 		$heure = 24;

@@ -26,7 +26,7 @@
 #include "System.hpp"
 #include "utils.hpp"
 
-#define PC
+//#define PC
 
 #ifdef PC
 #define TIMELAPSE_INTERVAL 20 // 30 sec

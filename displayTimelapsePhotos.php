@@ -4,7 +4,14 @@
 <body>
 
     <?php
-    $dir = "motion/" . (string)$_GET['dir'];
+	$year=(string)$_GET['year'];
+	$month=(string)$_GET['month'];
+	$day=(string)$_GET['day'];
+	$file=(string)$_GET['file'];
+
+    $dir = "motion/$year/$month/$day/$file";
+
+    // $dir = "motion/" . (string)$_GET['dir'];
 
     $files = scandir("$dir");
 

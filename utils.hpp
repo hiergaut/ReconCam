@@ -75,6 +75,7 @@ public:
 //    std::string name;
     int label;
     double confidence;
+    double detectDuration;
 
     // mutable Identity * m_id = nullptr;
     //    mutable Identity m_id;

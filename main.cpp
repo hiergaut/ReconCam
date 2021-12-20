@@ -36,8 +36,8 @@
 #define TIMELAPSE_INTERVAL 600 // 10 min
 #endif
 
-#define NB_CAP_LEARNING_MODEL_FIRST 5
-#define NB_CAP_FOCUS_BRIGHTNESS 2
+#define NB_CAP_LEARNING_MODEL_FIRST 2
+#define NB_CAP_FOCUS_BRIGHTNESS 0
 
 #define NEW_OBJECT_MIN_DENSITY 10
 #define MAX_ERROR_DIST_FOR_NEW_POS_OBJECT 100
@@ -49,7 +49,7 @@
 #define HEIGHT 480
 
 #ifdef PC
-#define FPS 15
+#define FPS 10
 #else
 #define FPS 5
 #endif
@@ -102,7 +102,7 @@ int main(int argc, char** argv)
         "{f flip        | false     | rotate image 180}"
         "{r repository  |           | save motion to specific repo}"
         "{p port        | -1        | remote port repository}"
-        "{script        |           | launch script on recognize}"
+        "{script        |           | launch script on recognize human}"
         "{help h        |           | help message}");
 
     if (parser.has("help")) {
@@ -134,8 +134,14 @@ int main(int argc, char** argv)
     cv::moveWindow("mask", 1920, 1080);
     namedWindow("mask2", cv::WINDOW_AUTOSIZE);
     cv::moveWindow("mask2", 1920 + 640, 1080);
+    cv::namedWindow("mask3", cv::WINDOW_AUTOSIZE);
+    cv::moveWindow("mask3", 1920 + 640 * 2, 1080);
+    namedWindow("mask4", cv::WINDOW_AUTOSIZE);
+    cv::moveWindow("mask4", 1920, 1080 + 540);
+    namedWindow("mask5", cv::WINDOW_AUTOSIZE);
+    cv::moveWindow("mask5", 1920 + 640, 1080 + 540);
     namedWindow("drawing", cv::WINDOW_AUTOSIZE);
-    cv::moveWindow("drawing", 1920 + 640 * 2, 1080);
+    cv::moveWindow("drawing", 1920 + 640 * 2, 1080 + 540);
 //    namedWindow("blobs", cv::WINDOW_AUTOSIZE);
 //    cv::moveWindow("blobs", 1920 + 640, 1080 + 480);
 // }
@@ -203,7 +209,7 @@ int main(int argc, char** argv)
         if (vCap.read(meter_image)) {
             //            imwrite("/tmp/reconCamStartupTest.jpg", meter_image);
             vCap.release();
-            std::cout << HEADER "camera '" << stream << "' is ok" << std::endl;
+            std::cout << HEADER "camera/stream '" << stream << "' is ok" << std::endl;
             // return 0;
         } else {
             vCap.release();
@@ -402,14 +408,24 @@ int main(int argc, char** argv)
 
         auto frameStart = std::chrono::high_resolution_clock::now();
 
+        bool streamFinished = false;
         //        int nbObjects = 0;
         iFrame = 0;
         int nMovement = 0;
         // ----------------------- WHILE HAS MOVEMENT
+#ifdef PC
+        //        while ((hasMovement() || nMovement > 0) && !quit) {
         while (hasMovement() || nMovement > 0) {
+#else
+        while (hasMovement() || nMovement > 0) {
+#endif
             //            auto frameStart = std::chrono::high_resolution_clock::now();
             vCap >> inputFrame;
-            assert(!inputFrame.empty());
+            //            assert(!inputFrame.empty());
+            if (inputFrame.empty()) {
+                streamFinished = true;
+                break;
+            }
             if (flip180) {
                 flip(inputFrame, inputFrame, -1);
             }
@@ -418,20 +434,32 @@ int main(int argc, char** argv)
 
             // ------------------------ START
 
-            if (iFrame <= NB_CAP_FOCUS_BRIGHTNESS) {
+            if (iFrame < NB_CAP_FOCUS_BRIGHTNESS) {
                 rectangle(drawing, cv::Rect(640 - 50, 0, 50, 50), cv::Scalar(255, 0, 0),
                     -1);
 
             } else {
 
-                // equalizeHist(grey, grey);
-                // model->apply(grey, mask);
-                model->apply(inputFrame, mask);
+                //                mask = inputFrame;
+                cv::Mat gray;
+                //                                gray = inputFrame;
+                cv::cvtColor(inputFrame, gray, cv::COLOR_BGR2GRAY);
+                //                                equalizeHist(gray, gray);
+                cv::GaussianBlur(gray, gray, cv::Size(21, 21), 0);
+//                cv::GaussianBlur(gray, gray, cv::Size(15, 15), 0);
+// model->apply(grey, mask);
+//                mask = gray;
 #ifdef PC
-                imshow("mask", mask);
+                imshow("mask", gray);
+#endif
+                //                model->apply(inputFrame, mask);
+                model->apply(gray, mask);
+//                model->apply(inputFrame, mask);
+#ifdef PC
+                imshow("mask2", mask);
 #endif
 
-                if (iFrame <= NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST) {
+                if (iFrame < NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST) {
                     rectangle(drawing, cv::Rect(640 - 50, 0, 50, 50), cv::Scalar(0, 255, 0),
                         -1);
 
@@ -439,9 +467,9 @@ int main(int argc, char** argv)
 
                     // ------------------- BOUNDING MOVMENT ---------------------------
                     // threshold(mask, mask, 127, 255, THRESH_BINARY);
-                    medianBlur(mask, mask, 15);
+                    //                    medianBlur(mask, mask, 15);
 
-                    // auto kernel = getStructuringElement(MORPH_RECT, Size(3, 3));
+                    auto kernel = getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
                     // morphologyEx(mask, mask, MORPH_OPEN, kernel, Point(-1, -1), 1);
                     // imshow("inputFrame", mask);
                     // threshold(mask, mask, 127, 255, THRESH_BINARY);
@@ -460,10 +488,20 @@ int main(int argc, char** argv)
                     // const int size = 100;
                     // blur(mask, mask, Size(size, size));
                     // blur(mask, mask, Size(size, size));
-                    threshold(mask, mask, 0, 255, cv::THRESH_BINARY);
+
+                    threshold(mask, mask, 25, 255, cv::THRESH_BINARY);
+                    dilate(mask, mask, kernel, cv::Point(-1, -1), 1);
+#ifdef PC
+                    imshow("mask3", mask);
+                    // imshow("mask2", drawing);
+#endif
+//                                        cv::Mat maskContour;
+//                    cv::dilate(mask, maskContour, kernel, cv::Point(-1, -1), 5);
+                    cv::dilate(mask, mask, kernel, cv::Point(-1, -1), 5);
 
 #ifdef PC
-                    imshow("mask2", mask);
+//                                        imshow("mask4", maskContour);
+                    imshow("mask4", mask);
                     // imshow("mask2", drawing);
 #endif
 
@@ -471,7 +509,17 @@ int main(int argc, char** argv)
                     std::vector<std::vector<cv::Point>> movContours;
                     std::vector<cv::Vec4i> hierarchy;
                     findContours(mask, movContours, hierarchy, cv::RETR_TREE,
+//                    findContours(maskContour, movContours, hierarchy, cv::RETR_TREE,
                         cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+
+#ifdef PC
+                    cv::Mat mat = inputFrame.clone();
+                    for (int i = 0; i < movContours.size(); ++i) {
+                        drawContours(mat, movContours, i, cv::Scalar(0, 255, 0), 2);
+                        imshow("mask5", mat);
+                        // imshow("mask2", drawing);
+                    }
+#endif
 
                     nMovement = movContours.size();
                     // to many movements -> no detection
@@ -699,9 +747,9 @@ int main(int argc, char** argv)
 
                     } // if (nMovement >= MAX_MOVEMENTS)
 
-                } // if (iFrame <= NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST)
+                } // if (iFrame < NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST)
 
-            } // if (iFrame <= NB_CAP_FOCUS_BRIGHTNESS)
+            } // if (iFrame < NB_CAP_FOCUS_BRIGHTNESS)
 
             putText(drawing, "nbObjs : " + std::to_string(objects.size()),
                 cv::Point(0, 30), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
@@ -735,15 +783,27 @@ int main(int argc, char** argv)
             outputVideo << drawing;
 #ifdef PC
             cv::imshow("drawing", drawing);
-            if (cv::waitKey(1) == 'q') {
-                quit = true;
-                break;
+            if (hasStream && !quit) {
+                while (true) {
+                    auto key = cv::waitKey(10);
+                    if (key == 'q') {
+                        quit = true;
+                        break;
+                    } else if (key == ' ')
+                        break;
+                }
+            } else {
+                if (cv::waitKey(1) == 'q') {
+                    quit = true;
+                    //                    break;
+                }
             }
 #endif
             ++iFrame;
             //            std::cout << "this thread : " << std::this_thread::get_id() << std::endl;
 
         } // while (hasMovement())
+        std::cout << std::endl;
 
         vCap.release();
         //        auto end = std::chrono::high_resolution_clock::now();
@@ -761,6 +821,7 @@ int main(int argc, char** argv)
         }
 
         int nbRealObjects = 0;
+        int nbHuman = 0;
         // draw all detected object movements in drawing capture
         for (Object& obj : objects) {
 
@@ -781,11 +842,19 @@ int main(int argc, char** argv)
 
                     bestCapture.m_img.copyTo(cv::Mat(drawing, bestCapture.m_rect),
                         bestCapture.m_mask);
+                    //                                        cv::Mat m;
+                    //                                        cv::cvtColor(bestCapture.m_mask, m, cv::COLOR_GRAY2BGR);
+                    //                                        m.copyTo(cv::Mat(drawing, bestCapture.m_rect));
+
+                    //                                        std::vector<std::vector<cv::Point>> movCountours { bestCapture.m_contour };
+                    //                                        drawContours(drawing, movCountours, 0, obj.color, 2);
 
                     drawPred(bestCapture, drawing, obj.color);
                     ++nbRealObjects;
+                    if (classes[bestCapture.label] == "person") {
+                        ++nbHuman;
+                    }
                 } else {
-
                     //                    std::vector<std::vector<cv::Point>> movCountours { bestCapture.m_contour };
                     //                    drawContours(drawing, movCountours, 0, obj.color, 2);
                 }
@@ -816,6 +885,12 @@ int main(int argc, char** argv)
             cmd = "touch " + newMotionDir + "/objectDetected.var";
             std::cout << HEADER << cmd << std::endl;
             system(cmd.c_str());
+        }
+
+        if (nbHuman > 0) {
+            cmd = "touch " + newMotionDir + "/humanDetected.var";
+            std::cout << HEADER << cmd << std::endl;
+            system(cmd.c_str());
             if (hasScript) {
                 //                imwrite("alert.jpg", drawing);
 
@@ -836,7 +911,11 @@ int main(int argc, char** argv)
             }
             //            std::thread t([cmd]() {
             std::cout << HEADER << cmd << std::endl;
+#ifdef PC
+            system((cmd).c_str());
+#else
             system((cmd + " &").c_str());
+#endif
             //            });
         }
         // }
@@ -846,14 +925,15 @@ int main(int argc, char** argv)
 #endif
 
         std::cout << HEADER "object detected : " << nbRealObjects << std::endl;
+        std::cout << HEADER "human detected : " << nbHuman << std::endl;
         std::cout << HEADER "duration : " << videoDuration << std::endl;
         std::cout << HEADER "nb capture : " << iFrame << std::endl;
         std::cout << HEADER "recording fps : " << static_cast<double>(iFrame) / videoDuration
                   << std::endl;
 
 #ifdef PC
-        if (quit) {
-            std::this_thread::sleep_for(std::chrono::seconds(2)); // wait rsync
+        if (quit || streamFinished) {
+            //            std::this_thread::sleep_for(std::chrono::seconds(2)); // wait rsync
             return 0;
         }
 #endif
@@ -873,10 +953,10 @@ void drawPred(const Capture& capture, cv::Mat& frame, const cv::Scalar& color)
     int right = rect.br().x;
     int bottom = rect.br().y;
     // Draw a rectangle displaying the bounding box
-    cv::rectangle(frame, cv::Point(left, top), cv::Point(right, bottom), color, 3);
+    cv::rectangle(frame, cv::Point(left, top + 3), cv::Point(right, bottom), color, 3);
 
     // Get the label for the class name and its confidence
-    std::string label = cv::format("%i%% (%.2fs)", int(capture.confidence * 100), capture.detectDuration);
+    std::string label = cv::format("%i%%", int(capture.confidence * 100));
     if (!classes.empty()) {
         CV_Assert(capture.label < (int)classes.size());
         label = classes[capture.label] + ":" + label;
@@ -886,9 +966,10 @@ void drawPred(const Capture& capture, cv::Mat& frame, const cv::Scalar& color)
     int baseLine;
     cv::Size labelSize = getTextSize(label, cv::FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseLine);
     top = cv::max(top, labelSize.height);
-    rectangle(frame, cv::Point(left, top - round(1.5 * labelSize.height)), cv::Point(left + round(1.5 * labelSize.width), top + baseLine), color, cv::FILLED);
+    rectangle(frame, cv::Point(left - 2, top - round(1.5 * labelSize.height) + 2), cv::Point(left + round(labelSize.width) + 2, top + baseLine), color, cv::FILLED);
     //    putText(frame, label, cv::Point(left, top), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0), 3.0);
     putText(frame, label, cv::Point(left, top), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 1.0);
+    putText(frame, cv::format("%.2fs", capture.detectDuration), cv::Point(left, bottom + 15), cv::FONT_HERSHEY_SIMPLEX, 0.5, color, 1.0);
 
     //    putText(frame, label, cv::Point(left, top), cv::FONT_HERSHEY_SIMPLEX, 0.75, cv::Scalar(0, 0, 0), 1.0);
     //    putText(frame, std::to_string(capture.detectDuration),

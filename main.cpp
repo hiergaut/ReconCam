@@ -48,7 +48,6 @@
 #define WIDTH 640
 #define HEIGHT 480
 
-
 #ifdef PC
 #define FPS 15
 #else
@@ -68,7 +67,7 @@ int inpHeight = 416; // Height of network's input image
 std::vector<std::string> classes;
 
 // Draw the predicted bounding box
-void drawPred(int classId, float conf, int left, int top, int right, int bottom, cv::Mat& frame, const cv::Scalar & color)
+void drawPred(int classId, float conf, int left, int top, int right, int bottom, cv::Mat& frame, const cv::Scalar& color)
 {
     // Draw a rectangle displaying the bounding box
     rectangle(frame, cv::Point(left, top), cv::Point(right, bottom), color, 3);
@@ -159,7 +158,7 @@ void detect(cv::dnn::Net& net, Capture& capture)
         }
     }
 
-//    capture.name = classes[iMax];
+    //    capture.name = classes[iMax];
     capture.label = iMax;
     capture.confidence = confidenceMax;
 }
@@ -387,7 +386,7 @@ int main(int argc, char** argv)
     while (getline(ifs, line))
         classes.push_back(line);
 
-    // Give the configuration and weight files for the model
+        // Give the configuration and weight files for the model
 #ifdef PC
     cv::String modelConfiguration = PROJECT_DIR "yolo/yolov3.cfg";
     cv::String modelWeights = PROJECT_DIR "yolo/yolov3.weights";
@@ -759,6 +758,28 @@ int main(int argc, char** argv)
                                 //                                newObjects.insert(std::move(obj));
 
                                 //                                objects.emplace_front(obj);
+                                //                                if (obj.age > 10) {
+                                //                                    const cv::Rect& rect { nearestMov->boundRect };
+                                //                                    cv::Mat img = cv::Mat(inputFrame, rect).clone();
+                                //                                    //                                    cv::Mat img = cv;
+                                //                                    cv::Mat m_mask = cv::Mat(mask, rect).clone();
+
+                                //                                    //                assert(rect.size() == m_mask.size());
+                                //                                    //                img.copyTo(cv::Mat(inputFrame, rect),
+                                //                                    //                    mask);
+
+                                //                                    //                                    inputFrame.copyTo(cv::Mat(img, rect),
+                                //                                    //                                        cv::Mat(mask, rect));
+                                //                                    Capture capture = { std::move(img), std::move(m_mask), nearestMov->contours,
+                                //                                        rect, nearestMov->boundRect.x, nearestMov->boundRect.y, rect.width,
+                                //                                        rect.height, nearestMov->density, -1, 0.0 };
+
+                                //                                    detect(net, capture);
+                                //                                    if (capture.confidence > 0.5) {
+                                //                                        const auto& rect = capture.m_rect;
+                                //                                        drawPred(capture.label, capture.confidence, rect.tl().x, rect.tl().y, rect.br().x, rect.br().y, drawing, obj.color);
+                                //                                    }
+                                //                                }
 
                             } // if (iMovNearest != -1)
 
@@ -884,20 +905,22 @@ int main(int argc, char** argv)
                 Capture& bestCapture = obj.biggestCapture;
                 // const cv::Mat &img = bestCapture.m_img;
 
-                assert(!bestCapture.m_rect.empty());
-                assert(!bestCapture.m_mask.empty());
-                assert(bestCapture.m_rect.size() == bestCapture.m_mask.size());
-
-                bestCapture.m_img.copyTo(cv::Mat(drawing, bestCapture.m_rect),
-                    bestCapture.m_mask);
-                std::vector<std::vector<cv::Point>> movCountours { bestCapture.m_contour };
-                drawContours(drawing, movCountours, 0, obj.color, 2);
-                ++nbRealObjects;
-
                 detect(net, bestCapture);
                 if (bestCapture.confidence > 0.5) {
                     const auto& rect = bestCapture.m_rect;
                     drawPred(bestCapture.label, bestCapture.confidence, rect.tl().x, rect.tl().y, rect.br().x, rect.br().y, drawing, obj.color);
+                    ++nbRealObjects;
+
+                } else {
+
+                    assert(!bestCapture.m_rect.empty());
+                    assert(!bestCapture.m_mask.empty());
+                    assert(bestCapture.m_rect.size() == bestCapture.m_mask.size());
+
+                    bestCapture.m_img.copyTo(cv::Mat(drawing, bestCapture.m_rect),
+                        bestCapture.m_mask);
+                    std::vector<std::vector<cv::Point>> movCountours { bestCapture.m_contour };
+                    drawContours(drawing, movCountours, 0, obj.color, 2);
                 }
             }
         }

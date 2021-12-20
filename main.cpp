@@ -390,6 +390,8 @@ int main(int argc, char** argv)
     // Give the configuration and weight files for the model
     cv::String modelConfiguration = PROJECT_DIR "yolo/yolov3.cfg";
     cv::String modelWeights = PROJECT_DIR "yolo/yolov3.weights";
+//    cv::String modelConfiguration = PROJECT_DIR "yolo/yolov3-tiny.cfg";
+//    cv::String modelWeights = PROJECT_DIR "yolo/yolov3-tiny.weights";
 
     // Load the network
     cv::dnn::Net net = cv::dnn::readNetFromDarknet(modelConfiguration, modelWeights);

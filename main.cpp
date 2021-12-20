@@ -2,6 +2,7 @@
 //#include "opencv2/imgproc.hpp"
 //#include "opencv2/opencv.hpp"
 //#include "opencv2/video.hpp" // model
+#include <opencv2/dnn.hpp>
 
 //#include <assert.h>
 //#include <cassert>
@@ -26,8 +27,6 @@
 #include "System.hpp"
 #include "utils.hpp"
 
-//#define PC
-
 #ifdef PC
 #define TIMELAPSE_INTERVAL 20 // 30 sec
 #else
@@ -49,10 +48,166 @@
 #define WIDTH 640
 #define HEIGHT 480
 
-using namespace cv;
-using namespace std;
 
-RNG rng(29791);
+#ifdef PC
+#define FPS 15
+#else
+#define FPS 5
+#endif
+
+// using namespace cv;
+// using namespace std;
+
+cv::RNG rng(29791);
+
+// Initialize the parameters
+float confThreshold = 0.5; // Confidence threshold
+float nmsThreshold = 0.4; // Non-maximum suppression threshold
+int inpWidth = 416; // Width of network's input image
+int inpHeight = 416; // Height of network's input image
+std::vector<std::string> classes;
+
+// Draw the predicted bounding box
+void drawPred(int classId, float conf, int left, int top, int right, int bottom, cv::Mat& frame, const cv::Scalar & color)
+{
+    // Draw a rectangle displaying the bounding box
+    rectangle(frame, cv::Point(left, top), cv::Point(right, bottom), color, 3);
+
+    // Get the label for the class name and its confidence
+    std::string label = cv::format("%.2f", conf);
+    if (!classes.empty()) {
+        CV_Assert(classId < (int)classes.size());
+        label = classes[classId] + ":" + label;
+    }
+
+    // Display the label at the top of the bounding box
+    int baseLine;
+    cv::Size labelSize = getTextSize(label, cv::FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseLine);
+    top = cv::max(top, labelSize.height);
+    rectangle(frame, cv::Point(left, top - round(1.5 * labelSize.height)), cv::Point(left + round(1.5 * labelSize.width), top + baseLine), cv::Scalar(255, 255, 255), cv::FILLED);
+    putText(frame, label, cv::Point(left, top), cv::FONT_HERSHEY_SIMPLEX, 0.75, cv::Scalar(0, 0, 0), 1.5);
+}
+
+// Get the names of the output layers
+std::vector<cv::String> getOutputsNames(const cv::dnn::Net& net)
+{
+    static std::vector<cv::String> names;
+    if (names.empty()) {
+        // Get the indices of the output layers, i.e. the layers with unconnected outputs
+        std::vector<int> outLayers = net.getUnconnectedOutLayers();
+
+        // get the names of all the layers in the network
+        std::vector<cv::String> layersNames = net.getLayerNames();
+
+        // Get the names of the output layers in names
+        names.resize(outLayers.size());
+        for (size_t i = 0; i < outLayers.size(); ++i)
+            names[i] = layersNames[outLayers[i] - 1];
+    }
+    return names;
+}
+
+void detect(cv::dnn::Net& net, Capture& capture)
+{
+    // Create a 4D blob from a frame.
+    //                                    cv::Mat frame = cv::Mat(inputFrame, nearestMov->boundRect).clone();
+    cv::Mat frame = capture.m_img;
+    //                                    cv::Mat frame = cv::Mat(inputFrame).clone();
+    cv::Mat blob;
+    cv::dnn::blobFromImage(frame, blob, 1 / 255.0, cv::Size(inpWidth, inpHeight), cv::Scalar(0, 0, 0), true, false);
+
+    // Sets the input to the network
+    net.setInput(blob);
+
+    // Runs the forward pass to get output of the output layers
+    std::vector<cv::Mat> outs;
+    net.forward(outs, getOutputsNames(net));
+
+    // Remove the bounding boxes with low confidence
+    //                postprocess(frame, outs, drawing);
+
+    //                std::vector<int> classIds;
+    //                std::vector<float> confidences;
+    //                std::vector<cv::Rect> boxes;
+    int iMax = -1;
+    double confidenceMax = 0.0;
+
+    for (size_t i = 0; i < outs.size(); ++i) {
+        // Scan through all the bounding boxes output from the network and keep only the
+        // ones with high confidence scores. Assign the box's class label as the class
+        // with the highest score for the box.
+        float* data = (float*)outs[i].data;
+        for (int j = 0; j < outs[i].rows; ++j, data += outs[i].cols) {
+            cv::Mat scores = outs[i].row(j).colRange(5, outs[i].cols);
+            cv::Point classIdPoint;
+            double confidence;
+            // Get the value and location of the maximum score
+            minMaxLoc(scores, 0, &confidence, 0, &classIdPoint);
+            if (confidence > confThreshold && confidence > confidenceMax) {
+                //                            int centerX = (int)(data[0] * frame.cols);
+                //                            int centerY = (int)(data[1] * frame.rows);
+                //                            int width = (int)(data[2] * frame.cols);
+                //                            int height = (int)(data[3] * frame.rows);
+                //                            int left = centerX - width / 2;
+                //                            int top = centerY - height / 2;
+                confidenceMax = confidence;
+                iMax = classIdPoint.x;
+                //                            classIds.push_back(classIdPoint.x);
+                //                            confidences.push_back((float)confidence);
+                //                            boxes.push_back(cv::Rect(left, top, width, height));
+            }
+        }
+    }
+
+//    capture.name = classes[iMax];
+    capture.label = iMax;
+    capture.confidence = confidenceMax;
+}
+
+//// Remove the bounding boxes with low confidence using non-maxima suppression
+// void postprocess(cv::Mat& frame, const std::vector<cv::Mat>& outs, cv::Mat& drawFrame)
+//{
+//     std::vector<int> classIds;
+//     std::vector<float> confidences;
+//     std::vector<cv::Rect> boxes;
+
+//    for (size_t i = 0; i < outs.size(); ++i) {
+//        // Scan through all the bounding boxes output from the network and keep only the
+//        // ones with high confidence scores. Assign the box's class label as the class
+//        // with the highest score for the box.
+//        float* data = (float*)outs[i].data;
+//        for (int j = 0; j < outs[i].rows; ++j, data += outs[i].cols) {
+//            cv::Mat scores = outs[i].row(j).colRange(5, outs[i].cols);
+//            cv::Point classIdPoint;
+//            double confidence;
+//            // Get the value and location of the maximum score
+//            minMaxLoc(scores, 0, &confidence, 0, &classIdPoint);
+//            if (confidence > confThreshold) {
+//                int centerX = (int)(data[0] * frame.cols);
+//                int centerY = (int)(data[1] * frame.rows);
+//                int width = (int)(data[2] * frame.cols);
+//                int height = (int)(data[3] * frame.rows);
+//                int left = centerX - width / 2;
+//                int top = centerY - height / 2;
+
+//                classIds.push_back(classIdPoint.x);
+//                confidences.push_back((float)confidence);
+//                boxes.push_back(cv::Rect(left, top, width, height));
+//            }
+//        }
+//    }
+
+//    // Perform non maximum suppression to eliminate redundant overlapping boxes with
+//    // lower confidences
+//    std::vector<int> indices;
+//    cv::dnn::NMSBoxes(boxes, confidences, confThreshold, nmsThreshold, indices);
+//    for (size_t i = 0; i < indices.size(); ++i) {
+//        int idx = indices[i];
+//        cv::Rect box = boxes[idx];
+//        drawPred(classIds[idx], confidences[idx], box.x, box.y,
+//            box.x + box.width, box.y + box.height, drawFrame);
+//    }
+//}
 
 // ------------------------------- MAIN ---------------------------------------
 
@@ -60,10 +215,10 @@ RNG rng(29791);
 
 int main(int argc, char** argv)
 {
-    cout << HEADER "OpenCV version : " << CV_VERSION << endl;
-    cout << HEADER "Major version : " << CV_MAJOR_VERSION << endl;
-    cout << HEADER "Minor version : " << CV_MINOR_VERSION << endl;
-    cout << HEADER "Subminor version : " << CV_SUBMINOR_VERSION << endl;
+    std::cout << HEADER "OpenCV version : " << CV_VERSION << std::endl;
+    std::cout << HEADER "Major version : " << CV_MAJOR_VERSION << std::endl;
+    std::cout << HEADER "Minor version : " << CV_MINOR_VERSION << std::endl;
+    std::cout << HEADER "Subminor version : " << CV_SUBMINOR_VERSION << std::endl;
 
     // if ( CV_MAJOR_VERSION < 3)
     // {
@@ -76,7 +231,7 @@ int main(int argc, char** argv)
 
     std::cout << std::fixed << std::setprecision(3);
 
-    CommandLineParser parser(
+    cv::CommandLineParser parser(
         argc, argv,
         "{s sensor      | -1        | gpio number of IR senror}"
         "{a and         | -1        | add detect sensor, (and logic)}"
@@ -114,13 +269,15 @@ int main(int argc, char** argv)
     gpioDir = "gpio/";
 
     // if (hasStream) {
-    namedWindow("mask", WINDOW_AUTOSIZE);
-    moveWindow("mask", 1920, 1080);
-    namedWindow("mask2", WINDOW_AUTOSIZE);
-    moveWindow("mask2", 1920 + 640, 1080);
-    namedWindow("drawing", WINDOW_AUTOSIZE);
-    moveWindow("drawing", 1920 + 640 * 2, 1080);
-    // }
+    cv::namedWindow("mask", cv::WINDOW_AUTOSIZE);
+    cv::moveWindow("mask", 1920, 1080);
+    namedWindow("mask2", cv::WINDOW_AUTOSIZE);
+    cv::moveWindow("mask2", 1920 + 640, 1080);
+    namedWindow("drawing", cv::WINDOW_AUTOSIZE);
+    cv::moveWindow("drawing", 1920 + 640 * 2, 1080);
+//    namedWindow("blobs", cv::WINDOW_AUTOSIZE);
+//    cv::moveWindow("blobs", 1920 + 640, 1080 + 480);
+// }
 #else
     gpioDir = "/sys/class/gpio/";
 #endif
@@ -142,7 +299,7 @@ int main(int argc, char** argv)
     }
     const std::string hostname = getHostname();
 
-    VideoCapture vCap;
+    cv::VideoCapture vCap;
 
     std::string timelapseDir = motionDir + getYear() + "/" + getMonth() + "/" + getDay() + "/timelapse_" + hostname + "_" + deviceName;
     //    std::string timelapseDir = motionDir + "timelapse_" + hostname + "_" + deviceName;
@@ -152,7 +309,7 @@ int main(int argc, char** argv)
     //    std::set<Object> objects;
     //    std::vector<DeadObj> tombs;
 
-    Mat inputFrame, mask, drawing;
+    cv::Mat inputFrame, mask, drawing;
     //        int iNewObj;
     int iFrame;
 
@@ -169,7 +326,7 @@ int main(int argc, char** argv)
     // Size sizeScreen(width, height);
     // vCap.release();
 
-    cout << HEADER "check camera" << endl;
+    std::cout << HEADER "check camera" << std::endl;
     if (vCap.open(stream)) {
         vCap.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
         vCap.set(cv::CAP_PROP_FRAME_HEIGHT, HEIGHT);
@@ -181,26 +338,26 @@ int main(int argc, char** argv)
         width = vCap.get(cv::CAP_PROP_FRAME_WIDTH);
         height = vCap.get(cv::CAP_PROP_FRAME_HEIGHT);
 
-        Mat meter_image;
+        cv::Mat meter_image;
         if (vCap.read(meter_image)) {
             //            imwrite("/tmp/reconCamStartupTest.jpg", meter_image);
             vCap.release();
-            cout << HEADER "camera '" << stream << "' is ok" << endl;
+            std::cout << HEADER "camera '" << stream << "' is ok" << std::endl;
             // return 0;
         } else {
             vCap.release();
-            cout << HEADER "could not read frame" << endl;
+            std::cout << HEADER "could not read frame" << std::endl;
             return -1; // can not read frame
         }
     } else {
-        cout << HEADER "could not open video capture device " << stream << endl;
+        std::cout << HEADER "could not open video capture device " << stream << std::endl;
         return -2; // can not open video capture device
     }
 
-    Size sizeScreen(width, height);
+    cv::Size sizeScreen(width, height);
 
     // Mat notGreen = Mat::zeros(Size(width, height), CV_8UC3);
-    // notGreen = Scalar(255, 0, 255);
+    // notGreen = cv::Scalar(255, 0, 255);
 
     if (sensorGpioNum != -1) {
         initGpio(sensorGpioNum, "in");
@@ -221,6 +378,25 @@ int main(int argc, char** argv)
 #ifdef PC
     bool quit = false;
 #endif
+
+    // Init DNN
+    // Load names of classes
+    std::string classesFile = PROJECT_DIR "yolo/coco.names";
+    std::ifstream ifs(classesFile.c_str());
+    std::string line;
+    while (getline(ifs, line))
+        classes.push_back(line);
+
+    // Give the configuration and weight files for the model
+    cv::String modelConfiguration = PROJECT_DIR "yolo/yolov3.cfg";
+    cv::String modelWeights = PROJECT_DIR "yolo/yolov3.weights";
+
+    // Load the network
+    cv::dnn::Net net = cv::dnn::readNetFromDarknet(modelConfiguration, modelWeights);
+
+    net.setPreferableBackend(cv::dnn::DNN_TARGET_CPU);
+    net.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
+    cv::Mat blob;
 
     const auto timelapseStart = std::chrono::high_resolution_clock::now();
     int timelapseCounter = -1;
@@ -258,6 +434,7 @@ int main(int argc, char** argv)
                 }
                 for (int i = 0; i < NB_CAP_FOCUS_BRIGHTNESS + 100; ++i) {
                     vCap >> inputFrame;
+                    assert(!inputFrame.empty());
                 }
 
                 if (flip180) {
@@ -323,8 +500,8 @@ int main(int argc, char** argv)
         }
 
         std::string outputVideoFile = newMotionDir + "/video.webm";
-        VideoWriter outputVideo = VideoWriter(
-            outputVideoFile, cv::VideoWriter::fourcc('V', 'P', '8', '0'), 15,
+        cv::VideoWriter outputVideo = cv::VideoWriter(
+            outputVideoFile, cv::VideoWriter::fourcc('V', 'P', '8', '0'), FPS,
             sizeScreen, true);
 
         //        std::string outputVideoFileRec = newMotionDir + "/video.mp4";
@@ -333,10 +510,10 @@ int main(int argc, char** argv)
         //            sizeScreen, true);
 
         std::string outputVideoFileRec;
-        VideoWriter outputVideoRec;
+        cv::VideoWriter outputVideoRec;
         outputVideoFileRec = newMotionDir + "/video.avi";
-        outputVideoRec = VideoWriter(
-            outputVideoFileRec, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), 15,
+        outputVideoRec = cv::VideoWriter(
+            outputVideoFileRec, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), FPS,
             sizeScreen, true);
 
         if (!outputVideo.isOpened() || !outputVideoRec.isOpened()) {
@@ -350,7 +527,7 @@ int main(int argc, char** argv)
         //        tombs.clear();
         //        objects.clear();
 
-        auto model = createBackgroundSubtractorMOG2();
+        auto model = cv::createBackgroundSubtractorMOG2();
         // auto model = createBackgroundSubtractorKNN();
         // auto model = createBackgroundSubtractorGMG();
 
@@ -376,7 +553,7 @@ int main(int argc, char** argv)
             // ------------------------ START
 
             if (iFrame <= NB_CAP_FOCUS_BRIGHTNESS) {
-                rectangle(drawing, Rect(640 - 50, 0, 50, 50), Scalar(255, 0, 0),
+                rectangle(drawing, cv::Rect(640 - 50, 0, 50, 50), cv::Scalar(255, 0, 0),
                     -1);
 
             } else {
@@ -389,7 +566,7 @@ int main(int argc, char** argv)
 #endif
 
                 if (iFrame <= NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST) {
-                    rectangle(drawing, Rect(640 - 50, 0, 50, 50), Scalar(0, 255, 0),
+                    rectangle(drawing, cv::Rect(640 - 50, 0, 50, 50), cv::Scalar(0, 255, 0),
                         -1);
 
                 } else {
@@ -417,7 +594,7 @@ int main(int argc, char** argv)
                     // const int size = 100;
                     // blur(mask, mask, Size(size, size));
                     // blur(mask, mask, Size(size, size));
-                    threshold(mask, mask, 0, 255, THRESH_BINARY);
+                    threshold(mask, mask, 0, 255, cv::THRESH_BINARY);
 
 #ifdef PC
                     imshow("mask2", mask);
@@ -425,37 +602,37 @@ int main(int argc, char** argv)
 #endif
 
                     // ------------------- BOUNDING BOXING MOVEMENTS
-                    std::vector<std::vector<Point>> movContours;
-                    std::vector<Vec4i> hierarchy;
-                    findContours(mask, movContours, hierarchy, RETR_TREE,
-                        CHAIN_APPROX_SIMPLE, Point(0, 0));
+                    std::vector<std::vector<cv::Point>> movContours;
+                    std::vector<cv::Vec4i> hierarchy;
+                    findContours(mask, movContours, hierarchy, cv::RETR_TREE,
+                        cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
 
                     nMovement = movContours.size();
                     // to many movements -> no detection
                     if (nMovement > MAX_MOVEMENTS) {
-                        rectangle(drawing, Rect(640 - 50, 0, 50, 50), Scalar(0, 0, 255),
+                        rectangle(drawing, cv::Rect(640 - 50, 0, 50, 50), cv::Scalar(0, 0, 255),
                             -1);
 
                     } else {
 
                         std::set<Movement> movements;
                         {
-                            std::vector<std::vector<Point>> contours_poly(nMovement);
-                            std::vector<Rect> movBoundRect(nMovement);
+                            std::vector<std::vector<cv::Point>> contours_poly(nMovement);
+                            std::vector<cv::Rect> movBoundRect(nMovement);
                             for (int i = 0; i < nMovement; ++i) {
-                                approxPolyDP(Mat(movContours[i]), contours_poly[i], 3, true);
-                                movBoundRect[i] = boundingRect(Mat(contours_poly[i]));
+                                approxPolyDP(cv::Mat(movContours[i]), contours_poly[i], 3, true);
+                                movBoundRect[i] = boundingRect(cv::Mat(contours_poly[i]));
                             }
 
-                            std::vector<Moments> movMoments(nMovement);
+                            std::vector<cv::Moments> movMoments(nMovement);
                             for (int i = 0; i < nMovement; ++i) {
                                 movMoments[i] = moments(movContours[i], true);
                             }
 
                             // drawing = inputFrame.clone();
-                            std::vector<Point2f> movCenters(nMovement);
+                            std::vector<cv::Point2f> movCenters(nMovement);
                             for (int i = 0; i < nMovement; ++i) {
-                                movCenters[i] = Point2f(movMoments[i].m10 / movMoments[i].m00, movMoments[i].m01 / movMoments[i].m00);
+                                movCenters[i] = cv::Point2f(movMoments[i].m10 / movMoments[i].m00, movMoments[i].m01 / movMoments[i].m00);
                             }
 
                             for (int i = 0; i < nMovement; ++i) {
@@ -506,8 +683,8 @@ int main(int argc, char** argv)
                                 // save position of no moved object
                                 else {
                                     // std::cout << "object saved";
-                                    putText(drawing, "s", obj.pos + Point2i(-9, 9),
-                                        FONT_HERSHEY_DUPLEX, 1, obj.color, 1);
+                                    putText(drawing, "s", obj.pos + cv::Point2i(-9, 9),
+                                        cv::FONT_HERSHEY_DUPLEX, 1, obj.color, 1);
                                     // ++it;
                                     //                                    newObjects.insert(std::move(obj));
                                 }
@@ -518,8 +695,8 @@ int main(int argc, char** argv)
                                 //                                movsFound[iMovNearest] = true;
                                 nearestMov->found = true;
 
-                                Point2i tl = nearestMov->boundRect.tl();
-                                Point2i tr = tl + Point2i(nearestMov->boundRect.width + 5, 10);
+                                cv::Point2i tl = nearestMov->boundRect.tl();
+                                cv::Point2i tr = tl + cv::Point2i(nearestMov->boundRect.width + 5, 10);
 
                                 // std::vector<std::vector<Point>> movContours
                                 // {movCountours[iMovNearest]};
@@ -531,13 +708,13 @@ int main(int argc, char** argv)
                                 // if found best trace
                                 //                                if (movMoments[iMovNearest].m00 > obj.trace[obj.bestCapture].m_density) {
                                 if (nearestMov->density > obj.biggestCapture.m_density) {
-                                    const Rect& rect { nearestMov->boundRect };
+                                    const cv::Rect& rect { nearestMov->boundRect };
                                     assert(!rect.empty());
-                                    Mat img = Mat(inputFrame, rect).clone();
-                                    Mat m = Mat(mask, rect).clone();
+                                    cv::Mat img = cv::Mat(inputFrame, rect).clone();
+                                    cv::Mat m = cv::Mat(mask, rect).clone();
                                     obj.biggestCapture = { std::move(img), std::move(m), nearestMov->contours,
                                         rect, nearestMov->boundRect.x, nearestMov->boundRect.y, rect.width,
-                                        rect.height, nearestMov->density };
+                                        rect.height, nearestMov->density, -1, 0.0 };
                                     //                                    obj.bestCapture = obj.trace.size() - 1;
                                     //                                    obj.biggestCapture = cap;
                                 }
@@ -555,22 +732,22 @@ int main(int argc, char** argv)
 
                                 //                    if (obj.name.compare("")) {
                                 //                        putText(drawing, obj.name, tr + Point(0, 0),
-                                //                            FONT_HERSHEY_DUPLEX, 0.5, obj.color, 1);
+                                //                            cv::FONT_HERSHEY_DUPLEX, 0.5, obj.color, 1);
                                 //                    } else {
                                 putText(drawing, std::to_string(obj.id),
-                                    tr + Point(0, 0), FONT_HERSHEY_DUPLEX, 0.5,
+                                    tr + cv::Point(0, 0), cv::FONT_HERSHEY_DUPLEX, 0.5,
                                     obj.color, 1);
                                 //                    }
                                 putText(drawing,
                                     std::to_string(static_cast<int>(obj.distance)),
-                                    tr + Point(0, 20), FONT_HERSHEY_DUPLEX, 0.5,
+                                    tr + cv::Point(0, 20), cv::FONT_HERSHEY_DUPLEX, 0.5,
                                     obj.color, 1);
                                 putText(drawing, std::to_string(obj.density),
-                                    tr + Point(0, 40), FONT_HERSHEY_DUPLEX, 0.5,
+                                    tr + cv::Point(0, 40), cv::FONT_HERSHEY_DUPLEX, 0.5,
                                     obj.color, 1);
 
-                                line(drawing, obj.pos, obj.pos + obj.speedVector,
-                                    Scalar(0, 0, 255), 1, LineTypes::LINE_AA);
+                                cv::line(drawing, obj.pos, obj.pos + obj.speedVector,
+                                    cv::Scalar(0, 0, 255), 1, cv::LineTypes::LINE_AA);
 
                                 //                                obj.trace.emplace_back(std::move(cap));
                                 // obj.trace.emplace_back(cap);
@@ -592,26 +769,26 @@ int main(int argc, char** argv)
                             //                            int density = mov.density;
                             // new object
                             if (!mov.found && mov.density > NEW_OBJECT_MIN_DENSITY) {
-                                Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0, 255),
+                                cv::Scalar color = cv::Scalar(rng.uniform(0, 255), rng.uniform(0, 255),
                                     rng.uniform(0, 255));
 
-                                const Rect& rect { mov.boundRect };
+                                const cv::Rect& rect { mov.boundRect };
                                 // std::cout << "rect : " << rect << std::endl;
                                 assert(!inputFrame.empty());
                                 assert(!rect.empty());
-                                const Mat& img = Mat(inputFrame, rect).clone();
+                                const cv::Mat& img = cv::Mat(inputFrame, rect).clone();
                                 assert(!img.empty());
-                                const Mat& m = Mat(mask, rect).clone();
+                                const cv::Mat& m = cv::Mat(mask, rect).clone();
                                 assert(!m.empty());
                                 // NColors colors = Capture::getPrimaryColors(img, m);
                                 Capture cap({ std::move(img), std::move(m), mov.contours, rect,
                                     mov.center.x, mov.center.y, rect.width, rect.height,
-                                    mov.density });
+                                    mov.density, -1, 0.0 });
 
-                                const std::vector<std::vector<Point>>& contour = { mov.contours };
+                                const std::vector<std::vector<cv::Point>>& contour = { mov.contours };
                                 drawContours(drawing, contour, 0, color, 2);
 
-                                objects.emplace_back(Object { 0.0, mov.center, mov.density, Point2i(0, 0),
+                                objects.emplace_back(Object { 0.0, mov.center, mov.density, cv::Point2i(0, 0),
                                     color, iNewObj++, std::move(cap),
                                     mov.center, 0u, {} });
 
@@ -623,12 +800,12 @@ int main(int argc, char** argv)
 
                         for (const auto& obj : objects) {
                             for (const auto& l : obj.lines) {
-                                line(drawing, l.first, l.second, obj.color, 2);
+                                cv::line(drawing, l.first, l.second, obj.color, 2);
                             }
                         }
 
                         for (const DeadObj& obj : tombs) {
-                            putText(drawing, "x", obj.p + Point(-9, 9), FONT_HERSHEY_DUPLEX,
+                            putText(drawing, "x", obj.p + cv::Point(-9, 9), cv::FONT_HERSHEY_DUPLEX,
                                 1, obj.color, 1);
                         }
 
@@ -639,15 +816,15 @@ int main(int argc, char** argv)
             } // if (iFrame <= NB_CAP_FOCUS_BRIGHTNESS)
 
             putText(drawing, "nbObjs : " + std::to_string(objects.size()),
-                Point(0, 30), FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 5);
+                cv::Point(0, 30), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
             putText(drawing, "nbObjs : " + std::to_string(objects.size()),
-                Point(0, 30), FONT_HERSHEY_DUPLEX, 1,
-                Scalar(255, 255, 255));
+                cv::Point(0, 30), cv::FONT_HERSHEY_DUPLEX, 1,
+                cv::Scalar(255, 255, 255));
 
-            putText(drawing, "frame : " + std::to_string(iFrame), Point(0, 60),
-                FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 5);
-            putText(drawing, "frame : " + std::to_string(iFrame), Point(0, 60),
-                FONT_HERSHEY_DUPLEX, 1, Scalar(255, 255, 255), 1);
+            putText(drawing, "frame : " + std::to_string(iFrame), cv::Point(0, 60),
+                cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
+            putText(drawing, "frame : " + std::to_string(iFrame), cv::Point(0, 60),
+                cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 255, 255), 1);
 
             // std::cout << "frame : " << iFrame << "\r" << std::flush;
             std::cout << "+" << std::flush;
@@ -662,15 +839,15 @@ int main(int argc, char** argv)
             //            fps << std::fixed << std::setprecision(2) << 1.0 / frameDuration;
             //            fps << 1.0 / frameDuration;
             double fps = 1.0 / frameDuration;
-            putText(drawing, "fps : " + std::to_string(fps), Point(0, 90),
-                FONT_HERSHEY_DUPLEX, 1, Scalar(0, 0, 0), 5);
-            putText(drawing, "fps : " + std::to_string(fps), Point(0, 90),
-                FONT_HERSHEY_DUPLEX, 1, Scalar(255, 255, 255), 1);
+            putText(drawing, "fps : " + std::to_string(fps), cv::Point(0, 90),
+                cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
+            putText(drawing, "fps : " + std::to_string(fps), cv::Point(0, 90),
+                cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 255, 255), 1);
 
             outputVideo << drawing;
 #ifdef PC
-            imshow("drawing", drawing);
-            if (waitKey(1) == 'q') {
+            cv::imshow("drawing", drawing);
+            if (cv::waitKey(1) == 'q') {
                 quit = true;
                 break;
             }
@@ -692,25 +869,31 @@ int main(int argc, char** argv)
 
         int nbRealObjects = 0;
         // draw all detected object movements in drawing capture
-        for (const Object& obj : objects) {
+        for (Object& obj : objects) {
 
             // if (obj.distance > MIN_MOV_DIST_TO_SAVE_OBJECT) {
             if (obj.age > MIN_MOV_YEARS_TO_SAVE_OBJECT) {
 
                 // assert(obj.trace[obj.bestCapture] != nullptr);
                 //                const Capture& bestCapture = obj.trace[obj.bestCapture];
-                const Capture& bestCapture = obj.biggestCapture;
-                // const Mat &img = bestCapture.m_img;
+                Capture& bestCapture = obj.biggestCapture;
+                // const cv::Mat &img = bestCapture.m_img;
 
                 assert(!bestCapture.m_rect.empty());
                 assert(!bestCapture.m_mask.empty());
                 assert(bestCapture.m_rect.size() == bestCapture.m_mask.size());
 
-                bestCapture.m_img.copyTo(Mat(drawing, bestCapture.m_rect),
+                bestCapture.m_img.copyTo(cv::Mat(drawing, bestCapture.m_rect),
                     bestCapture.m_mask);
-                std::vector<std::vector<Point>> movCountours { bestCapture.m_contour };
+                std::vector<std::vector<cv::Point>> movCountours { bestCapture.m_contour };
                 drawContours(drawing, movCountours, 0, obj.color, 2);
                 ++nbRealObjects;
+
+                detect(net, bestCapture);
+                if (bestCapture.confidence > 0.5) {
+                    const auto& rect = bestCapture.m_rect;
+                    drawPred(bestCapture.label, bestCapture.confidence, rect.tl().x, rect.tl().y, rect.br().x, rect.br().y, drawing, obj.color);
+                }
             }
         }
 
@@ -742,7 +925,7 @@ int main(int argc, char** argv)
         // }
 
 #ifdef PC
-        destroyAllWindows();
+        cv::destroyAllWindows();
 #endif
 
         std::cout << HEADER "object detected : " << nbRealObjects << std::endl;
@@ -753,7 +936,7 @@ int main(int argc, char** argv)
 
 #ifdef PC
         if (quit) {
-            std::this_thread::sleep_for(std::chrono::seconds(5)); // wait rsync
+            std::this_thread::sleep_for(std::chrono::seconds(2)); // wait rsync
             return 0;
         }
 #endif

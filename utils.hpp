@@ -72,6 +72,10 @@ public:
     int m_height;
     double m_density;
 
+//    std::string name;
+    int label;
+    double confidence;
+
     // mutable Identity * m_id = nullptr;
     //    mutable Identity m_id;
     //    mutable bool m_build {false};
@@ -120,6 +124,7 @@ public:
     uint age;
 //    std::string name;
     std::vector<std::pair<cv::Point, cv::Point>> lines;
+//    cv::Rect boundRect;
 };
 
 

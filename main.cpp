@@ -295,7 +295,7 @@ int main(int argc, char** argv)
         // if no movement, wait for timelapse photo
         while (!hasMovement()) {
 
-//            std::cout << colorHash(std::this_thread::get_id()) << "." << "\033[0m" << std::flush;
+            //            std::cout << colorHash(std::this_thread::get_id()) << "." << "\033[0m" << std::flush;
             std::cout << "." << std::flush;
             usleep(CLOCKS_PER_SEC);
             // --tickTimeLapse;
@@ -436,6 +436,7 @@ int main(int argc, char** argv)
             vCap >> inputFrame;
             //            assert(!inputFrame.empty());
             if (inputFrame.empty()) {
+                std::cout << HEADER "stream finished" << std::endl;
                 streamFinished = true;
                 break;
             }
@@ -776,7 +777,7 @@ int main(int argc, char** argv)
                 cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 255, 255), 1);
 
             // std::cout << "frame : " << iFrame << "\r" << std::flush;
-//            std::cout << colorHash(std::this_thread::get_id()) << "+" << std::flush << "\033[0m";
+            //            std::cout << colorHash(std::this_thread::get_id()) << "+" << std::flush << "\033[0m";
             std::cout << "+" << std::flush;
 
             double frameDuration = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -837,8 +838,8 @@ int main(int argc, char** argv)
 
         auto it = threads.begin();
         while (it != threads.end()) {
-//        for (auto & thread : threads) {
-            auto & thread = *it;
+            //        for (auto & thread : threads) {
+            auto& thread = *it;
 
             if (thread.joinable()) {
                 thread.join();
@@ -853,7 +854,7 @@ int main(int argc, char** argv)
             //        std::thread t([=, objects = std::move(objects), &net, drawing = std::move(drawing)]() mutable {
             std::cout << HEADER "start new thread, nb object to detect = " << objects.size() << std::endl;
             std::cout << HEADER "nb thread = " << threads.size() << std::endl;
-//            std::this_thread::sleep_for(std::chrono::seconds(120 * threads.size()));
+            //            std::this_thread::sleep_for(std::chrono::seconds(120 * threads.size()));
 
             auto detectStart = std::chrono::high_resolution_clock::now();
             int nbRealObjects = 0;
@@ -868,6 +869,7 @@ int main(int argc, char** argv)
                     //                const Capture& bestCapture = obj.trace[obj.bestCapture];
                     Capture& bestCapture = obj.biggestCapture;
                     // const cv::Mat &img = bestCapture.m_img;
+                    ++nbRealObjects;
 
                     detect(net, bestCapture);
                     if (bestCapture.confidence > 0.2) {
@@ -886,7 +888,6 @@ int main(int argc, char** argv)
                         //                                        drawContours(drawing, movCountours, 0, obj.color, 2);
 
                         drawPred(bestCapture, drawing, obj.color);
-                        ++nbRealObjects;
                         if (classes[bestCapture.label] == "person") {
                             ++nbHuman;
                         }
@@ -940,7 +941,7 @@ int main(int argc, char** argv)
                     //                imwrite("alert.jpg", drawing);
 
                     //                cmd = "./" + script + " " + bestPath + " &";
-//                    cmd = script + " " + motionId + " &";
+                    //                    cmd = script + " " + motionId + " &";
                     cmd = script + " " + motionId;
                     system(cmd.c_str());
 
@@ -957,18 +958,18 @@ int main(int argc, char** argv)
                 }
                 //            std::thread t([cmd]() {
                 std::cout << HEADER << "start " << cmd << std::endl;
-//#ifdef PC
+                //#ifdef PC
                 system((cmd).c_str());
-//#else
-//                system((cmd + " &").c_str());
-//#endif
+                //#else
+                //                system((cmd + " &").c_str());
+                //#endif
                 std::cout << HEADER << "end " << cmd << std::endl;
                 //            });
             }
-//            return 0;
+            //            return 0;
         });
         t.detach();
-//        threads.emplace_back(std::move(t));
+        //        threads.emplace_back(std::move(t));
         threads.push_back(std::move(t));
         // }
 
@@ -990,8 +991,8 @@ int main(int argc, char** argv)
 
     } // while (1)
 
-//        thread.join();
-    for (auto & thread : threads) {
+    //        thread.join();
+    for (auto& thread : threads) {
         thread.join();
     }
 

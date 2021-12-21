@@ -56,7 +56,7 @@
 #define FPS 5
 #endif
 
-#define HEADER "[" << std::this_thread::get_id() << "] "
+#define HEADER colorHash(std::this_thread::get_id()) << "[" << std::this_thread::get_id() << "]\033[0m "
 
 // void foo()
 //{
@@ -295,6 +295,7 @@ int main(int argc, char** argv)
         // if no movement, wait for timelapse photo
         while (!hasMovement()) {
 
+//            std::cout << colorHash(std::this_thread::get_id()) << "." << "\033[0m" << std::flush;
             std::cout << "." << std::flush;
             usleep(CLOCKS_PER_SEC);
             // --tickTimeLapse;
@@ -775,6 +776,7 @@ int main(int argc, char** argv)
                 cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 255, 255), 1);
 
             // std::cout << "frame : " << iFrame << "\r" << std::flush;
+//            std::cout << colorHash(std::this_thread::get_id()) << "+" << std::flush << "\033[0m";
             std::cout << "+" << std::flush;
 
             double frameDuration = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -924,7 +926,7 @@ int main(int argc, char** argv)
                     cmd = script + " " + motionId + " &";
                     system(cmd.c_str());
 
-                    std::cout << "[SCRIPT] run : " << cmd
+                    std::cout << HEADER "[SCRIPT] run : " << cmd
                               << std::endl;
                 }
             }

@@ -927,7 +927,8 @@ int main(int argc, char** argv)
                     //                imwrite("alert.jpg", drawing);
 
                     //                cmd = "./" + script + " " + bestPath + " &";
-                    cmd = script + " " + motionId + " &";
+//                    cmd = script + " " + motionId + " &";
+                    cmd = script + " " + motionId;
                     system(cmd.c_str());
 
                     std::cout << HEADER "[SCRIPT] run : " << cmd

@@ -201,7 +201,7 @@ int main(int argc, char** argv)
     // Size sizeScreen(width, height);
     // vCap.release();
 
-    std::cout << HEADER "check camera" << std::endl;
+    std::cout << HEADER "check camera/stream" << std::endl;
     if (vCap.open(stream)) {
         vCap.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
         vCap.set(cv::CAP_PROP_FRAME_HEIGHT, HEIGHT);
@@ -281,7 +281,7 @@ int main(int argc, char** argv)
     const auto timelapseStart = std::chrono::high_resolution_clock::now();
     int timelapseCounter = -1;
     //    std::thread thread;
-//    std::vector<std::thread> threads;
+    std::vector<std::thread> threads;
 
     // --------------------------- INFINITE LOOP ------------------------------
     while (1) {
@@ -314,7 +314,7 @@ int main(int argc, char** argv)
                     std::cout << HEADER "device not found";
                     return 1;
                 }
-                for (int i = 0; i < NB_CAP_FOCUS_BRIGHTNESS + 100; ++i) {
+                for (int i = 0; i < NB_CAP_FOCUS_BRIGHTNESS + 100 || inputFrame.empty(); ++i) {
                     vCap >> inputFrame;
                     assert(!inputFrame.empty());
                 }
@@ -937,18 +937,19 @@ int main(int argc, char** argv)
                 }
                 //            std::thread t([cmd]() {
                 std::cout << HEADER << "start " << cmd << std::endl;
-#ifdef PC
+//#ifdef PC
                 system((cmd).c_str());
-#else
-                system((cmd + " &").c_str());
-#endif
-                std::cout << HEADER << "end" << cmd << std::endl;
+//#else
+//                system((cmd + " &").c_str());
+//#endif
+                std::cout << HEADER << "end " << cmd << std::endl;
                 //            });
             }
 //            return 0;
         });
         t.detach();
 //        threads.emplace_back(std::move(t));
+        threads.push_back(t);
         // }
 
 #ifdef PC
@@ -970,9 +971,9 @@ int main(int argc, char** argv)
     } // while (1)
 
 //        thread.join();
-//    for (auto & thread : threads) {
-//        thread.join();
-//    }
+    for (auto & thread : threads) {
+        thread.join();
+    }
 
     return 0;
 

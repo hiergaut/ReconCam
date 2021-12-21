@@ -50,7 +50,7 @@
 	if (isset($_GET['lite'])) {
 		$lite=(string)$_GET['lite'];
 	} else {
-		$lite=false;
+		$lite=true;
 	}
 
 	include("showDay.php");

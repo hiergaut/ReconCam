@@ -41,8 +41,9 @@ std::string colorHash(std::thread::id t)
 {
 //    auto key = reinterpret_cast<std::uintptr_t>(t) / sizeof(t) / 3;
 //    int key = (uint64_t)t;
-    int key = std::hash<std::thread::id>{}(t);
-    std::string str = "\033[" + std::to_string(key % 2) + ";" + std::to_string(key % 7 + 31) + "m ";
+    uint key = std::hash<std::thread::id>{}(t);
+//    std::string str = "\033[" + std::to_string(key % 2) + ";" + std::to_string(key % 7 + 31) + "m ";
+    std::string str = "\033[" + std::to_string(key % 7 + 31) + "m ";
     return str;
 
 }

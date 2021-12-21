@@ -838,6 +838,7 @@ int main(int argc, char** argv)
         //        std::thread t([iFrame, newMotionDir, hasScript, script, motionId, hasRemoteDir, port, motionDir, remoteDir, &objects, net, &drawing, &outputVideo]() mutable {
         std::thread t([=, objects = std::move(objects), drawing = drawing.clone(), outputVideo = std::move(outputVideo)]() mutable {
             //        std::thread t([=, objects = std::move(objects), &net, drawing = std::move(drawing)]() mutable {
+            std::cout << HEADER "start new thread, nb object to detect = " << objects.size() << std::endl;
             auto detectStart = std::chrono::high_resolution_clock::now();
             int nbRealObjects = 0;
             int nbHuman = 0;

@@ -14,7 +14,7 @@ OBJ := $(patsubst %.cpp,%.o,$(SRC))
 # CFLAGS = -g3 -gdwarf2 -DDEBUG
 # CFLAGS = -g3 -gdwarf-3 -DDEBUG
 # else
-CFLAGS= -Ofast -DNDEBUG -DPROJECT_DIR=""
+CFLAGS= -Ofast -DNDEBUG -DPROJECT_DIR="" -DTINY_YOLO
 # endif
 
 CXX = g++ $(CFLAGS)

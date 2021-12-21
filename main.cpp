@@ -281,6 +281,7 @@ int main(int argc, char** argv)
     const auto timelapseStart = std::chrono::high_resolution_clock::now();
     int timelapseCounter = -1;
     //    std::thread thread;
+//    std::vector<std::thread> threads;
 
     // --------------------------- INFINITE LOOP ------------------------------
     while (1) {
@@ -832,9 +833,9 @@ int main(int argc, char** argv)
         }
         outputVideoRec.release();
 
-//        std::thread t([iFrame, newMotionDir, hasScript, script, motionId, hasRemoteDir, port, motionDir, remoteDir, &objects, net, &drawing, &outputVideo]() mutable {
-        std::thread t([=, &objects, drawing = drawing.clone(), &outputVideo]() mutable {
-//        std::thread t([=, objects = std::move(objects), &net, drawing = std::move(drawing)]() mutable {
+        //        std::thread t([iFrame, newMotionDir, hasScript, script, motionId, hasRemoteDir, port, motionDir, remoteDir, &objects, net, &drawing, &outputVideo]() mutable {
+        std::thread t([=, objects = std::move(objects), drawing = drawing.clone(), outputVideo = std::move(outputVideo)]() mutable {
+            //        std::thread t([=, objects = std::move(objects), &net, drawing = std::move(drawing)]() mutable {
             auto detectStart = std::chrono::high_resolution_clock::now();
             int nbRealObjects = 0;
             int nbHuman = 0;
@@ -944,8 +945,10 @@ int main(int argc, char** argv)
                 std::cout << HEADER << "end" << cmd << std::endl;
                 //            });
             }
-
+//            return 0;
         });
+        t.detach();
+//        threads.emplace_back(std::move(t));
         // }
 
 #ifdef PC
@@ -959,14 +962,17 @@ int main(int argc, char** argv)
 
 #ifdef PC
         if (quit || streamFinished) {
-                        std::this_thread::sleep_for(std::chrono::seconds(5)); // wait rsync
+            std::this_thread::sleep_for(std::chrono::seconds(5)); // wait rsync
             return 0;
         }
 #endif
 
     } // while (1)
 
-    //    thread.join();
+//        thread.join();
+//    for (auto & thread : threads) {
+//        thread.join();
+//    }
 
     return 0;
 

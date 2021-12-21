@@ -25,8 +25,8 @@ std::string getCurTime() {
 	if (sec < 10)
 		sec_str = "0" + sec_str;
 
-//	return hour_str + ':' + min_str + ':' + sec_str;
-    return "12:12:12";
+    return hour_str + ':' + min_str + ':' + sec_str;
+//    return "12:12:12";
 }
 
 std::string getDay() {

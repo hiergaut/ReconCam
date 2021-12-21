@@ -949,7 +949,7 @@ int main(int argc, char** argv)
         });
         t.detach();
 //        threads.emplace_back(std::move(t));
-        threads.push_back(t);
+        threads.push_back(std::move(t));
         // }
 
 #ifdef PC

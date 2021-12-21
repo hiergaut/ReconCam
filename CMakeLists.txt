@@ -3,7 +3,7 @@ project( ReconCam )
 
 find_package( OpenCV REQUIRED )
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 include_directories( ${OpenCV_INCLUDE_DIRS} )
@@ -11,11 +11,11 @@ include_directories( ${OpenCV_INCLUDE_DIRS} )
 #file(GLOB SOURCES *.cpp *.hpp)
 set(SOURCES main.cpp Gpio.hpp System.hpp utils.hpp)
 add_executable( ${PROJECT_NAME} ${SOURCES})
-target_link_libraries( ${PROJECT_NAME} ${OpenCV_LIBS} )
 
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
-#find_package(Threads REQUIRED)
+find_package(Threads REQUIRED)
 #target_link_libraries(${PROJECT_NAME} PUBLIC ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries( ${PROJECT_NAME} ${OpenCV_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
 add_compile_definitions(PC)
 add_definitions(-DPROJECT_DIR=\"${CMAKE_SOURCE_DIR}/\")

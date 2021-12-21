@@ -27,7 +27,7 @@
 #include "System.hpp"
 #include "utils.hpp"
 
-//#define TINY_YOLO
+#define TINY_YOLO
 
 #ifdef PC
 #define TIMELAPSE_INTERVAL 20 // 30 sec

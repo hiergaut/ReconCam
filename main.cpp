@@ -853,7 +853,7 @@ int main(int argc, char** argv)
             //        std::thread t([=, objects = std::move(objects), &net, drawing = std::move(drawing)]() mutable {
             std::cout << HEADER "start new thread, nb object to detect = " << objects.size() << std::endl;
             std::cout << HEADER "nb thread = " << threads.size() << std::endl;
-            std::this_thread::sleep_for(std::chrono::seconds(120 * threads.size()));
+//            std::this_thread::sleep_for(std::chrono::seconds(120 * threads.size()));
 
             auto detectStart = std::chrono::high_resolution_clock::now();
             int nbRealObjects = 0;

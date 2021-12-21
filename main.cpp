@@ -281,7 +281,7 @@ int main(int argc, char** argv)
     const auto timelapseStart = std::chrono::high_resolution_clock::now();
     int timelapseCounter = -1;
     //    std::thread thread;
-    std::vector<std::thread> threads;
+    std::list<std::thread> threads;
 
     // --------------------------- INFINITE LOOP ------------------------------
     while (1) {
@@ -834,6 +834,19 @@ int main(int argc, char** argv)
             gpioSetValue(lightGpio, 0);
         }
         outputVideoRec.release();
+
+        auto it = threads.begin();
+        while (it != threads.end()) {
+//        for (auto & thread : threads) {
+            auto & thread = *it;
+
+            if (thread.joinable()) {
+                thread.join();
+                it = threads.erase(it);
+                continue;
+            }
+            ++it;
+        }
 
         //        std::thread t([iFrame, newMotionDir, hasScript, script, motionId, hasRemoteDir, port, motionDir, remoteDir, &objects, net, &drawing, &outputVideo]() mutable {
         std::thread t([=, &threads, objects = std::move(objects), drawing = drawing.clone(), outputVideo = std::move(outputVideo)]() mutable {

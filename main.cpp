@@ -27,6 +27,8 @@
 #include "System.hpp"
 #include "utils.hpp"
 
+//#define TINY_YOLO
+
 #ifdef PC
 #define TIMELAPSE_INTERVAL 20 // 30 sec
 #else
@@ -255,12 +257,12 @@ int main(int argc, char** argv)
         classes.push_back(line);
 
         // Give the configuration and weight files for the model
-#ifdef PC
-    cv::String modelConfiguration = PROJECT_DIR "yolo/yolov3.cfg";
-    cv::String modelWeights = PROJECT_DIR "yolo/yolov3.weights";
-#else
+#ifdef TINY_YOLO
     cv::String modelConfiguration = PROJECT_DIR "yolo/yolov3-tiny.cfg";
     cv::String modelWeights = PROJECT_DIR "yolo/yolov3-tiny.weights";
+#else
+    cv::String modelConfiguration = PROJECT_DIR "yolo/yolov3.cfg";
+    cv::String modelWeights = PROJECT_DIR "yolo/yolov3.weights";
 #endif
 
     // Load the network

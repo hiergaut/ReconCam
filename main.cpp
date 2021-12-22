@@ -176,11 +176,6 @@ int main(int argc, char** argv)
 
     cv::VideoCapture vCap;
 
-    std::string timelapseDir = motionDir + getYear() + "/" + getMonth() + "/" + getDay() + "/timelapse_" + hostname + "_" + deviceName;
-    //    std::string timelapseDir = motionDir + "timelapse_" + hostname + "_" + deviceName;
-    std::string cmd = "mkdir -p " + timelapseDir;
-    system(cmd.c_str());
-
     //    std::set<Object> objects;
     //    std::vector<DeadObj> tombs;
 
@@ -277,6 +272,7 @@ int main(int argc, char** argv)
     net.setPreferableBackend(cv::dnn::DNN_TARGET_CPU);
     net.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
     cv::Mat blob;
+    std::string cmd;
 
     const auto timelapseStart = std::chrono::high_resolution_clock::now();
     int timelapseCounter = -1;
@@ -324,6 +320,11 @@ int main(int argc, char** argv)
                     flip(inputFrame, inputFrame, -1);
                 }
                 vCap.release();
+
+                std::string timelapseDir = motionDir + getYear() + "/" + getMonth() + "/" + getDay() + "/timelapse_" + hostname + "_" + deviceName;
+                //    std::string timelapseDir = motionDir + "timelapse_" + hostname + "_" + deviceName;
+                cmd = "mkdir -p " + timelapseDir;
+                system(cmd.c_str());
 
                 std::string saveLapse = timelapseDir + "/" + getCurTime() + ".jpg";
                 imwrite(saveLapse, inputFrame);

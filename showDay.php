@@ -82,7 +82,8 @@
 					// if (file_exists("$dir/$file/complete.var")) {
 
 					// if (file_exists("$dir/$file/objectDetected.var")) {
-					if (! $lite or file_exists("$dir/$file/objectDetected.var")) {
+					// if (! $lite or file_exists("$dir/$file/objectDetected.var")) {
+					if (! $lite or file_exists("$dir/$file/learningModelDone.var")) {
 
 						if (file_exists("$dir/$file/focusBrightnessDone.var")) {
 						// if (file_exists("$dir/$file/learningModelDone.var")) {

@@ -872,15 +872,16 @@ int main(int argc, char** argv)
                     // const cv::Mat &img = bestCapture.m_img;
                     ++nbRealObjects;
 
+                    assert(!bestCapture.m_rect.empty());
+                    assert(!bestCapture.m_mask.empty());
+                    assert(bestCapture.m_rect.size() == bestCapture.m_mask.size());
+
+                    bestCapture.m_img.copyTo(cv::Mat(drawing, bestCapture.m_rect),
+                        bestCapture.m_mask);
+
                     detect(net, bestCapture);
                     if (bestCapture.confidence > 0.2) {
 
-                        assert(!bestCapture.m_rect.empty());
-                        assert(!bestCapture.m_mask.empty());
-                        assert(bestCapture.m_rect.size() == bestCapture.m_mask.size());
-
-                        bestCapture.m_img.copyTo(cv::Mat(drawing, bestCapture.m_rect),
-                            bestCapture.m_mask);
                         //                                        cv::Mat m;
                         //                                        cv::cvtColor(bestCapture.m_mask, m, cv::COLOR_GRAY2BGR);
                         //                                        m.copyTo(cv::Mat(drawing, bestCapture.m_rect));
@@ -893,8 +894,8 @@ int main(int argc, char** argv)
                             ++nbHuman;
                         }
                     } else {
-                        //                    std::vector<std::vector<cv::Point>> movCountours { bestCapture.m_contour };
-                        //                    drawContours(drawing, movCountours, 0, obj.color, 2);
+                        std::vector<std::vector<cv::Point>> movCountours { bestCapture.m_contour };
+                        drawContours(drawing, movCountours, 0, obj.color, 2);
                     }
                 }
             }

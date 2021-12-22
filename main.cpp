@@ -863,21 +863,25 @@ int main(int argc, char** argv)
             // draw all detected object movements in drawing capture
             for (Object& obj : objects) {
 
+                Capture& bestCapture = obj.biggestCapture;
+                // const cv::Mat &img = bestCapture.m_img;
+
+                assert(!bestCapture.m_rect.empty());
+                assert(!bestCapture.m_mask.empty());
+                assert(bestCapture.m_rect.size() == bestCapture.m_mask.size());
+
+                bestCapture.m_img.copyTo(cv::Mat(drawing, bestCapture.m_rect),
+                    bestCapture.m_mask);
+
+                std::vector<std::vector<cv::Point>> movCountours { bestCapture.m_contour };
+                drawContours(drawing, movCountours, 0, obj.color, 2);
+
                 // if (obj.distance > MIN_MOV_DIST_TO_SAVE_OBJECT) {
                 if (obj.age > MIN_MOV_YEARS_TO_SAVE_OBJECT) {
+                    ++nbRealObjects;
 
                     // assert(obj.trace[obj.bestCapture] != nullptr);
                     //                const Capture& bestCapture = obj.trace[obj.bestCapture];
-                    Capture& bestCapture = obj.biggestCapture;
-                    // const cv::Mat &img = bestCapture.m_img;
-                    ++nbRealObjects;
-
-                    assert(!bestCapture.m_rect.empty());
-                    assert(!bestCapture.m_mask.empty());
-                    assert(bestCapture.m_rect.size() == bestCapture.m_mask.size());
-
-                    bestCapture.m_img.copyTo(cv::Mat(drawing, bestCapture.m_rect),
-                        bestCapture.m_mask);
 
                     detect(net, bestCapture);
                     if (bestCapture.confidence > 0.2) {
@@ -894,8 +898,6 @@ int main(int argc, char** argv)
                             ++nbHuman;
                         }
                     } else {
-                        std::vector<std::vector<cv::Point>> movCountours { bestCapture.m_contour };
-                        drawContours(drawing, movCountours, 0, obj.color, 2);
                     }
                 }
             }

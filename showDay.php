@@ -85,7 +85,7 @@
 					// if (! $lite or file_exists("$dir/$file/objectDetected.var")) {
 					if (! $lite or file_exists("$dir/$file/learningModelDone.var")) {
 
-						if (file_exists("$dir/$file/focusBrightnessDone.var")) {
+						// if (file_exists("$dir/$file/focusBrightnessDone.var")) {
 						// if (file_exists("$dir/$file/learningModelDone.var")) {
 							$heure = exec("echo $file | cut -c1-2");
 							// $heure = exec("echo $file | cut -d_ -f2 | cut -c1-2");
@@ -158,7 +158,7 @@
 							// </a>
 							// ";
 							// }
-						}
+						// }
 					}
 				}
 			}

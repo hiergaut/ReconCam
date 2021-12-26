@@ -174,6 +174,10 @@ int main(int argc, char** argv)
     }
     const std::string hostname = getHostname();
 
+	if (hostname == "rpi3ap") {
+		sensorGpioNum = -1;
+	}
+
     cv::VideoCapture vCap;
 
     //    std::set<Object> objects;

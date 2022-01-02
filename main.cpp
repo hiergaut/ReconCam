@@ -173,6 +173,7 @@ int main(int argc, char** argv)
         motionRootDir = "motion/";
     }
     const std::string hostname = getHostname();
+    const std::string deviceId = hostname + "_" + deviceName;
 
     cv::VideoCapture vCap;
 
@@ -321,19 +322,30 @@ int main(int argc, char** argv)
                 }
                 vCap.release();
 
-                std::string timelapseId = getCurTime() + "_" + hostname + "_" + deviceName;
-                putText(inputFrame, timelapseId,
-                    cv::Point(0, 30), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
-                putText(inputFrame, timelapseId,
-                    cv::Point(0, 30), cv::FONT_HERSHEY_DUPLEX, 1,
+                std::string timelapseStartTime = getCurTime();
+
+                int line = 30;
+
+                putText(drawing, deviceId,
+                    cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
+                putText(drawing, deviceId,
+                    cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1,
+                    cv::Scalar(255, 255, 255));
+                line += 30;
+
+                putText(drawing, timelapseStartTime,
+                    cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
+                putText(drawing, timelapseStartTime,
+                    cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1,
                     cv::Scalar(255, 255, 255));
 
-                std::string timelapseDir = motionRootDir + getYear() + "/" + getMonth() + "/" + getDay() + "/timelapse_" + hostname + "_" + deviceName;
-                //    std::string timelapseDir = motionRootDir + "timelapse_" + hostname + "_" + deviceName;
+
+                std::string timelapseDir = motionRootDir + getYear() + "/" + getMonth() + "/" + getDay() + "/timelapse_" + deviceId;
+                //    std::string timelapseDir = motionRootDir + "timelapse_" + deviceId;
                 cmd = "mkdir -p " + timelapseDir;
                 system(cmd.c_str());
 
-                std::string saveLapse = timelapseDir + "/" + getCurTime() + ".jpg";
+                std::string saveLapse = timelapseDir + "/" + timelapseStartTime + ".jpg";
                 imwrite(saveLapse, inputFrame);
                 imwrite(timelapseDir + "/latest.jpeg", inputFrame);
                 std::cout << HEADER "[TIMELAPSE] save lapse '" << saveLapse << "'"
@@ -375,7 +387,8 @@ int main(int argc, char** argv)
         }
 
         std::string motionPath = getYear() + "/" + getMonth() + "/" + getDay() + "/";
-        std::string motionId = getCurTime() + "_" + hostname + "_" + deviceName;
+        std::string motionStartTime = getCurTime();
+        std::string motionId = motionStartTime + "_" + deviceId;
         std::cout << HEADER "new event : " << motionId << std::endl;
         std::string newMotionDir = motionRootDir + motionPath + motionId;
         cmd = "mkdir -p " + newMotionDir;
@@ -438,6 +451,7 @@ int main(int argc, char** argv)
         //        int nbObjects = 0;
         iFrame = 0;
         int nMovement = 0;
+        double lastFrameDuration = 0.0;
         // ----------------------- WHILE HAS MOVEMENT
 #ifdef PC
         //        while ((hasMovement() || nMovement > 0) && !quit) {
@@ -778,22 +792,34 @@ int main(int argc, char** argv)
 
             } // if (iFrame < NB_CAP_FOCUS_BRIGHTNESS)
 
-            putText(drawing, motionId,
-                cv::Point(0, 30), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
-            putText(drawing, motionId,
-                cv::Point(0, 30), cv::FONT_HERSHEY_DUPLEX, 1,
+            int line = 30;
+
+            putText(drawing, deviceId,
+                cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
+            putText(drawing, deviceId,
+                cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1,
                 cv::Scalar(255, 255, 255));
+            line += 30;
+
+            putText(drawing, motionStartTime,
+                cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
+            putText(drawing, motionStartTime,
+                cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1,
+                cv::Scalar(255, 255, 255));
+            line += 30;
 
             putText(drawing, "nbObjs : " + std::to_string(objects.size()),
-                cv::Point(0, 60), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
+                cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
             putText(drawing, "nbObjs : " + std::to_string(objects.size()),
-                cv::Point(0, 60), cv::FONT_HERSHEY_DUPLEX, 1,
+                cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1,
                 cv::Scalar(255, 255, 255));
+            line += 30;
 
-            putText(drawing, "frame : " + std::to_string(iFrame), cv::Point(0, 90),
+            putText(drawing, "frame : " + std::to_string(iFrame), cv::Point(0, line),
                 cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
-            putText(drawing, "frame : " + std::to_string(iFrame), cv::Point(0, 90),
+            putText(drawing, "frame : " + std::to_string(iFrame), cv::Point(0, line),
                 cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 255, 255), 1);
+            line += 30;
 
             // std::cout << "frame : " << iFrame << "\r" << std::flush;
             //            std::cout << colorHash(std::this_thread::get_id()) << "+" << std::flush << "\033[0m";
@@ -808,10 +834,12 @@ int main(int argc, char** argv)
             //            std::ostringstream fps;
             //            fps << std::fixed << std::setprecision(2) << 1.0 / frameDuration;
             //            fps << 1.0 / frameDuration;
-            double fps = 1.0 / frameDuration;
-            putText(drawing, "fps : " + std::to_string(fps), cv::Point(0, 120),
+//            double fps = 1.0 / frameDuration;
+            double fps = 2.0 / (frameDuration + lastFrameDuration);
+            lastFrameDuration = frameDuration;
+            putText(drawing, "fps : " + std::to_string(fps), cv::Point(0, line),
                 cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
-            putText(drawing, "fps : " + std::to_string(fps), cv::Point(0, 120),
+            putText(drawing, "fps : " + std::to_string(fps), cv::Point(0, line),
                 cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 255, 255), 1);
 
             outputVideo << drawing;

@@ -145,10 +145,17 @@
 							//     ";
 
 							echo "
-								<a href=\"$dir/$file/video.webm\" >
+								<a href=\"$dir/$file/video.mp4\" >
 									<img src=\"$dir/$file/trace.jpg\" width=320 height=240 />
 								</a>
 								";
+
+							// echo "
+							//     <video width=\"640\" height=\"480\" controls>
+							//     <source src=\"$dir/$file/video.mp4\" type=\"video/mp4\">
+							//     Your browser does not support the video tag.
+							//     </video>
+							//     ";
 							// }
 							// }
 							//         } else {

@@ -166,11 +166,11 @@ int main(int argc, char** argv)
     }
 
     bool hasRemoteDir = !remoteDir.empty();
-    std::string motionDir;
+    std::string motionRootDir;
     if (hasRemoteDir) {
-        motionDir = "/tmp/motion/";
+        motionRootDir = "/tmp/motion/";
     } else {
-        motionDir = "motion/";
+        motionRootDir = "motion/";
     }
     const std::string hostname = getHostname();
 
@@ -321,8 +321,15 @@ int main(int argc, char** argv)
                 }
                 vCap.release();
 
-                std::string timelapseDir = motionDir + getYear() + "/" + getMonth() + "/" + getDay() + "/timelapse_" + hostname + "_" + deviceName;
-                //    std::string timelapseDir = motionDir + "timelapse_" + hostname + "_" + deviceName;
+                std::string timelapseId = getCurTime() + "_" + hostname + "_" + deviceName;
+                putText(inputFrame, timelapseId,
+                    cv::Point(0, 30), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
+                putText(inputFrame, timelapseId,
+                    cv::Point(0, 30), cv::FONT_HERSHEY_DUPLEX, 1,
+                    cv::Scalar(255, 255, 255));
+
+                std::string timelapseDir = motionRootDir + getYear() + "/" + getMonth() + "/" + getDay() + "/timelapse_" + hostname + "_" + deviceName;
+                //    std::string timelapseDir = motionRootDir + "timelapse_" + hostname + "_" + deviceName;
                 cmd = "mkdir -p " + timelapseDir;
                 system(cmd.c_str());
 
@@ -338,9 +345,9 @@ int main(int argc, char** argv)
 
                 if (hasRemoteDir) {
                     if (port == -1) {
-                        cmd += " && rsync -arv " + motionDir + " " + remoteDir;
+                        cmd += " && rsync -arv " + motionRootDir + " " + remoteDir;
                     } else {
-                        cmd += " && rsync -arv -e 'ssh -p " + std::to_string(port) + "' " + motionDir + " " + remoteDir;
+                        cmd += " && rsync -arv -e 'ssh -p " + std::to_string(port) + "' " + motionRootDir + " " + remoteDir;
                     }
                     //                    std::thread t([cmd]() {
                     //                        std::cout << HEADER "[TIMELAPSE] " << cmd << std::endl;
@@ -367,9 +374,10 @@ int main(int argc, char** argv)
             gpioSetValue(lightGpio, 1);
         }
 
-        std::string motionId = getYear() + "/" + getMonth() + "/" + getDay() + "/" + getCurTime() + "_" + hostname + "_" + deviceName;
+        std::string motionPath = getYear() + "/" + getMonth() + "/" + getDay() + "/";
+        std::string motionId = getCurTime() + "_" + hostname + "_" + deviceName;
         std::cout << HEADER "new event : " << motionId << std::endl;
-        std::string newMotionDir = motionDir + motionId;
+        std::string newMotionDir = motionRootDir + motionPath + motionId;
         cmd = "mkdir -p " + newMotionDir;
         system(cmd.c_str());
 
@@ -770,15 +778,21 @@ int main(int argc, char** argv)
 
             } // if (iFrame < NB_CAP_FOCUS_BRIGHTNESS)
 
-            putText(drawing, "nbObjs : " + std::to_string(objects.size()),
+            putText(drawing, motionId,
                 cv::Point(0, 30), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
-            putText(drawing, "nbObjs : " + std::to_string(objects.size()),
+            putText(drawing, motionId,
                 cv::Point(0, 30), cv::FONT_HERSHEY_DUPLEX, 1,
                 cv::Scalar(255, 255, 255));
 
-            putText(drawing, "frame : " + std::to_string(iFrame), cv::Point(0, 60),
+            putText(drawing, "nbObjs : " + std::to_string(objects.size()),
+                cv::Point(0, 60), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
+            putText(drawing, "nbObjs : " + std::to_string(objects.size()),
+                cv::Point(0, 60), cv::FONT_HERSHEY_DUPLEX, 1,
+                cv::Scalar(255, 255, 255));
+
+            putText(drawing, "frame : " + std::to_string(iFrame), cv::Point(0, 90),
                 cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
-            putText(drawing, "frame : " + std::to_string(iFrame), cv::Point(0, 60),
+            putText(drawing, "frame : " + std::to_string(iFrame), cv::Point(0, 90),
                 cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 255, 255), 1);
 
             // std::cout << "frame : " << iFrame << "\r" << std::flush;
@@ -795,9 +809,9 @@ int main(int argc, char** argv)
             //            fps << std::fixed << std::setprecision(2) << 1.0 / frameDuration;
             //            fps << 1.0 / frameDuration;
             double fps = 1.0 / frameDuration;
-            putText(drawing, "fps : " + std::to_string(fps), cv::Point(0, 90),
+            putText(drawing, "fps : " + std::to_string(fps), cv::Point(0, 120),
                 cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
-            putText(drawing, "fps : " + std::to_string(fps), cv::Point(0, 90),
+            putText(drawing, "fps : " + std::to_string(fps), cv::Point(0, 120),
                 cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 255, 255), 1);
 
             outputVideo << drawing;
@@ -854,7 +868,7 @@ int main(int argc, char** argv)
             ++it;
         }
 
-        //        std::thread t([iFrame, newMotionDir, hasScript, script, motionId, hasRemoteDir, port, motionDir, remoteDir, &objects, net, &drawing, &outputVideo]() mutable {
+        //        std::thread t([iFrame, newMotionDir, hasScript, script, motionId, hasRemoteDir, port, motionRootDir, remoteDir, &objects, net, &drawing, &outputVideo]() mutable {
         std::thread t([=, &threads, objects = std::move(objects), drawing = drawing.clone(), outputVideo = std::move(outputVideo)]() mutable {
             //        std::thread t([=, objects = std::move(objects), &net, drawing = std::move(drawing)]() mutable {
             std::cout << HEADER "start new thread, nb object to detect = " << objects.size() << std::endl;
@@ -952,7 +966,7 @@ int main(int argc, char** argv)
 
                     //                cmd = "./" + script + " " + bestPath + " &";
                     //                    cmd = script + " " + motionId + " &";
-                    cmd = script + " " + motionId;
+                    cmd = script + " " + motionPath + motionId;
                     system(cmd.c_str());
 
                     std::cout << HEADER "[SCRIPT] run : " << cmd
@@ -962,9 +976,9 @@ int main(int argc, char** argv)
 
             if (hasRemoteDir) {
                 if (port == -1) {
-                    cmd = "rsync -arv " + motionDir + " " + remoteDir;
+                    cmd = "rsync -arv " + motionRootDir + " " + remoteDir;
                 } else {
-                    cmd = "rsync -arv -e 'ssh -p " + std::to_string(port) + "' " + motionDir + " " + remoteDir;
+                    cmd = "rsync -arv -e 'ssh -p " + std::to_string(port) + "' " + motionRootDir + " " + remoteDir;
                 }
                 //            std::thread t([cmd]() {
                 std::cout << HEADER << "start " << cmd << std::endl;

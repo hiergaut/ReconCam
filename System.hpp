@@ -26,7 +26,8 @@ std::string getCurTime()
         sec_str = "0" + sec_str;
 
 #ifdef PC
-    return "12:12:12";
+//    return "12:12:12";
+    return hour_str + ':' + min_str + ':' + sec_str;
 #else
     return hour_str + ':' + min_str + ':' + sec_str;
 #endif

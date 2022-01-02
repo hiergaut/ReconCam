@@ -51,7 +51,7 @@
 #define HEIGHT 480
 
 #ifdef PC
-#define FPS 5
+#define FPS 30
 #else
 #define FPS 5
 #endif
@@ -383,20 +383,20 @@ int main(int argc, char** argv)
             return 1;
         }
 
-        std::string outputVideoFile = newMotionDir + "/video.webm";
+        //        std::string outputVideoFile = newMotionDir + "/video.webm";
+        //        cv::VideoWriter outputVideo = cv::VideoWriter(
+        //            outputVideoFile, cv::VideoWriter::fourcc('V', 'P', '8', '0'), FPS,
+        //            sizeScreen, true);
+        std::string outputVideoFile = newMotionDir + "/video.mp4";
         cv::VideoWriter outputVideo = cv::VideoWriter(
-            outputVideoFile, cv::VideoWriter::fourcc('V', 'P', '8', '0'), FPS,
+//            outputVideoFile, cv::VideoWriter::fourcc('M', 'P', '4', 'V'), FPS,
+            outputVideoFile, cv::VideoWriter::fourcc('H', '2', '6', '4'), FPS,
             sizeScreen, true);
         if (!outputVideo.isOpened()) {
             //        if (!outputVideo.isOpened()) {
             std::cout << HEADER "failed to open webm video" << std::endl;
             return 6;
         }
-
-        //        std::string outputVideoFileRec = newMotionDir + "/video.mp4";
-        //        VideoWriter outputVideoRec = VideoWriter(
-        //            outputVideoFile, cv::VideoWriter::fourcc('M', 'P', '4', 'V'), 3,
-        //            sizeScreen, true);
 
         std::string outputVideoFileRec;
         cv::VideoWriter outputVideoRec;

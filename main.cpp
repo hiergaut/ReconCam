@@ -51,7 +51,7 @@
 #define HEIGHT 480
 
 #ifdef PC
-#define FPS 30
+#define FPS 15
 #else
 #define FPS 5
 #endif
@@ -394,7 +394,7 @@ int main(int argc, char** argv)
             sizeScreen, true);
         if (!outputVideo.isOpened()) {
             //        if (!outputVideo.isOpened()) {
-            std::cout << HEADER "failed to open webm video" << std::endl;
+            std::cout << HEADER "failed to open mp4 video" << std::endl;
             return 6;
         }
 

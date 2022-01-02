@@ -389,7 +389,7 @@ int main(int argc, char** argv)
         //            sizeScreen, true);
         std::string outputVideoFile = newMotionDir + "/video.mp4";
         cv::VideoWriter outputVideo = cv::VideoWriter(
-//            outputVideoFile, cv::VideoWriter::fourcc('M', 'P', '4', 'V'), FPS,
+            //            outputVideoFile, cv::VideoWriter::fourcc('M', 'P', '4', 'V'), FPS,
             outputVideoFile, cv::VideoWriter::fourcc('H', '2', '6', '4'), FPS,
             sizeScreen, true);
         if (!outputVideo.isOpened()) {
@@ -913,7 +913,9 @@ int main(int argc, char** argv)
             std::cout << HEADER "human detected : " << nbHuman << std::endl;
             std::cout << HEADER "detect duration : " << detectDuration << std::endl;
 
-            outputVideo << drawing;
+            if (iFrame != 0) {
+                outputVideo << drawing;
+            }
             outputVideo.release();
             // std::cout << "save video '" << outputVideoFile << "'" << std::endl;
 

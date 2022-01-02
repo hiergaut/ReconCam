@@ -387,6 +387,11 @@ int main(int argc, char** argv)
         cv::VideoWriter outputVideo = cv::VideoWriter(
             outputVideoFile, cv::VideoWriter::fourcc('V', 'P', '8', '0'), FPS,
             sizeScreen, true);
+        if (!outputVideo.isOpened()) {
+            //        if (!outputVideo.isOpened()) {
+            std::cout << HEADER "failed to open webm video" << std::endl;
+            return 6;
+        }
 
         //        std::string outputVideoFileRec = newMotionDir + "/video.mp4";
         //        VideoWriter outputVideoRec = VideoWriter(
@@ -399,11 +404,10 @@ int main(int argc, char** argv)
         outputVideoRec = cv::VideoWriter(
             outputVideoFileRec, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), FPS,
             sizeScreen, true);
-
-        if (!outputVideo.isOpened() || !outputVideoRec.isOpened()) {
+        if (!outputVideoRec.isOpened()) {
             //        if (!outputVideo.isOpened()) {
-            std::cout << HEADER "failed to write video" << std::endl;
-            return 6;
+            std::cout << HEADER "failed to open avi video" << std::endl;
+            return 7;
         }
         auto videoStart = std::chrono::high_resolution_clock::now();
 

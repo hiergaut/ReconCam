@@ -915,11 +915,11 @@ int main(int argc, char** argv)
 
             if (iFrame != 0) {
                 outputVideo << drawing;
+                imwrite(newMotionDir + "/trace.jpg", drawing);
             }
             outputVideo.release();
             // std::cout << "save video '" << outputVideoFile << "'" << std::endl;
 
-            imwrite(newMotionDir + "/trace.jpg", drawing);
             // std::cout << "save trace file '" << newMotionDir + "/trace.jpg'"
             //   << std::endl;
 

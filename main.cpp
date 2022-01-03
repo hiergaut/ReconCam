@@ -326,16 +326,16 @@ int main(int argc, char** argv)
 
                 int line = 30;
 
-                putText(drawing, deviceId,
+                putText(inputFrame, deviceId,
                     cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
-                putText(drawing, deviceId,
+                putText(inputFrame, deviceId,
                     cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1,
                     cv::Scalar(255, 255, 255));
                 line += 30;
 
-                putText(drawing, timelapseStartTime,
+                putText(inputFrame, timelapseStartTime,
                     cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
-                putText(drawing, timelapseStartTime,
+                putText(inputFrame, timelapseStartTime,
                     cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1,
                     cv::Scalar(255, 255, 255));
 

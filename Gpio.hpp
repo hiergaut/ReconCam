@@ -70,7 +70,7 @@ void initGpio(int gpio, std::string direction)
     if (direction != directionFile) {
         std::ofstream directionGpio(gpioNumDirectionDir.c_str());
         if (!directionGpio.is_open()) {
-            std::cout << "unable to set direction gpio" << std::endl;
+            std::cout << "unable to set direction gpio (" << directionFile << " -> " << direction << ")" << std::endl;
             perror(gpioNumDirectionDir.c_str());
             exit(2);
         }

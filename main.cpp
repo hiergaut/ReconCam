@@ -276,7 +276,7 @@ int main(int argc, char** argv)
     std::string cmd;
 
     const auto timelapseStart = std::chrono::high_resolution_clock::now();
-    size_t timelapseCounter = -1;
+    int64_t timelapseCounter = -1;
     //    std::thread thread;
     std::list<std::thread> threads;
 

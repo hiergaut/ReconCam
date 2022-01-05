@@ -276,7 +276,7 @@ int main(int argc, char** argv)
     std::string cmd;
 
     const auto timelapseStart = std::chrono::high_resolution_clock::now();
-    int timelapseCounter = -1;
+    size_t timelapseCounter = -1;
     //    std::thread thread;
     std::list<std::thread> threads;
 
@@ -321,6 +321,7 @@ int main(int argc, char** argv)
                     flip(inputFrame, inputFrame, -1);
                 }
                 vCap.release();
+                std::cout << HEADER "[TIMELAPSE] vCap.release()" << std::endl;
 
                 std::string timelapseStartTime = getCurTime();
 
@@ -343,6 +344,7 @@ int main(int argc, char** argv)
                 std::string timelapseDir = motionRootDir + getYear() + "/" + getMonth() + "/" + getDay() + "/timelapse_" + deviceId;
                 //    std::string timelapseDir = motionRootDir + "timelapse_" + deviceId;
                 cmd = "mkdir -p " + timelapseDir;
+                std::cout << HEADER "[TIMELAPSE] " << cmd << std::endl;
                 system(cmd.c_str());
 
                 std::string saveLapse = timelapseDir + "/" + timelapseStartTime + ".jpg";

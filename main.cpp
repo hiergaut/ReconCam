@@ -305,17 +305,20 @@ int main(int argc, char** argv)
                 std::cout << std::endl;
                 std::cout << HEADER "[TIMELAPSE] open stream" << std::endl;
                 vCap.open(stream);
-                std::cout << HEADER "[TIMELAPSE] set camera settings" << std::endl;
-                vCap.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
-                vCap.set(cv::CAP_PROP_FRAME_HEIGHT, HEIGHT);
                 //
                 // vCap.open(CAP_V4L2);
                 if (!vCap.isOpened()) {
                     std::cout << HEADER "device not found";
                     return 1;
                 }
+
+                std::cout << HEADER "[TIMELAPSE] set camera settings" << std::endl;
+                vCap.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
+                vCap.set(cv::CAP_PROP_FRAME_HEIGHT, HEIGHT);
+
                 std::cout << HEADER "[TIMELAPSE] focus brightness" << std::endl;
                 for (int i = 0; i < NB_CAP_FOCUS_BRIGHTNESS + 100 || inputFrame.empty(); ++i) {
+                    std::cout << "-" << std::flush;
                     vCap >> inputFrame;
                     assert(!inputFrame.empty());
                 }

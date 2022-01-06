@@ -278,7 +278,7 @@ int main(int argc, char** argv)
     const auto timelapseStart = std::chrono::high_resolution_clock::now();
     int64_t timelapseCounter = -1;
     //    std::thread thread;
-    std::list<std::thread> threads;
+//    std::list<std::thread> threads;
 
     // --------------------------- INFINITE LOOP ------------------------------
     while (1) {
@@ -892,24 +892,26 @@ int main(int argc, char** argv)
         }
         outputVideoRec.release();
 
-        auto it = threads.begin();
-        while (it != threads.end()) {
-            //        for (auto & thread : threads) {
-            auto& thread = *it;
+//        auto it = threads.begin();
+//        while (it != threads.end()) {
+//            //        for (auto & thread : threads) {
+//            auto& thread = *it;
 
-            if (thread.joinable()) {
-                thread.join();
-                it = threads.erase(it);
-                continue;
-            }
-            ++it;
-        }
+//            if (thread.joinable()) {
+//                thread.join();
+//                it = threads.erase(it);
+//                continue;
+//            }
+//            ++it;
+//        }
 
         //        std::thread t([iFrame, newMotionDir, hasScript, script, motionId, hasRemoteDir, port, motionRootDir, remoteDir, &objects, net, &drawing, &outputVideo]() mutable {
-        std::thread t([=, &threads, objects = std::move(objects), drawing = drawing.clone(), outputVideo = std::move(outputVideo)]() mutable {
+
+//        std::thread t([=, &threads, objects = std::move(objects), drawing = drawing.clone(), outputVideo = std::move(outputVideo)]() mutable {
+
             //        std::thread t([=, objects = std::move(objects), &net, drawing = std::move(drawing)]() mutable {
             std::cout << HEADER "start new thread, nb object to detect = " << objects.size() << std::endl;
-            std::cout << HEADER "nb thread = " << threads.size() << std::endl;
+//            std::cout << HEADER "nb thread = " << threads.size() << std::endl;
             //            std::this_thread::sleep_for(std::chrono::seconds(120 * threads.size()));
 
             auto detectStart = std::chrono::high_resolution_clock::now();
@@ -1028,10 +1030,12 @@ int main(int argc, char** argv)
                 //            });
             }
             //            return 0;
-        });
-        t.detach();
+
+//        });
+//        t.detach();
+//        threads.push_back(std::move(t));
+
         //        threads.emplace_back(std::move(t));
-        threads.push_back(std::move(t));
         // }
 
 #ifdef PC
@@ -1045,17 +1049,25 @@ int main(int argc, char** argv)
 
 #ifdef PC
         if (quit || streamFinished) {
-            std::this_thread::sleep_for(std::chrono::seconds(5)); // wait rsync
-            return 0;
+//            std::this_thread::sleep_for(std::chrono::seconds(5)); // wait rsync
+//            return 0;
+            break;
+        }
+#else
+        if (streamFinished) {
+//            std::this_thread::sleep_for(std::chrono::seconds(5)); // wait rsync
+//            return 0;
+            break;
         }
 #endif
 
     } // while (1)
 
     //        thread.join();
-    for (auto& thread : threads) {
-        thread.join();
-    }
+//    for (auto& thread : threads) {
+//        if (thread.joinable())
+//            thread.join();
+//    }
 
     return 0;
 

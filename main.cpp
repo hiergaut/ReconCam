@@ -290,7 +290,7 @@ int main(int argc, char** argv)
                   << TIMELAPSE_INTERVAL - timelapseDuration << " sec " << std::endl;
 
         // if no movement, wait for timelapse photo
-        while (!hasMovement()) {
+        while (!hasMovement() && !hasStream) {
 
             //            std::cout << colorHash(std::this_thread::get_id()) << "." << "\033[0m" << std::flush;
             std::cout << "." << std::flush;
@@ -461,9 +461,9 @@ int main(int argc, char** argv)
         // ----------------------- WHILE HAS MOVEMENT
 #ifdef PC
         //        while ((hasMovement() || nMovement > 0) && !quit) {
-        while (hasMovement() || nMovement > 0) {
+        while (hasMovement() || nMovement > 0 || hasStream) {
 #else
-        while (hasMovement() || nMovement > 0) {
+        while (hasMovement() || nMovement > 0 || hasStream) {
 #endif
             //            auto frameStart = std::chrono::high_resolution_clock::now();
             vCap >> inputFrame;

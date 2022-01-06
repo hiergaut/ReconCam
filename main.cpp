@@ -303,7 +303,9 @@ int main(int argc, char** argv)
             if (timelapseDuration > TIMELAPSE_INTERVAL) {
                 // if (tickTimeLapse == 0) {
                 std::cout << std::endl;
+                std::cout << HEADER "[TIMELAPSE] open stream" << std::endl;
                 vCap.open(stream);
+                std::cout << HEADER "[TIMELAPSE] set camera settings" << std::endl;
                 vCap.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
                 vCap.set(cv::CAP_PROP_FRAME_HEIGHT, HEIGHT);
                 //
@@ -312,11 +314,13 @@ int main(int argc, char** argv)
                     std::cout << HEADER "device not found";
                     return 1;
                 }
+                std::cout << HEADER "[TIMELAPSE] focus brightness" << std::endl;
                 for (int i = 0; i < NB_CAP_FOCUS_BRIGHTNESS + 100 || inputFrame.empty(); ++i) {
                     vCap >> inputFrame;
                     assert(!inputFrame.empty());
                 }
 
+                std::cout << HEADER "[TIMELAPSE] flip camera" << std::endl;
                 if (flip180) {
                     flip(inputFrame, inputFrame, -1);
                 }

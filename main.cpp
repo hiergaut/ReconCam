@@ -50,8 +50,13 @@
 #define WIDTH 640
 #define HEIGHT 480
 
+//#define WIDTH 1920
+//#define HEIGHT 1080
+
+//#define DETECTION
+
 #ifdef PC
-#define FPS 15
+#define FPS 30
 #else
 #define FPS 5
 #endif
@@ -180,9 +185,12 @@ int main(int argc, char** argv)
     //    std::set<Object> objects;
     //    std::vector<DeadObj> tombs;
 
-    cv::Mat inputFrame, mask, drawing;
+    cv::Mat inputFrame, mask;
+#ifdef DETECTION
+    cv::Mat drawing;
+#endif
     //        int iNewObj;
-    int iFrame;
+    //    int iFrame;
 
     // int tickTimeLapse = 1; // take picture immediately
 
@@ -250,6 +258,7 @@ int main(int argc, char** argv)
     bool quit = false;
 #endif
 
+#ifdef DETECTION
     // Init DNN
     // Load names of classes
     std::string classesFile = PROJECT_DIR "yolo/coco.names";
@@ -273,12 +282,13 @@ int main(int argc, char** argv)
     net.setPreferableBackend(cv::dnn::DNN_TARGET_CPU);
     net.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
     cv::Mat blob;
+#endif
     std::string cmd;
 
     const auto timelapseStart = std::chrono::high_resolution_clock::now();
     int64_t timelapseCounter = -1;
     //    std::thread thread;
-//    std::list<std::thread> threads;
+    //    std::list<std::thread> threads;
 
     // --------------------------- INFINITE LOOP ------------------------------
     while (1) {
@@ -316,13 +326,13 @@ int main(int argc, char** argv)
                 vCap.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
                 vCap.set(cv::CAP_PROP_FRAME_HEIGHT, HEIGHT);
 
-//                std::cout << HEADER "[TIMELAPSE] focus brightness" << std::endl;
-//                for (int i = 0; i < NB_CAP_FOCUS_BRIGHTNESS + 100 || inputFrame.empty(); ++i) {
-//                    std::cout << "-" << std::flush;
-                    vCap >> inputFrame;
-                    assert(!inputFrame.empty());
-//                }
-//                std::cout << std::endl;
+                //                std::cout << HEADER "[TIMELAPSE] focus brightness" << std::endl;
+                //                for (int i = 0; i < NB_CAP_FOCUS_BRIGHTNESS + 100 || inputFrame.empty(); ++i) {
+                //                    std::cout << "-" << std::flush;
+                vCap >> inputFrame;
+                assert(!inputFrame.empty());
+                //                }
+                //                std::cout << std::endl;
 
                 std::cout << HEADER "[TIMELAPSE] vCap.release()" << std::endl;
                 vCap.release();
@@ -348,7 +358,6 @@ int main(int argc, char** argv)
                 putText(inputFrame, timelapseStartTime,
                     cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1,
                     cv::Scalar(255, 255, 255));
-
 
                 std::string timelapseDir = motionRootDir + getYear() + "/" + getMonth() + "/" + getDay() + "/timelapse_" + deviceId;
                 //    std::string timelapseDir = motionRootDir + "timelapse_" + deviceId;
@@ -408,7 +417,7 @@ int main(int argc, char** argv)
         vCap.open(stream);
         vCap.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
         vCap.set(cv::CAP_PROP_FRAME_HEIGHT, HEIGHT);
-        //        vCap.set(cv::CAP_PROP_FPS, 60);
+//                vCap.set(cv::CAP_PROP_FPS, 60);
         // vCap.open(CAP_V4L2);
         if (!vCap.isOpened()) {
             std::cout << HEADER "device not found";
@@ -419,6 +428,8 @@ int main(int argc, char** argv)
         //        cv::VideoWriter outputVideo = cv::VideoWriter(
         //            outputVideoFile, cv::VideoWriter::fourcc('V', 'P', '8', '0'), FPS,
         //            sizeScreen, true);
+
+#ifdef DETECTION
         std::string outputVideoFile = newMotionDir + "/video.mp4";
         cv::VideoWriter outputVideo = cv::VideoWriter(
             //            outputVideoFile, cv::VideoWriter::fourcc('M', 'P', '4', 'V'), FPS,
@@ -429,6 +440,7 @@ int main(int argc, char** argv)
             std::cout << HEADER "failed to open mp4 video" << std::endl;
             return 6;
         }
+#endif
 
         std::string outputVideoFileRec;
         cv::VideoWriter outputVideoRec;
@@ -443,26 +455,30 @@ int main(int argc, char** argv)
         }
         auto videoStart = std::chrono::high_resolution_clock::now();
 
-        int iNewObj = 0;
-        //        tombs.clear();
-        //        objects.clear();
-
         auto model = cv::createBackgroundSubtractorMOG2();
         // auto model = createBackgroundSubtractorKNN();
         // auto model = createBackgroundSubtractorGMG();
 
+#ifdef DETECTION
+        int iNewObj = 0;
+        //        tombs.clear();
+        //        objects.clear();
         std::list<DeadObj> tombs;
         assert(tombs.size() == 0);
         std::list<Object> objects;
         assert(objects.size() == 0);
+#endif
 
-        auto frameStart = std::chrono::high_resolution_clock::now();
 
         bool streamFinished = false;
         //        int nbObjects = 0;
-        iFrame = 0;
+        int iFrame = 0;
         int nMovement = 0;
+
+#ifdef DETECTION
+        auto frameStart = std::chrono::high_resolution_clock::now();
         double lastFrameDuration = 0.0;
+#endif
         // ----------------------- WHILE HAS MOVEMENT
 #ifdef PC
         //        while ((hasMovement() || nMovement > 0) && !quit) {
@@ -482,13 +498,17 @@ int main(int argc, char** argv)
                 flip(inputFrame, inputFrame, -1);
             }
             outputVideoRec << inputFrame;
+#ifdef DETECTION
             drawing = inputFrame;
+#endif
 
             // ------------------------ START
 
             if (iFrame < NB_CAP_FOCUS_BRIGHTNESS) {
+#ifdef DETECTION
                 rectangle(drawing, cv::Rect(640 - 50, 0, 50, 50), cv::Scalar(255, 0, 0),
                     -1);
+#endif
 
             } else {
 
@@ -512,8 +532,10 @@ int main(int argc, char** argv)
 #endif
 
                 if (iFrame < NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST) {
+#ifdef DETECTION
                     rectangle(drawing, cv::Rect(640 - 50, 0, 50, 50), cv::Scalar(0, 255, 0),
                         -1);
+#endif
 
                 } else {
 
@@ -574,6 +596,7 @@ int main(int argc, char** argv)
 #endif
 
                     nMovement = movContours.size();
+#ifdef DETECTION
                     // to many movements -> no detection
                     if (nMovement > MAX_MOVEMENTS) {
                         rectangle(drawing, cv::Rect(640 - 50, 0, 50, 50), cv::Scalar(0, 0, 255),
@@ -798,13 +821,14 @@ int main(int argc, char** argv)
                         }
 
                     } // if (nMovement >= MAX_MOVEMENTS)
+#endif
 
                 } // if (iFrame < NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST)
 
             } // if (iFrame < NB_CAP_FOCUS_BRIGHTNESS)
 
+#ifdef DETECTION
             int line = 30;
-
             putText(drawing, deviceId,
                 cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
             putText(drawing, deviceId,
@@ -845,7 +869,7 @@ int main(int argc, char** argv)
             //            std::ostringstream fps;
             //            fps << std::fixed << std::setprecision(2) << 1.0 / frameDuration;
             //            fps << 1.0 / frameDuration;
-//            double fps = 1.0 / frameDuration;
+            //            double fps = 1.0 / frameDuration;
             double fps = 2.0 / (frameDuration + lastFrameDuration);
             lastFrameDuration = frameDuration;
             putText(drawing, "fps : " + std::to_string(fps), cv::Point(0, line),
@@ -854,8 +878,11 @@ int main(int argc, char** argv)
                 cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 255, 255), 1);
 
             outputVideo << drawing;
+#endif
 #ifdef PC
+#ifdef DETECTION
             cv::imshow("drawing", drawing);
+#endif
             if (hasStream && !quit) {
                 while (true) {
                     auto key = cv::waitKey(10);
@@ -894,149 +921,152 @@ int main(int argc, char** argv)
         }
         outputVideoRec.release();
 
-//        auto it = threads.begin();
-//        while (it != threads.end()) {
-//            //        for (auto & thread : threads) {
-//            auto& thread = *it;
+        //        auto it = threads.begin();
+        //        while (it != threads.end()) {
+        //            //        for (auto & thread : threads) {
+        //            auto& thread = *it;
 
-//            if (thread.joinable()) {
-//                thread.join();
-//                it = threads.erase(it);
-//                continue;
-//            }
-//            ++it;
-//        }
+        //            if (thread.joinable()) {
+        //                thread.join();
+        //                it = threads.erase(it);
+        //                continue;
+        //            }
+        //            ++it;
+        //        }
 
         //        std::thread t([iFrame, newMotionDir, hasScript, script, motionId, hasRemoteDir, port, motionRootDir, remoteDir, &objects, net, &drawing, &outputVideo]() mutable {
 
-//        std::thread t([=, &threads, objects = std::move(objects), drawing = drawing.clone(), outputVideo = std::move(outputVideo)]() mutable {
-//            std::cout << HEADER "start new thread, nb object to detect = " << objects.size() << std::endl;
+        //        std::thread t([=, &threads, objects = std::move(objects), drawing = drawing.clone(), outputVideo = std::move(outputVideo)]() mutable {
+        //            std::cout << HEADER "start new thread, nb object to detect = " << objects.size() << std::endl;
 
-            //        std::thread t([=, objects = std::move(objects), &net, drawing = std::move(drawing)]() mutable {
+        //        std::thread t([=, objects = std::move(objects), &net, drawing = std::move(drawing)]() mutable {
 
-//            std::cout << HEADER "nb thread = " << threads.size() << std::endl;
-            //            std::this_thread::sleep_for(std::chrono::seconds(120 * threads.size()));
+        //            std::cout << HEADER "nb thread = " << threads.size() << std::endl;
+        //            std::this_thread::sleep_for(std::chrono::seconds(120 * threads.size()));
 
-            auto detectStart = std::chrono::high_resolution_clock::now();
-            int nbRealObjects = 0;
-            int nbHuman = 0;
-            // draw all detected object movements in drawing capture
-            for (Object& obj : objects) {
+#ifdef DETECTION
+        auto detectStart = std::chrono::high_resolution_clock::now();
+        int nbRealObjects = 0;
+        int nbHuman = 0;
+        // draw all detected object movements in drawing capture
+        for (Object& obj : objects) {
 
-                Capture& bestCapture = obj.biggestCapture;
-                // const cv::Mat &img = bestCapture.m_img;
+            Capture& bestCapture = obj.biggestCapture;
+            // const cv::Mat &img = bestCapture.m_img;
 
-                assert(!bestCapture.m_rect.empty());
-                assert(!bestCapture.m_mask.empty());
-                assert(bestCapture.m_rect.size() == bestCapture.m_mask.size());
+            assert(!bestCapture.m_rect.empty());
+            assert(!bestCapture.m_mask.empty());
+            assert(bestCapture.m_rect.size() == bestCapture.m_mask.size());
 
-                bestCapture.m_img.copyTo(cv::Mat(drawing, bestCapture.m_rect),
-                    bestCapture.m_mask);
+            bestCapture.m_img.copyTo(cv::Mat(drawing, bestCapture.m_rect),
+                bestCapture.m_mask);
 
-                std::vector<std::vector<cv::Point>> movCountours { bestCapture.m_contour };
-                drawContours(drawing, movCountours, 0, obj.color, 2);
+            std::vector<std::vector<cv::Point>> movCountours { bestCapture.m_contour };
+            drawContours(drawing, movCountours, 0, obj.color, 2);
 
-                // if (obj.distance > MIN_MOV_DIST_TO_SAVE_OBJECT) {
-                if (obj.age > MIN_MOV_YEARS_TO_SAVE_OBJECT) {
-                    ++nbRealObjects;
+            // if (obj.distance > MIN_MOV_DIST_TO_SAVE_OBJECT) {
+            if (obj.age > MIN_MOV_YEARS_TO_SAVE_OBJECT) {
+                ++nbRealObjects;
 
-                    // assert(obj.trace[obj.bestCapture] != nullptr);
-                    //                const Capture& bestCapture = obj.trace[obj.bestCapture];
+                // assert(obj.trace[obj.bestCapture] != nullptr);
+                //                const Capture& bestCapture = obj.trace[obj.bestCapture];
 
-                    detect(net, bestCapture);
-                    if (bestCapture.confidence > 0.2) {
+                detect(net, bestCapture);
+                if (bestCapture.confidence > 0.2) {
 
-                        //                                        cv::Mat m;
-                        //                                        cv::cvtColor(bestCapture.m_mask, m, cv::COLOR_GRAY2BGR);
-                        //                                        m.copyTo(cv::Mat(drawing, bestCapture.m_rect));
+                    //                                        cv::Mat m;
+                    //                                        cv::cvtColor(bestCapture.m_mask, m, cv::COLOR_GRAY2BGR);
+                    //                                        m.copyTo(cv::Mat(drawing, bestCapture.m_rect));
 
-                        //                                        std::vector<std::vector<cv::Point>> movCountours { bestCapture.m_contour };
-                        //                                        drawContours(drawing, movCountours, 0, obj.color, 2);
+                    //                                        std::vector<std::vector<cv::Point>> movCountours { bestCapture.m_contour };
+                    //                                        drawContours(drawing, movCountours, 0, obj.color, 2);
 
-                        drawPred(bestCapture, drawing, obj.color);
-                        if (classes[bestCapture.label] == "person") {
-                            ++nbHuman;
-                        }
-                    } else {
+                    drawPred(bestCapture, drawing, obj.color);
+                    if (classes[bestCapture.label] == "person") {
+                        ++nbHuman;
                     }
-                }
-            }
-
-            auto detectDuration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - detectStart)
-                                      .count()
-                / 1000.0;
-            std::cout << HEADER "object detected : " << nbRealObjects << std::endl;
-            std::cout << HEADER "human detected : " << nbHuman << std::endl;
-            std::cout << HEADER "detect duration : " << detectDuration << std::endl;
-
-            if (iFrame != 0) {
-                outputVideo << drawing;
-                imwrite(newMotionDir + "/trace.jpg", drawing);
-            }
-            outputVideo.release();
-            // std::cout << "save video '" << outputVideoFile << "'" << std::endl;
-
-            // std::cout << "save trace file '" << newMotionDir + "/trace.jpg'"
-            //   << std::endl;
-
-            //        thread = std::thread(foo);
-            std::string cmd;
-            if (iFrame > NB_CAP_FOCUS_BRIGHTNESS) {
-                cmd = "touch " + newMotionDir + "/focusBrightnessDone.var";
-                std::cout << HEADER << cmd << std::endl;
-                system(cmd.c_str());
-            }
-
-            if (iFrame > NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST) {
-                cmd = "touch " + newMotionDir + "/learningModelDone.var";
-                std::cout << HEADER << cmd << std::endl;
-                system(cmd.c_str());
-            }
-
-            if (nbRealObjects > 0) {
-                cmd = "touch " + newMotionDir + "/objectDetected.var";
-                std::cout << HEADER << cmd << std::endl;
-                system(cmd.c_str());
-            }
-
-            if (nbHuman > 0) {
-                cmd = "touch " + newMotionDir + "/humanDetected.var";
-                std::cout << HEADER << cmd << std::endl;
-                system(cmd.c_str());
-                if (hasScript) {
-                    //                imwrite("alert.jpg", drawing);
-
-                    //                cmd = "./" + script + " " + bestPath + " &";
-                    //                    cmd = script + " " + motionId + " &";
-                    cmd = script + " " + motionPath + motionId;
-                    system(cmd.c_str());
-
-                    std::cout << HEADER "[SCRIPT] run : " << cmd
-                              << std::endl;
-                }
-            }
-
-            if (hasRemoteDir) {
-                if (port == -1) {
-                    cmd = "rsync -arv " + motionRootDir + " " + remoteDir;
                 } else {
-                    cmd = "rsync -arv -e 'ssh -p " + std::to_string(port) + "' " + motionRootDir + " " + remoteDir;
                 }
-                //            std::thread t([cmd]() {
-                std::cout << HEADER << "start " << cmd << std::endl;
-                //#ifdef PC
-                system((cmd).c_str());
-                //#else
-                //                system((cmd + " &").c_str());
-                //#endif
-                std::cout << HEADER << "end " << cmd << std::endl;
-                //            });
             }
-            //            return 0;
+        }
 
-//        });
-//        t.detach();
-//        threads.push_back(std::move(t));
+        auto detectDuration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - detectStart)
+                                  .count()
+            / 1000.0;
+        std::cout << HEADER "object detected : " << nbRealObjects << std::endl;
+        std::cout << HEADER "human detected : " << nbHuman << std::endl;
+        std::cout << HEADER "detect duration : " << detectDuration << std::endl;
+
+        if (iFrame != 0) {
+            outputVideo << drawing;
+            imwrite(newMotionDir + "/trace.jpg", drawing);
+        }
+        outputVideo.release();
+
+        if (nbRealObjects > 0) {
+            cmd = "touch " + newMotionDir + "/objectDetected.var";
+            std::cout << HEADER << cmd << std::endl;
+            system(cmd.c_str());
+        }
+
+        if (nbHuman > 0) {
+            cmd = "touch " + newMotionDir + "/humanDetected.var";
+            std::cout << HEADER << cmd << std::endl;
+            system(cmd.c_str());
+            if (hasScript) {
+                //                imwrite("alert.jpg", drawing);
+
+                //                cmd = "./" + script + " " + bestPath + " &";
+                //                    cmd = script + " " + motionId + " &";
+                cmd = script + " " + motionPath + motionId;
+                system(cmd.c_str());
+
+                std::cout << HEADER "[SCRIPT] run : " << cmd
+                          << std::endl;
+            }
+        }
+
+#endif
+        // std::cout << "save video '" << outputVideoFile << "'" << std::endl;
+
+        // std::cout << "save trace file '" << newMotionDir + "/trace.jpg'"
+        //   << std::endl;
+
+        //        thread = std::thread(foo);
+        std::string cmd;
+        if (iFrame > NB_CAP_FOCUS_BRIGHTNESS) {
+            cmd = "touch " + newMotionDir + "/focusBrightnessDone.var";
+            std::cout << HEADER << cmd << std::endl;
+            system(cmd.c_str());
+        }
+
+        if (iFrame > NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST) {
+            cmd = "touch " + newMotionDir + "/learningModelDone.var";
+            std::cout << HEADER << cmd << std::endl;
+            system(cmd.c_str());
+        }
+
+        if (hasRemoteDir) {
+            if (port == -1) {
+                cmd = "rsync -arv " + motionRootDir + " " + remoteDir;
+            } else {
+                cmd = "rsync -arv -e 'ssh -p " + std::to_string(port) + "' " + motionRootDir + " " + remoteDir;
+            }
+            //            std::thread t([cmd]() {
+            std::cout << HEADER << "start " << cmd << std::endl;
+            //#ifdef PC
+            system((cmd).c_str());
+            //#else
+            //                system((cmd + " &").c_str());
+            //#endif
+            std::cout << HEADER << "end " << cmd << std::endl;
+            //            });
+        }
+        //            return 0;
+
+        //        });
+        //        t.detach();
+        //        threads.push_back(std::move(t));
 
         //        threads.emplace_back(std::move(t));
         // }
@@ -1052,14 +1082,14 @@ int main(int argc, char** argv)
 
 #ifdef PC
         if (quit || streamFinished) {
-//            std::this_thread::sleep_for(std::chrono::seconds(5)); // wait rsync
-//            return 0;
+            //            std::this_thread::sleep_for(std::chrono::seconds(5)); // wait rsync
+            //            return 0;
             break;
         }
 #else
         if (streamFinished) {
-//            std::this_thread::sleep_for(std::chrono::seconds(5)); // wait rsync
-//            return 0;
+            //            std::this_thread::sleep_for(std::chrono::seconds(5)); // wait rsync
+            //            return 0;
             break;
         }
 #endif
@@ -1067,15 +1097,16 @@ int main(int argc, char** argv)
     } // while (1)
 
     //        thread.join();
-//    for (auto& thread : threads) {
-//        if (thread.joinable())
-//            thread.join();
-//    }
+    //    for (auto& thread : threads) {
+    //        if (thread.joinable())
+    //            thread.join();
+    //    }
 
     return 0;
 
 } // end main
 
+#ifdef DETECTION
 // Draw the predicted bounding box
 void drawPred(const Capture& capture, cv::Mat& frame, const cv::Scalar& color)
 {
@@ -1189,3 +1220,4 @@ void detect(cv::dnn::Net& net, Capture& capture)
     double detectDuration = std::chrono::duration_cast<std::chrono::milliseconds>(detectEnd - detectStart).count() / 1000.0f;
     capture.detectDuration = detectDuration;
 }
+#endif

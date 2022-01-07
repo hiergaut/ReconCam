@@ -316,19 +316,21 @@ int main(int argc, char** argv)
                 vCap.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
                 vCap.set(cv::CAP_PROP_FRAME_HEIGHT, HEIGHT);
 
-                std::cout << HEADER "[TIMELAPSE] focus brightness" << std::endl;
-                for (int i = 0; i < NB_CAP_FOCUS_BRIGHTNESS + 100 || inputFrame.empty(); ++i) {
-                    std::cout << "-" << std::flush;
+//                std::cout << HEADER "[TIMELAPSE] focus brightness" << std::endl;
+//                for (int i = 0; i < NB_CAP_FOCUS_BRIGHTNESS + 100 || inputFrame.empty(); ++i) {
+//                    std::cout << "-" << std::flush;
                     vCap >> inputFrame;
                     assert(!inputFrame.empty());
-                }
+//                }
+//                std::cout << std::endl;
 
-                std::cout << HEADER "[TIMELAPSE] flip camera" << std::endl;
+                std::cout << HEADER "[TIMELAPSE] vCap.release()" << std::endl;
+                vCap.release();
+
+                std::cout << HEADER "[TIMELAPSE] flip frame" << std::endl;
                 if (flip180) {
                     flip(inputFrame, inputFrame, -1);
                 }
-                vCap.release();
-                std::cout << HEADER "[TIMELAPSE] vCap.release()" << std::endl;
 
                 std::string timelapseStartTime = getCurTime();
 

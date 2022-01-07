@@ -2,15 +2,20 @@
 //#include "opencv2/imgproc.hpp"
 //#include "opencv2/opencv.hpp"
 //#include "opencv2/video.hpp" // model
+
+//#define DETECTION
+
+#ifdef DETECTION
 #include <opencv2/dnn.hpp>
+#endif
 
 //#include <assert.h>
 //#include <cassert>
 //#include <chrono>
 //#include <ctime>
 #include <dirent.h>
-#include <fstream>
-#include <iomanip>
+//#include <fstream>
+//#include <iomanip>
 #include <iostream>
 //#include <list>
 //#include <map>
@@ -20,8 +25,8 @@
 #include <list>
 //#include <set>
 #include <set>
-#include <thread>
-#include <unistd.h>
+//#include <thread>
+//#include <unistd.h>
 
 #include "Gpio.hpp"
 #include "System.hpp"
@@ -56,7 +61,6 @@
 //#define WIDTH 1920
 //#define HEIGHT 1080
 
-#define DETECTION
 
 #ifdef PC
 #define FPS 30
@@ -108,7 +112,7 @@ int main(int argc, char** argv)
     // }
     // return 0;
 
-    std::cout << std::fixed << std::setprecision(3);
+//    std::cout << std::fixed << std::setprecision(3);
 
     cv::CommandLineParser parser(
         argc, argv,

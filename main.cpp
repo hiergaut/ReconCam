@@ -58,7 +58,7 @@
 #ifdef PC
 #define FPS 30
 #else
-#define FPS 5
+#define FPS 30
 #endif
 
 #define HEADER colorHash(std::this_thread::get_id()) << "[" << std::this_thread::get_id() << "]\033[0m "

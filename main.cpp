@@ -27,10 +27,13 @@
 #include "System.hpp"
 #include "utils.hpp"
 
+#include <string>
+
 //#define TINY_YOLO
 
 #ifdef PC
-#define TIMELAPSE_INTERVAL 20 // 30 sec
+//#define TIMELAPSE_INTERVAL 20
+#define TIMELAPSE_INTERVAL 600
 #else
 // #define TIMELAPSE_INTERVAL 1800 // 30 min
 // #define TIMELAPSE_INTERVAL 1200 // 20 min
@@ -53,7 +56,7 @@
 //#define WIDTH 1920
 //#define HEIGHT 1080
 
-//#define DETECTION
+#define DETECTION
 
 #ifdef PC
 #define FPS 30
@@ -72,6 +75,7 @@
 //  using namespace cv;
 //  using namespace std;
 
+#ifdef DETECTION
 cv::RNG rng(29791);
 
 // Initialize the parameters
@@ -84,6 +88,7 @@ std::vector<std::string> classes;
 void drawPred(const Capture& capture, cv::Mat& frame, const cv::Scalar& color);
 std::vector<cv::String> getOutputsNames(const cv::dnn::Net& net);
 void detect(cv::dnn::Net& net, Capture& capture);
+#endif
 
 // ------------------------------- MAIN ---------------------------------------
 
@@ -131,7 +136,9 @@ int main(int argc, char** argv)
     bool flip180 = parser.get<bool>("flip");
     int lightGpio = parser.get<int>("light");
     std::string script = parser.get<std::string>("script");
+#ifdef DETECTION
     bool hasScript = !script.empty();
+#endif
     bool hasStream = !stream.empty();
     if (!parser.check()) {
         parser.printMessage();
@@ -142,22 +149,6 @@ int main(int argc, char** argv)
 #ifdef PC
     gpioDir = "gpio/";
 
-    // if (hasStream) {
-    cv::namedWindow("mask", cv::WINDOW_AUTOSIZE);
-    cv::moveWindow("mask", 1920, 1080);
-    namedWindow("mask2", cv::WINDOW_AUTOSIZE);
-    cv::moveWindow("mask2", 1920 + 640, 1080);
-    cv::namedWindow("mask3", cv::WINDOW_AUTOSIZE);
-    cv::moveWindow("mask3", 1920 + 640 * 2, 1080);
-    namedWindow("mask4", cv::WINDOW_AUTOSIZE);
-    cv::moveWindow("mask4", 1920, 1080 + 540);
-    namedWindow("mask5", cv::WINDOW_AUTOSIZE);
-    cv::moveWindow("mask5", 1920 + 640, 1080 + 540);
-    namedWindow("drawing", cv::WINDOW_AUTOSIZE);
-    cv::moveWindow("drawing", 1920 + 640 * 2, 1080 + 540);
-//    namedWindow("blobs", cv::WINDOW_AUTOSIZE);
-//    cv::moveWindow("blobs", 1920 + 640, 1080 + 480);
-// }
 #else
     gpioDir = "/sys/class/gpio/";
 #endif
@@ -170,6 +161,22 @@ int main(int argc, char** argv)
         deviceName = stream;
     }
 
+    std::string motionPath, motionStartTime, deviceId = "";
+
+    std::size_t pos = deviceName.find_first_of("/");
+    std::string rootDir = deviceName.substr(0, pos);
+    //    std::cout << rootDir << std::endl;
+    bool recordDetection = false;
+    if (rootDir == "motion") {
+        motionPath = deviceName.substr(7, 11);
+        //        std::cout << motionPath << std::endl;
+        motionStartTime = deviceName.substr(18, 8);
+        //        std::cout << motionStartTime << std::endl;
+        deviceId = deviceName.substr(deviceName.find_first_of("_") + 1, deviceName.find_last_of("/") - deviceName.find_first_of("_") - 1);
+        //        std::cout << deviceId << std::endl;
+        recordDetection = true;
+    }
+
     bool hasRemoteDir = !remoteDir.empty();
     std::string motionRootDir;
     if (hasRemoteDir) {
@@ -177,18 +184,17 @@ int main(int argc, char** argv)
     } else {
         motionRootDir = "motion/";
     }
-    const std::string hostname = getHostname();
-    const std::string deviceId = hostname + "_" + deviceName;
+    if (! recordDetection) {
+        const std::string hostname = getHostname();
+        deviceId = hostname + "_" + deviceName;
+    }
 
     cv::VideoCapture vCap;
 
     //    std::set<Object> objects;
     //    std::vector<DeadObj> tombs;
 
-    cv::Mat inputFrame, mask;
-#ifdef DETECTION
-    cv::Mat drawing;
-#endif
+    cv::Mat inputFrame, mask, drawing;
     //        int iNewObj;
     //    int iFrame;
 
@@ -263,9 +269,9 @@ int main(int argc, char** argv)
     // Load names of classes
     std::string classesFile = PROJECT_DIR "yolo/coco.names";
     std::ifstream ifs(classesFile.c_str());
-    std::string line;
-    while (getline(ifs, line))
-        classes.push_back(line);
+    std::string lineStr;
+    while (getline(ifs, lineStr))
+        classes.push_back(lineStr);
 
         // Give the configuration and weight files for the model
 #ifdef TINY_YOLO
@@ -401,23 +407,45 @@ int main(int argc, char** argv)
 
         // movement detected !!!
         // start recording
+#ifdef PC
+        // if (hasStream) {
+        cv::namedWindow("mask", cv::WINDOW_AUTOSIZE);
+        cv::moveWindow("mask", 1920, 1080);
+        namedWindow("mask2", cv::WINDOW_AUTOSIZE);
+        cv::moveWindow("mask2", 1920 + 640, 1080);
+        cv::namedWindow("mask3", cv::WINDOW_AUTOSIZE);
+        cv::moveWindow("mask3", 1920 + 640 * 2, 1080);
+        namedWindow("mask4", cv::WINDOW_AUTOSIZE);
+        cv::moveWindow("mask4", 1920, 1080 + 540);
+        namedWindow("mask5", cv::WINDOW_AUTOSIZE);
+        cv::moveWindow("mask5", 1920 + 640, 1080 + 540);
+        namedWindow("drawing", cv::WINDOW_AUTOSIZE);
+        cv::moveWindow("drawing", 1920 + 640 * 2, 1080 + 540);
+
+//    namedWindow("blobs", cv::WINDOW_AUTOSIZE);
+//    cv::moveWindow("blobs", 1920 + 640, 1080 + 480);
+// }
+#endif
 
         if (lightGpio != -1 && isNight()) {
             gpioSetValue(lightGpio, 1);
         }
 
-        std::string motionPath = getYear() + "/" + getMonth() + "/" + getDay() + "/";
-        std::string motionStartTime = getCurTime();
-        std::string motionId = motionStartTime + "_" + deviceId;
+        if (! recordDetection) {
+//            assert(motionStartTime.empty());
+            motionPath = getYear() + "/" + getMonth() + "/" + getDay() + "/";
+            motionStartTime = getCurTime();
+        }
+        const std::string motionId = motionStartTime + "_" + deviceId;
         std::cout << HEADER "new event : " << motionId << std::endl;
-        std::string newMotionDir = motionRootDir + motionPath + motionId;
+        const std::string newMotionDir = motionRootDir + motionPath + motionId;
         cmd = "mkdir -p " + newMotionDir;
         system(cmd.c_str());
 
         vCap.open(stream);
         vCap.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
         vCap.set(cv::CAP_PROP_FRAME_HEIGHT, HEIGHT);
-//                vCap.set(cv::CAP_PROP_FPS, 60);
+        //                        vCap.set(cv::CAP_PROP_FPS, 10);
         // vCap.open(CAP_V4L2);
         if (!vCap.isOpened()) {
             std::cout << HEADER "device not found";
@@ -430,7 +458,10 @@ int main(int argc, char** argv)
         //            sizeScreen, true);
 
 #ifdef DETECTION
-        std::string outputVideoFile = newMotionDir + "/video.mp4";
+        std::string outputVideoFile = newMotionDir + "/detection.mp4";
+#else
+        std::string outputVideoFile = newMotionDir + "/record.mp4";
+#endif
         cv::VideoWriter outputVideo = cv::VideoWriter(
             //            outputVideoFile, cv::VideoWriter::fourcc('M', 'P', '4', 'V'), FPS,
             outputVideoFile, cv::VideoWriter::fourcc('H', '2', '6', '4'), FPS,
@@ -440,20 +471,22 @@ int main(int argc, char** argv)
             std::cout << HEADER "failed to open mp4 video" << std::endl;
             return 6;
         }
-#endif
 
-        std::string outputVideoFileRec;
         cv::VideoWriter outputVideoRec;
-        outputVideoFileRec = newMotionDir + "/video.avi";
-        outputVideoRec = cv::VideoWriter(
-            outputVideoFileRec, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), FPS,
-            sizeScreen, true);
-        if (!outputVideoRec.isOpened()) {
-            //        if (!outputVideo.isOpened()) {
-            std::cout << HEADER "failed to open avi video" << std::endl;
-            return 7;
+        if (!recordDetection) {
+            std::string outputVideoFileRec = newMotionDir + "/original.mp4";
+            outputVideoRec = cv::VideoWriter(
+                outputVideoFileRec, cv::VideoWriter::fourcc('H', '2', '6', '4'), FPS,
+                //                outputVideoFileRec, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), FPS,
+                sizeScreen, true);
+            if (!outputVideoRec.isOpened()) {
+                //        if (!outputVideo.isOpened()) {
+                std::cout << HEADER "failed to open avi video" << std::endl;
+                return 7;
+            }
         }
-        auto videoStart = std::chrono::high_resolution_clock::now();
+
+        //        auto videoStart = std::chrono::high_resolution_clock::now();
 
         auto model = cv::createBackgroundSubtractorMOG2();
         // auto model = createBackgroundSubtractorKNN();
@@ -469,16 +502,17 @@ int main(int argc, char** argv)
         assert(objects.size() == 0);
 #endif
 
-
         bool streamFinished = false;
         //        int nbObjects = 0;
         int iFrame = 0;
         int nMovement = 0;
 
-#ifdef DETECTION
-        auto frameStart = std::chrono::high_resolution_clock::now();
-        double lastFrameDuration = 0.0;
-#endif
+        //        auto frameStart = std::chrono::high_resolution_clock::now();
+        //        double lastFrameDuration = 0.0;
+        int line;
+        std::vector<typeof std::chrono::high_resolution_clock::now()> frameStarts;
+        frameStarts.reserve(1000);
+
         // ----------------------- WHILE HAS MOVEMENT
 #ifdef PC
         //        while ((hasMovement() || nMovement > 0) && !quit) {
@@ -486,6 +520,7 @@ int main(int argc, char** argv)
 #else
         while (hasMovement() || nMovement > 0 || hasStream) {
 #endif
+            frameStarts.push_back(std::chrono::high_resolution_clock::now());
             //            auto frameStart = std::chrono::high_resolution_clock::now();
             vCap >> inputFrame;
             //            assert(!inputFrame.empty());
@@ -497,18 +532,17 @@ int main(int argc, char** argv)
             if (flip180) {
                 flip(inputFrame, inputFrame, -1);
             }
-            outputVideoRec << inputFrame;
-#ifdef DETECTION
+            if (!recordDetection) {
+                outputVideoRec << inputFrame;
+            }
+
             drawing = inputFrame;
-#endif
 
             // ------------------------ START
 
             if (iFrame < NB_CAP_FOCUS_BRIGHTNESS) {
-#ifdef DETECTION
                 rectangle(drawing, cv::Rect(640 - 50, 0, 50, 50), cv::Scalar(255, 0, 0),
                     -1);
-#endif
 
             } else {
 
@@ -532,10 +566,8 @@ int main(int argc, char** argv)
 #endif
 
                 if (iFrame < NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST) {
-#ifdef DETECTION
                     rectangle(drawing, cv::Rect(640 - 50, 0, 50, 50), cv::Scalar(0, 255, 0),
                         -1);
-#endif
 
                 } else {
 
@@ -590,19 +622,26 @@ int main(int argc, char** argv)
                     cv::Mat mat = inputFrame.clone();
                     for (int i = 0; i < movContours.size(); ++i) {
                         drawContours(mat, movContours, i, cv::Scalar(0, 255, 0), 2);
-                        imshow("mask5", mat);
                         // imshow("mask2", drawing);
+                    }
+                    imshow("mask5", mat);
+#endif
+
+#ifndef DETECTION
+                    for (int i = 0; i < movContours.size(); ++i) {
+                        drawContours(drawing, movContours, i, cv::Scalar(0, 255, 0), 2);
                     }
 #endif
 
                     nMovement = movContours.size();
-#ifdef DETECTION
                     // to many movements -> no detection
                     if (nMovement > MAX_MOVEMENTS) {
                         rectangle(drawing, cv::Rect(640 - 50, 0, 50, 50), cv::Scalar(0, 0, 255),
                             -1);
 
-                    } else {
+                    }
+#ifdef DETECTION
+                    else {
 
                         std::set<Movement> movements;
                         {
@@ -827,28 +866,29 @@ int main(int argc, char** argv)
 
             } // if (iFrame < NB_CAP_FOCUS_BRIGHTNESS)
 
+            line = 30;
+            putText(drawing, deviceId,
+                cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
+            putText(drawing, deviceId,
+                cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1,
+                cv::Scalar(255, 255, 255));
+            line += 30;
+
+            putText(drawing, motionStartTime,
+                cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
+            putText(drawing, motionStartTime,
+                cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1,
+                cv::Scalar(255, 255, 255));
+            line += 30;
+
 #ifdef DETECTION
-            int line = 30;
-            putText(drawing, deviceId,
-                cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
-            putText(drawing, deviceId,
-                cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1,
-                cv::Scalar(255, 255, 255));
-            line += 30;
-
-            putText(drawing, motionStartTime,
-                cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
-            putText(drawing, motionStartTime,
-                cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1,
-                cv::Scalar(255, 255, 255));
-            line += 30;
-
             putText(drawing, "nbObjs : " + std::to_string(objects.size()),
                 cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
             putText(drawing, "nbObjs : " + std::to_string(objects.size()),
                 cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1,
                 cv::Scalar(255, 255, 255));
             line += 30;
+#endif
 
             putText(drawing, "frame : " + std::to_string(iFrame), cv::Point(0, line),
                 cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
@@ -860,29 +900,31 @@ int main(int argc, char** argv)
             //            std::cout << colorHash(std::this_thread::get_id()) << "+" << std::flush << "\033[0m";
             std::cout << "+" << std::flush;
 
-            double frameDuration = std::chrono::duration_cast<std::chrono::milliseconds>(
-                                       std::chrono::high_resolution_clock::now() - frameStart)
-                                       .count()
+            const int iLastFrame = std::max(iFrame - 30, 0);
+            const double framesDuration = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                        std::chrono::high_resolution_clock::now() - frameStarts[iLastFrame])
+                                        .count()
                 / 1000.0;
-            frameStart = std::chrono::high_resolution_clock::now();
+            //            frameStart = std::chrono::high_resolution_clock::now();
 
             //            std::ostringstream fps;
             //            fps << std::fixed << std::setprecision(2) << 1.0 / frameDuration;
             //            fps << 1.0 / frameDuration;
             //            double fps = 1.0 / frameDuration;
-            double fps = 2.0 / (frameDuration + lastFrameDuration);
-            lastFrameDuration = frameDuration;
-            putText(drawing, "fps : " + std::to_string(fps), cv::Point(0, line),
+            const double fps = (iFrame - iLastFrame + 1.0) / framesDuration;
+            char fpsBuf[10];
+            sprintf(fpsBuf, "%.2f", fps);
+            std::string fpsStr(fpsBuf);
+            //            lastFrameDuration = frameDuration;
+            putText(drawing, "fps : " + fpsStr, cv::Point(0, line),
                 cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
-            putText(drawing, "fps : " + std::to_string(fps), cv::Point(0, line),
+            putText(drawing, "fps : " + fpsStr, cv::Point(0, line),
                 cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 255, 255), 1);
+            line += 30;
 
             outputVideo << drawing;
-#endif
 #ifdef PC
-#ifdef DETECTION
             cv::imshow("drawing", drawing);
-#endif
             if (hasStream && !quit) {
                 while (true) {
                     auto key = cv::waitKey(10);
@@ -902,24 +944,33 @@ int main(int argc, char** argv)
             ++iFrame;
             //            std::cout << "this thread : " << std::this_thread::get_id() << std::endl;
 
-        } // while (hasMovement())
+        } // while (hasMovement() || nMovement > 0 || hasStream)
         std::cout << std::endl;
 
         vCap.release();
         //        auto end = std::chrono::high_resolution_clock::now();
-        auto videoDuration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - videoStart)
+        auto videoDuration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - frameStarts[0])
                                  .count()
             / 1000.0;
-        //        double fps = iFrame / videoDuration;
+        const double videoFps = static_cast<double>(iFrame) / videoDuration;
         //        putText(drawing, "fps : " + std::to_string(fps), cv::Point(0, 90),
         //            cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
         //        putText(drawing, "fps : " + std::to_string(fps), cv::Point(0, 90),
         //            cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 255, 255), 1);
+        char videoFpsBuf[10];
+        sprintf(videoFpsBuf, "%.2f", videoFps);
+        std::string videoFpsStr(videoFpsBuf);
+        putText(drawing, "video fps : " + videoFpsStr, cv::Point(0, line),
+            cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
+        putText(drawing, "video fps : " + videoFpsStr, cv::Point(0, line),
+            cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 255, 255), 1);
 
         if (lightGpio != -1) {
             gpioSetValue(lightGpio, 0);
         }
-        outputVideoRec.release();
+        if (!recordDetection) {
+            outputVideoRec.release();
+        }
 
         //        auto it = threads.begin();
         //        while (it != threads.end()) {
@@ -997,12 +1048,6 @@ int main(int argc, char** argv)
         std::cout << HEADER "human detected : " << nbHuman << std::endl;
         std::cout << HEADER "detect duration : " << detectDuration << std::endl;
 
-        if (iFrame != 0) {
-            outputVideo << drawing;
-            imwrite(newMotionDir + "/trace.jpg", drawing);
-        }
-        outputVideo.release();
-
         if (nbRealObjects > 0) {
             cmd = "touch " + newMotionDir + "/objectDetected.var";
             std::cout << HEADER << cmd << std::endl;
@@ -1027,6 +1072,13 @@ int main(int argc, char** argv)
         }
 
 #endif
+
+        if (iFrame != 0) {
+            outputVideo << drawing;
+            imwrite(newMotionDir + "/trace.jpg", drawing);
+        }
+        outputVideo.release();
+
         // std::cout << "save video '" << outputVideoFile << "'" << std::endl;
 
         // std::cout << "save trace file '" << newMotionDir + "/trace.jpg'"
@@ -1077,7 +1129,7 @@ int main(int argc, char** argv)
 
         std::cout << HEADER "video duration : " << videoDuration << std::endl;
         std::cout << HEADER "nb capture : " << iFrame << std::endl;
-        std::cout << HEADER "recording fps : " << static_cast<double>(iFrame) / videoDuration
+        std::cout << HEADER "recording fps : " << videoFps
                   << std::endl;
 
 #ifdef PC

@@ -1119,8 +1119,10 @@ int main(int argc, char** argv)
         if (iFrame != 0) {
 #ifdef DETECTION
             outputVideo << drawing;
-#endif
             imwrite(newMotionDir + "/trace.jpg", drawing);
+#else
+            imwrite(newMotionDir + "/record.jpg", drawing);
+#endif
         }
 #ifdef DETECTION
         outputVideo.release();

@@ -4,37 +4,22 @@
 //#include "opencv2/video.hpp" // model
 
 //#define DETECTION
+//#define TINY_YOLO
 
 #ifdef DETECTION
 #include <opencv2/dnn.hpp>
 #endif
 
-//#include <assert.h>
-//#include <cassert>
-//#include <chrono>
-//#include <ctime>
 #include <dirent.h>
-//#include <fstream>
-//#include <iomanip>
 #include <iostream>
-//#include <list>
-//#include <map>
-//#include <sstream>
-//#include <string>
-//#include <thread>
 #include <list>
-//#include <set>
 #include <set>
-//#include <thread>
-//#include <unistd.h>
+#include <string>
 
 #include "Gpio.hpp"
 #include "System.hpp"
 #include "utils.hpp"
 
-#include <string>
-
-//#define TINY_YOLO
 
 #ifdef PC
 //#define TIMELAPSE_INTERVAL 20
@@ -64,19 +49,11 @@
 #ifdef PC
 #define FPS 30
 #else
-#define FPS 30
+#define FPS 15
 #endif
 
 #define HEADER colorHash(std::this_thread::get_id()) << "[" << std::this_thread::get_id() << "]\033[0m "
 
-// void foo()
-//{
-//     std::string cmd = "echo fuck /focusBrightnessDone.var";
-//     std::cout << HEADER << cmd << std::endl;
-//     system(cmd.c_str());
-// }
-//  using namespace cv;
-//  using namespace std;
 
 #ifdef DETECTION
 cv::RNG rng(29791);
@@ -168,7 +145,8 @@ int main(int argc, char** argv)
 
     std::size_t pos = deviceName.find_first_of("/");
     std::string rootDir = deviceName.substr(0, pos);
-    //    std::cout << rootDir << std::endl;
+
+#ifdef DETECTION
     bool recordDetection = false;
     if (rootDir == "motion") {
         motionPath = deviceName.substr(7, 11);
@@ -179,6 +157,7 @@ int main(int argc, char** argv)
         //        std::cout << deviceId << std::endl;
         recordDetection = true;
     }
+#endif
 
     bool hasRemoteDir = !remoteDir.empty();
     std::string motionRootDir;
@@ -187,35 +166,24 @@ int main(int argc, char** argv)
     } else {
         motionRootDir = "motion/";
     }
+#ifdef DETECTION
     if (!recordDetection) {
+#endif
         const std::string hostname = getHostname();
         deviceId = hostname + "_" + deviceName;
+#ifdef DETECTION
     }
+#endif
 
     cv::VideoCapture vCap;
-
-    //    std::set<Object> objects;
-    //    std::vector<DeadObj> tombs;
 
     cv::Mat inputFrame, mask;
 #ifdef DETECTION
     cv::Mat drawing;
 #endif
-    //        int iNewObj;
-    //    int iFrame;
 
-    // int tickTimeLapse = 1; // take picture immediately
-
-    // vCap.open(stream);
-    // vCap.open(CAP_V4L2);
-    // if (!vCap.isOpened()) {
-    //     std::cout << "device not found" << std::endl;
-    //     return 1;
-    // }
     int width = -1;
     int height = -1;
-    // Size sizeScreen(width, height);
-    // vCap.release();
 
     std::cout << HEADER "check camera/stream" << std::endl;
     if (vCap.open(stream)) {
@@ -247,9 +215,6 @@ int main(int argc, char** argv)
 
     cv::Size sizeScreen(width, height);
 
-    // Mat notGreen = Mat::zeros(Size(width, height), CV_8UC3);
-    // notGreen = cv::Scalar(255, 0, 255);
-
     if (sensorGpioNum != -1) {
         initGpio(sensorGpioNum, "in");
         gpioGetValue(sensorGpioNum);
@@ -265,7 +230,6 @@ int main(int argc, char** argv)
         }
     }
 
-//    bool movsFound[MAX_MOVEMENTS];
 #ifdef PC
     bool quit = false;
 #endif
@@ -299,15 +263,13 @@ int main(int argc, char** argv)
 
     const auto timelapseStart = std::chrono::high_resolution_clock::now();
     int64_t timelapseCounter = -1;
-    //    std::thread thread;
     //    std::list<std::thread> threads;
 
     // --------------------------- INFINITE LOOP ------------------------------
     while (1) {
         auto timelapseEnd = std::chrono::high_resolution_clock::now();
         auto timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f - timelapseCounter * TIMELAPSE_INTERVAL;
-        // std::cout << "[TIMELAPSE] wait new motion, future lapse at "
-        //   << tickTimeLapse << " sec " << std::endl;
+
         std::cout << HEADER "[TIMELAPSE] wait new motion, future lapse at "
                   << TIMELAPSE_INTERVAL - timelapseDuration << " sec " << std::endl;
 
@@ -317,13 +279,10 @@ int main(int argc, char** argv)
             //            std::cout << colorHash(std::this_thread::get_id()) << "." << "\033[0m" << std::flush;
             std::cout << "." << std::flush;
             usleep(CLOCKS_PER_SEC);
-            // --tickTimeLapse;
 
             timelapseEnd = std::chrono::high_resolution_clock::now();
-            // timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f;
             timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f - timelapseCounter * TIMELAPSE_INTERVAL;
             if (timelapseDuration > TIMELAPSE_INTERVAL) {
-                // if (tickTimeLapse == 0) {
                 std::cout << std::endl;
                 std::cout << HEADER "[TIMELAPSE] open stream" << std::endl;
                 vCap.open(stream);
@@ -372,7 +331,6 @@ int main(int argc, char** argv)
                     cv::Scalar(255, 255, 255));
 
                 std::string timelapseDir = motionRootDir + getYear() + "/" + getMonth() + "/" + getDay() + "/timelapse_" + deviceId;
-                //    std::string timelapseDir = motionRootDir + "timelapse_" + deviceId;
                 cmd = "mkdir -p " + timelapseDir;
                 std::cout << HEADER "[TIMELAPSE] " << cmd << std::endl;
                 system(cmd.c_str());
@@ -437,11 +395,14 @@ int main(int argc, char** argv)
             gpioSetValue(lightGpio, 1);
         }
 
+#ifdef DETECTION
         if (!recordDetection) {
-            //            assert(motionStartTime.empty());
+#endif
             motionPath = getYear() + "/" + getMonth() + "/" + getDay() + "/";
             motionStartTime = getCurTime();
+#ifdef DETECTION
         }
+#endif
         const std::string motionId = motionStartTime + "_" + deviceId;
         std::cout << HEADER "new event : " << motionId << std::endl;
         const std::string newMotionDir = motionRootDir + motionPath + motionId;
@@ -479,20 +440,21 @@ int main(int argc, char** argv)
 #endif
 
         cv::VideoWriter outputVideoRec;
+#ifdef DETECTION
         if (!recordDetection) {
+#endif
             std::string outputVideoFileRec = newMotionDir + "/record.mp4";
             outputVideoRec = cv::VideoWriter(
                 outputVideoFileRec, cv::VideoWriter::fourcc('H', '2', '6', '4'), FPS,
                 //                outputVideoFileRec, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), FPS,
                 sizeScreen, true);
             if (!outputVideoRec.isOpened()) {
-                //        if (!outputVideo.isOpened()) {
                 std::cout << HEADER "failed to open avi video" << std::endl;
                 return 7;
             }
+#ifdef DETECTION
         }
-
-        //        auto videoStart = std::chrono::high_resolution_clock::now();
+#endif
 
         auto model = cv::createBackgroundSubtractorMOG2();
         // auto model = createBackgroundSubtractorKNN();
@@ -509,12 +471,9 @@ int main(int argc, char** argv)
 #endif
 
         bool streamFinished = false;
-        //        int nbObjects = 0;
         int iFrame = 0;
         int nMovement = 0;
 
-        //        auto frameStart = std::chrono::high_resolution_clock::now();
-        //        double lastFrameDuration = 0.0;
         int line;
 #ifdef DETECTION
         std::vector<typeof std::chrono::high_resolution_clock::now()> frameStarts;
@@ -534,9 +493,7 @@ int main(int argc, char** argv)
 #ifdef DETECTION
             frameStarts.push_back(std::chrono::high_resolution_clock::now());
 #endif
-            //            auto frameStart = std::chrono::high_resolution_clock::now();
             vCap >> inputFrame;
-            //            assert(!inputFrame.empty());
             if (inputFrame.empty()) {
                 std::cout << HEADER "stream finished" << std::endl;
                 streamFinished = true;
@@ -545,9 +502,13 @@ int main(int argc, char** argv)
             if (flip180) {
                 flip(inputFrame, inputFrame, -1);
             }
+#ifdef DETECTION
             if (!recordDetection) {
+#endif
                 outputVideoRec << inputFrame;
+#ifdef DETECTION
             }
+#endif
 
 #ifdef DETECTION
             drawing = inputFrame;
@@ -563,15 +524,11 @@ int main(int argc, char** argv)
 
             } else {
 
-                //                mask = inputFrame;
                 cv::Mat gray;
-                //                                gray = inputFrame;
                 cv::cvtColor(inputFrame, gray, cv::COLOR_BGR2GRAY);
                 //                                equalizeHist(gray, gray);
                 cv::GaussianBlur(gray, gray, cv::Size(21, 21), 0);
 //                cv::GaussianBlur(gray, gray, cv::Size(15, 15), 0);
-// model->apply(grey, mask);
-//                mask = gray;
 #ifdef PC
                 imshow("mask", gray);
 #endif
@@ -921,7 +878,9 @@ int main(int argc, char** argv)
 
             // std::cout << "frame : " << iFrame << "\r" << std::flush;
             //            std::cout << colorHash(std::this_thread::get_id()) << "+" << std::flush << "\033[0m";
+//#ifdef DEBUG
             std::cout << "+" << std::flush;
+//#endif
 
 #ifdef DETECTION
             const int iLastFrame = std::max(iFrame - 30, 0);
@@ -1021,9 +980,13 @@ int main(int argc, char** argv)
         if (lightGpio != -1) {
             gpioSetValue(lightGpio, 0);
         }
+#ifdef DETECTION
         if (!recordDetection) {
+#endif
             outputVideoRec.release();
+#ifdef DETECTION
         }
+#endif
 
         //        auto it = threads.begin();
         //        while (it != threads.end()) {

@@ -93,7 +93,7 @@ int main(int argc, char** argv)
     cv::CommandLineParser parser(
         argc, argv,
         "{s sensor      | -1        | gpio number of IR senror}"
-        "{a and         | -1        | add detect sensor, (and logic)}"
+//        "{a and         | -1        | add detect sensor, (and logic)}"
         "{l light       | -1        | pin light up on movment}"
         "{d device      | 0         | /dev/video<device>}"
         "{stream        |           | camera/video src}"
@@ -108,7 +108,7 @@ int main(int argc, char** argv)
         return 0;
     }
     sensorGpioNum = parser.get<int>("sensor");
-    sensorAdditional = parser.get<int>("and");
+//    sensorAdditional = parser.get<int>("and");
     int device = parser.get<int>("device");
     std::string stream = parser.get<std::string>("stream");
     std::string remoteDir = parser.get<std::string>("repository");
@@ -219,10 +219,10 @@ int main(int argc, char** argv)
         initGpio(sensorGpioNum, "in");
         gpioGetValue(sensorGpioNum);
 
-        if (sensorAdditional != -1) {
-            initGpio(sensorAdditional, "in");
-            gpioGetValue(sensorAdditional);
-        }
+//        if (sensorAdditional != -1) {
+//            initGpio(sensorAdditional, "in");
+//            gpioGetValue(sensorAdditional);
+//        }
 
         if (lightGpio != -1) {
             initGpio(lightGpio, "out");
@@ -485,9 +485,9 @@ int main(int argc, char** argv)
         // ----------------------- WHILE HAS MOVEMENT
 #ifdef PC
         //        while ((hasMovement() || nMovement > 0) && !quit) {
-        while (hasMovement() || nMovement > 0 || hasStream) {
+        while (nMovement > 0 || hasMovement() || hasStream) {
 #else
-        while (hasMovement() || nMovement > 0 || hasStream) {
+        while (nMovement > 0 || hasMovement() || hasStream) {
 #endif
 
 #ifdef DETECTION
@@ -548,7 +548,17 @@ int main(int argc, char** argv)
                 } else {
 
 #ifndef DETECTION
-                    nMovement = cv::countNonZero(mask);
+//                    nMovement = cv::countNonZero(mask);
+//                    nMovement = isBlack(mask);
+                    unsigned char * p = mask.data;
+                    bool isBlack = true;
+                    for (int i =0; i <mask.cols *mask.rows; ++i) {
+                        if (p[i] != 0) {
+                            isBlack = false;
+                            break;
+                        }
+                    }
+                    nMovement = ! isBlack;
 #else
 
                     // ------------------- BOUNDING MOVMENT ---------------------------
@@ -879,7 +889,9 @@ int main(int argc, char** argv)
             // std::cout << "frame : " << iFrame << "\r" << std::flush;
             //            std::cout << colorHash(std::this_thread::get_id()) << "+" << std::flush << "\033[0m";
 //#ifdef DEBUG
+#ifdef DETECTION
             std::cout << "+" << std::flush;
+#endif
 //#endif
 
 #ifdef DETECTION
@@ -932,6 +944,11 @@ int main(int argc, char** argv)
             //            std::cout << "this thread : " << std::this_thread::get_id() << std::endl;
 
         } // while (hasMovement() || nMovement > 0 || hasStream)
+#ifndef DETECTION
+        for (int i =0; i <iFrame; ++i) {
+            std::cout << "+";
+        }
+#endif
         std::cout << std::endl;
 
         vCap.release();

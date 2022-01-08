@@ -1080,9 +1080,9 @@ int main(int argc, char** argv)
         char detectDurationBuf[10];
         sprintf(detectDurationBuf, "%.2f", detectDuration);
         std::string detectDurationStr(detectDurationBuf);
-        putText(drawing, "video fps : " + detectDurationStr, cv::Point(0, line),
+        putText(drawing, "detection duration : " + detectDurationStr, cv::Point(0, line),
             cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
-        putText(drawing, "video fps : " + detectDurationStr, cv::Point(0, line),
+        putText(drawing, "detection duration : " + detectDurationStr, cv::Point(0, line),
             cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 255, 255), 1);
         line += 30;
 

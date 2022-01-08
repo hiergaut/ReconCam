@@ -20,7 +20,6 @@
 #include "System.hpp"
 #include "utils.hpp"
 
-
 #ifdef PC
 //#define TIMELAPSE_INTERVAL 20
 #define TIMELAPSE_INTERVAL 600
@@ -53,7 +52,6 @@
 #endif
 
 #define HEADER colorHash(std::this_thread::get_id()) << "[" << std::this_thread::get_id() << "]\033[0m "
-
 
 #ifdef DETECTION
 cv::RNG rng(29791);
@@ -93,7 +91,7 @@ int main(int argc, char** argv)
     cv::CommandLineParser parser(
         argc, argv,
         "{s sensor      | -1        | gpio number of IR senror}"
-//        "{a and         | -1        | add detect sensor, (and logic)}"
+        //        "{a and         | -1        | add detect sensor, (and logic)}"
         "{l light       | -1        | pin light up on movment}"
         "{d device      | 0         | /dev/video<device>}"
         "{stream        |           | camera/video src}"
@@ -108,7 +106,7 @@ int main(int argc, char** argv)
         return 0;
     }
     sensorGpioNum = parser.get<int>("sensor");
-//    sensorAdditional = parser.get<int>("and");
+    //    sensorAdditional = parser.get<int>("and");
     int device = parser.get<int>("device");
     std::string stream = parser.get<std::string>("stream");
     std::string remoteDir = parser.get<std::string>("repository");
@@ -219,10 +217,10 @@ int main(int argc, char** argv)
         initGpio(sensorGpioNum, "in");
         gpioGetValue(sensorGpioNum);
 
-//        if (sensorAdditional != -1) {
-//            initGpio(sensorAdditional, "in");
-//            gpioGetValue(sensorAdditional);
-//        }
+        //        if (sensorAdditional != -1) {
+        //            initGpio(sensorAdditional, "in");
+        //            gpioGetValue(sensorAdditional);
+        //        }
 
         if (lightGpio != -1) {
             initGpio(lightGpio, "out");
@@ -548,17 +546,17 @@ int main(int argc, char** argv)
                 } else {
 
 #ifndef DETECTION
-//                    nMovement = cv::countNonZero(mask);
-//                    nMovement = isBlack(mask);
-                    unsigned char * p = mask.data;
+                    //                    nMovement = cv::countNonZero(mask);
+                    //                    nMovement = isBlack(mask);
+                    unsigned char* p = mask.data;
                     bool isBlack = true;
-                    for (int i =0; i <mask.cols *mask.rows; ++i) {
+                    for (int i = 0; i < mask.cols * mask.rows; ++i) {
                         if (p[i] != 0) {
                             isBlack = false;
                             break;
                         }
                     }
-                    nMovement = ! isBlack;
+                    nMovement = !isBlack;
 #else
 
                     // ------------------- BOUNDING MOVMENT ---------------------------
@@ -892,7 +890,7 @@ int main(int argc, char** argv)
 #ifdef DETECTION
             std::cout << "+" << std::flush;
 #endif
-//#endif
+            //#endif
 
 #ifdef DETECTION
             const int iLastFrame = std::max(iFrame - 30, 0);
@@ -945,7 +943,7 @@ int main(int argc, char** argv)
 
         } // while (hasMovement() || nMovement > 0 || hasStream)
 #ifndef DETECTION
-        for (int i =0; i <iFrame; ++i) {
+        for (int i = 0; i < iFrame; ++i) {
             std::cout << "+";
         }
 #endif
@@ -953,27 +951,27 @@ int main(int argc, char** argv)
 
         vCap.release();
 #ifndef DETECTION
-            cv::Mat drawing = inputFrame;
-            line = 30;
-            putText(drawing, deviceId,
-                cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
-            putText(drawing, deviceId,
-                cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1,
-                cv::Scalar(255, 255, 255));
-            line += 30;
+        cv::Mat drawing = inputFrame;
+        line = 30;
+        putText(drawing, deviceId,
+            cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
+        putText(drawing, deviceId,
+            cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1,
+            cv::Scalar(255, 255, 255));
+        line += 30;
 
-            putText(drawing, motionStartTime,
-                cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
-            putText(drawing, motionStartTime,
-                cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1,
-                cv::Scalar(255, 255, 255));
-            line += 30;
+        putText(drawing, motionStartTime,
+            cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
+        putText(drawing, motionStartTime,
+            cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1,
+            cv::Scalar(255, 255, 255));
+        line += 30;
 
-            putText(drawing, "frame : " + std::to_string(iFrame), cv::Point(0, line),
-                cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
-            putText(drawing, "frame : " + std::to_string(iFrame), cv::Point(0, line),
-                cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 255, 255), 1);
-            line += 30;
+        putText(drawing, "frame : " + std::to_string(iFrame), cv::Point(0, line),
+            cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
+        putText(drawing, "frame : " + std::to_string(iFrame), cv::Point(0, line),
+            cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 255, 255), 1);
+        line += 30;
 #endif
         //        auto end = std::chrono::high_resolution_clock::now();
 #ifdef DETECTION
@@ -993,6 +991,7 @@ int main(int argc, char** argv)
             cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
         putText(drawing, "video fps : " + videoFpsStr, cv::Point(0, line),
             cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 255, 255), 1);
+        line += 30;
 
         if (lightGpio != -1) {
             gpioSetValue(lightGpio, 0);
@@ -1077,6 +1076,16 @@ int main(int argc, char** argv)
         auto detectDuration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - detectStart)
                                   .count()
             / 1000.0;
+
+        char detectDurationBuf[10];
+        sprintf(detectDurationBuf, "%.2f", detectDuration);
+        std::string detectDurationStr(detectDurationBuf);
+        putText(drawing, "video fps : " + detectDurationStr, cv::Point(0, line),
+            cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
+        putText(drawing, "video fps : " + detectDurationStr, cv::Point(0, line),
+            cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 255, 255), 1);
+        line += 30;
+
         std::cout << HEADER "object detected : " << nbRealObjects << std::endl;
         std::cout << HEADER "human detected : " << nbHuman << std::endl;
         std::cout << HEADER "detect duration : " << detectDuration << std::endl;
@@ -1105,6 +1114,7 @@ int main(int argc, char** argv)
         }
 
 #endif
+
 
         if (iFrame != 0) {
 #ifdef DETECTION

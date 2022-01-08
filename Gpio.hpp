@@ -7,7 +7,7 @@
 
 std::string gpioDir;
 int sensorGpioNum;
-int sensorAdditional;
+//int sensorAdditional;
 
 int gpioGetValue(int gpio)
 {
@@ -87,9 +87,9 @@ bool hasMovement()
     if (sensorGpioNum != -1) {
         ret = gpioGetValue(sensorGpioNum) == 1;
 
-        if (sensorAdditional != -1) {
-            ret = ret && gpioGetValue(sensorAdditional) == 1;
-        }
+//        if (sensorAdditional != -1) {
+//            ret = ret && gpioGetValue(sensorAdditional) == 1;
+//        }
     }
 
     return ret;

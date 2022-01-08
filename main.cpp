@@ -61,7 +61,6 @@
 //#define WIDTH 1920
 //#define HEIGHT 1080
 
-
 #ifdef PC
 #define FPS 30
 #else
@@ -112,7 +111,7 @@ int main(int argc, char** argv)
     // }
     // return 0;
 
-//    std::cout << std::fixed << std::setprecision(3);
+    //    std::cout << std::fixed << std::setprecision(3);
 
     cv::CommandLineParser parser(
         argc, argv,
@@ -188,7 +187,7 @@ int main(int argc, char** argv)
     } else {
         motionRootDir = "motion/";
     }
-    if (! recordDetection) {
+    if (!recordDetection) {
         const std::string hostname = getHostname();
         deviceId = hostname + "_" + deviceName;
     }
@@ -198,7 +197,10 @@ int main(int argc, char** argv)
     //    std::set<Object> objects;
     //    std::vector<DeadObj> tombs;
 
-    cv::Mat inputFrame, mask, drawing;
+    cv::Mat inputFrame, mask;
+#ifdef DETECTION
+    cv::Mat drawing;
+#endif
     //        int iNewObj;
     //    int iFrame;
 
@@ -435,8 +437,8 @@ int main(int argc, char** argv)
             gpioSetValue(lightGpio, 1);
         }
 
-        if (! recordDetection) {
-//            assert(motionStartTime.empty());
+        if (!recordDetection) {
+            //            assert(motionStartTime.empty());
             motionPath = getYear() + "/" + getMonth() + "/" + getDay() + "/";
             motionStartTime = getCurTime();
         }
@@ -463,9 +465,8 @@ int main(int argc, char** argv)
 
 #ifdef DETECTION
         std::string outputVideoFile = newMotionDir + "/detection.mp4";
-#else
-        std::string outputVideoFile = newMotionDir + "/record.mp4";
-#endif
+        //#else
+        //        std::string outputVideoFile = newMotionDir + "/record.mp4";
         cv::VideoWriter outputVideo = cv::VideoWriter(
             //            outputVideoFile, cv::VideoWriter::fourcc('M', 'P', '4', 'V'), FPS,
             outputVideoFile, cv::VideoWriter::fourcc('H', '2', '6', '4'), FPS,
@@ -475,10 +476,11 @@ int main(int argc, char** argv)
             std::cout << HEADER "failed to open mp4 video" << std::endl;
             return 6;
         }
+#endif
 
         cv::VideoWriter outputVideoRec;
         if (!recordDetection) {
-            std::string outputVideoFileRec = newMotionDir + "/original.mp4";
+            std::string outputVideoFileRec = newMotionDir + "/record.mp4";
             outputVideoRec = cv::VideoWriter(
                 outputVideoFileRec, cv::VideoWriter::fourcc('H', '2', '6', '4'), FPS,
                 //                outputVideoFileRec, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), FPS,
@@ -514,8 +516,12 @@ int main(int argc, char** argv)
         //        auto frameStart = std::chrono::high_resolution_clock::now();
         //        double lastFrameDuration = 0.0;
         int line;
+#ifdef DETECTION
         std::vector<typeof std::chrono::high_resolution_clock::now()> frameStarts;
         frameStarts.reserve(1000);
+#else
+        const auto videoStart = std::chrono::high_resolution_clock::now();
+#endif
 
         // ----------------------- WHILE HAS MOVEMENT
 #ifdef PC
@@ -524,7 +530,10 @@ int main(int argc, char** argv)
 #else
         while (hasMovement() || nMovement > 0 || hasStream) {
 #endif
+
+#ifdef DETECTION
             frameStarts.push_back(std::chrono::high_resolution_clock::now());
+#endif
             //            auto frameStart = std::chrono::high_resolution_clock::now();
             vCap >> inputFrame;
             //            assert(!inputFrame.empty());
@@ -540,13 +549,17 @@ int main(int argc, char** argv)
                 outputVideoRec << inputFrame;
             }
 
+#ifdef DETECTION
             drawing = inputFrame;
+#endif
 
             // ------------------------ START
 
             if (iFrame < NB_CAP_FOCUS_BRIGHTNESS) {
+#ifdef DETECTION
                 rectangle(drawing, cv::Rect(640 - 50, 0, 50, 50), cv::Scalar(255, 0, 0),
                     -1);
+#endif
 
             } else {
 
@@ -570,10 +583,16 @@ int main(int argc, char** argv)
 #endif
 
                 if (iFrame < NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST) {
+#ifdef DETECTION
                     rectangle(drawing, cv::Rect(640 - 50, 0, 50, 50), cv::Scalar(0, 255, 0),
                         -1);
+#endif
 
                 } else {
+
+#ifndef DETECTION
+                    nMovement = cv::countNonZero(mask);
+#else
 
                     // ------------------- BOUNDING MOVMENT ---------------------------
                     // threshold(mask, mask, 127, 255, THRESH_BINARY);
@@ -631,11 +650,11 @@ int main(int argc, char** argv)
                     imshow("mask5", mat);
 #endif
 
-#ifndef DETECTION
-                    for (int i = 0; i < movContours.size(); ++i) {
-                        drawContours(drawing, movContours, i, cv::Scalar(0, 255, 0), 2);
-                    }
-#endif
+                    //#ifndef DETECTION
+                    //                    for (int i = 0; i < movContours.size(); ++i) {
+                    //                        drawContours(drawing, movContours, i, cv::Scalar(0, 255, 0), 2);
+                    //                    }
+                    //#endif
 
                     nMovement = movContours.size();
                     // to many movements -> no detection
@@ -644,7 +663,7 @@ int main(int argc, char** argv)
                             -1);
 
                     }
-#ifdef DETECTION
+                    //#ifdef DETECTION
                     else {
 
                         std::set<Movement> movements;
@@ -870,6 +889,7 @@ int main(int argc, char** argv)
 
             } // if (iFrame < NB_CAP_FOCUS_BRIGHTNESS)
 
+#ifdef DETECTION
             line = 30;
             putText(drawing, deviceId,
                 cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
@@ -885,29 +905,29 @@ int main(int argc, char** argv)
                 cv::Scalar(255, 255, 255));
             line += 30;
 
-#ifdef DETECTION
             putText(drawing, "nbObjs : " + std::to_string(objects.size()),
                 cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
             putText(drawing, "nbObjs : " + std::to_string(objects.size()),
                 cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1,
                 cv::Scalar(255, 255, 255));
             line += 30;
-#endif
 
             putText(drawing, "frame : " + std::to_string(iFrame), cv::Point(0, line),
                 cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
             putText(drawing, "frame : " + std::to_string(iFrame), cv::Point(0, line),
                 cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 255, 255), 1);
             line += 30;
+#endif
 
             // std::cout << "frame : " << iFrame << "\r" << std::flush;
             //            std::cout << colorHash(std::this_thread::get_id()) << "+" << std::flush << "\033[0m";
             std::cout << "+" << std::flush;
 
+#ifdef DETECTION
             const int iLastFrame = std::max(iFrame - 30, 0);
             const double framesDuration = std::chrono::duration_cast<std::chrono::milliseconds>(
-                                        std::chrono::high_resolution_clock::now() - frameStarts[iLastFrame])
-                                        .count()
+                                              std::chrono::high_resolution_clock::now() - frameStarts[iLastFrame])
+                                              .count()
                 / 1000.0;
             //            frameStart = std::chrono::high_resolution_clock::now();
 
@@ -927,8 +947,12 @@ int main(int argc, char** argv)
             line += 30;
 
             outputVideo << drawing;
+#endif
+
 #ifdef PC
+#ifdef DETECTION
             cv::imshow("drawing", drawing);
+#endif
             if (hasStream && !quit) {
                 while (true) {
                     auto key = cv::waitKey(10);
@@ -952,10 +976,35 @@ int main(int argc, char** argv)
         std::cout << std::endl;
 
         vCap.release();
+#ifndef DETECTION
+            cv::Mat drawing = inputFrame;
+            line = 30;
+            putText(drawing, deviceId,
+                cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
+            putText(drawing, deviceId,
+                cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1,
+                cv::Scalar(255, 255, 255));
+            line += 30;
+
+            putText(drawing, motionStartTime,
+                cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
+            putText(drawing, motionStartTime,
+                cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1,
+                cv::Scalar(255, 255, 255));
+            line += 30;
+
+            putText(drawing, "frame : " + std::to_string(iFrame), cv::Point(0, line),
+                cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
+            putText(drawing, "frame : " + std::to_string(iFrame), cv::Point(0, line),
+                cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 255, 255), 1);
+            line += 30;
+#endif
         //        auto end = std::chrono::high_resolution_clock::now();
-        auto videoDuration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - frameStarts[0])
-                                 .count()
-            / 1000.0;
+#ifdef DETECTION
+        auto videoDuration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - frameStarts[0]).count() / 1000.0;
+#else
+        auto videoDuration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - videoStart).count() / 1000.0;
+#endif
         const double videoFps = static_cast<double>(iFrame) / videoDuration;
         //        putText(drawing, "fps : " + std::to_string(fps), cv::Point(0, 90),
         //            cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
@@ -1078,10 +1127,14 @@ int main(int argc, char** argv)
 #endif
 
         if (iFrame != 0) {
+#ifdef DETECTION
             outputVideo << drawing;
+#endif
             imwrite(newMotionDir + "/trace.jpg", drawing);
         }
+#ifdef DETECTION
         outputVideo.release();
+#endif
 
         // std::cout << "save video '" << outputVideoFile << "'" << std::endl;
 

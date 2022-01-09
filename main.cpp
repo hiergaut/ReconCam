@@ -470,7 +470,7 @@ int main(int argc, char** argv)
 
         bool streamFinished = false;
         int iFrame = 0;
-        int nMovement = 0;
+        int nMovement = 1;
 
         int line;
 #ifdef DETECTION

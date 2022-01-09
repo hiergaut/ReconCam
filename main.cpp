@@ -413,8 +413,13 @@ int main(int argc, char** argv)
         //                        vCap.set(cv::CAP_PROP_FPS, 10);
         // vCap.open(CAP_V4L2);
         if (!vCap.isOpened()) {
-            std::cout << HEADER "device not found";
+            std::cout << HEADER "device not found" << std::endl;
             return 1;
+        }
+        vCap >> inputFrame;
+        if (inputFrame.empty()) {
+            std::cout << HEADER "capture failed" << std::endl;
+            continue;
         }
 
         //        std::string outputVideoFile = newMotionDir + "/video.webm";

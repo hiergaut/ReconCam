@@ -211,7 +211,7 @@ int main(int argc, char** argv)
         return -2; // can not open video capture device
     }
 
-    cv::Size sizeScreen(width, height);
+    const cv::Size sizeScreen(width, height);
 
     if (sensorGpioNum != -1) {
         initGpio(sensorGpioNum, "in");
@@ -292,14 +292,19 @@ int main(int argc, char** argv)
                 }
 
                 std::cout << HEADER "[TIMELAPSE] set camera settings" << std::endl;
-                vCap.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
-                vCap.set(cv::CAP_PROP_FRAME_HEIGHT, HEIGHT);
+//                vCap.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
+//                vCap.set(cv::CAP_PROP_FRAME_HEIGHT, HEIGHT);
 
                 //                std::cout << HEADER "[TIMELAPSE] focus brightness" << std::endl;
                 //                for (int i = 0; i < NB_CAP_FOCUS_BRIGHTNESS + 100 || inputFrame.empty(); ++i) {
                 //                    std::cout << "-" << std::flush;
                 vCap >> inputFrame;
                 assert(!inputFrame.empty());
+                if (inputFrame.empty()) {
+                    std::cout << HEADER "[TIMELAPSE] inputFrame is empty" << std::endl;
+                    vCap.release();
+                    return 9;
+                }
                 //                }
                 //                std::cout << std::endl;
 
@@ -402,24 +407,26 @@ int main(int argc, char** argv)
         }
 #endif
         const std::string motionId = motionStartTime + "_" + deviceId;
-        std::cout << HEADER "new event : " << motionId << std::endl;
+        std::cout << HEADER "[CAPTURE] new event : " << motionId << std::endl;
         const std::string newMotionDir = motionRootDir + motionPath + motionId;
         cmd = "mkdir -p " + newMotionDir;
         system(cmd.c_str());
 
         vCap.open(stream);
-        vCap.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
-        vCap.set(cv::CAP_PROP_FRAME_HEIGHT, HEIGHT);
+//        vCap.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
+//        vCap.set(cv::CAP_PROP_FRAME_HEIGHT, HEIGHT);
         //                        vCap.set(cv::CAP_PROP_FPS, 10);
         // vCap.open(CAP_V4L2);
         if (!vCap.isOpened()) {
-            std::cout << HEADER "device not found" << std::endl;
+            std::cout << HEADER "[CAPTURE] device not found" << std::endl;
             return 1;
         }
         vCap >> inputFrame;
         if (inputFrame.empty()) {
-            std::cout << HEADER "capture failed" << std::endl;
-            continue;
+            std::cout << HEADER "[CAPTURE] input frame empty" << std::endl;
+            vCap.release();
+            return 1;
+//            continue;
         }
 
         //        std::string outputVideoFile = newMotionDir + "/video.webm";
@@ -437,7 +444,7 @@ int main(int argc, char** argv)
             sizeScreen, true);
         if (!outputVideo.isOpened()) {
             //        if (!outputVideo.isOpened()) {
-            std::cout << HEADER "failed to open mp4 video" << std::endl;
+            std::cout << HEADER "[CAPTURE] failed to open mp4 video" << std::endl;
             return 6;
         }
 #endif
@@ -452,7 +459,7 @@ int main(int argc, char** argv)
                 //                outputVideoFileRec, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), FPS,
                 sizeScreen, true);
             if (!outputVideoRec.isOpened()) {
-                std::cout << HEADER "failed to open avi video" << std::endl;
+                std::cout << HEADER "[CAPTURE] failed to open avi video" << std::endl;
                 return 7;
             }
 #ifdef DETECTION
@@ -498,7 +505,7 @@ int main(int argc, char** argv)
 #endif
             vCap >> inputFrame;
             if (inputFrame.empty()) {
-                std::cout << HEADER "stream finished" << std::endl;
+                std::cout << HEADER "[CAPTURE] stream finished" << std::endl;
                 streamFinished = true;
                 break;
             }
@@ -1025,11 +1032,11 @@ int main(int argc, char** argv)
         //        std::thread t([iFrame, newMotionDir, hasScript, script, motionId, hasRemoteDir, port, motionRootDir, remoteDir, &objects, net, &drawing, &outputVideo]() mutable {
 
         //        std::thread t([=, &threads, objects = std::move(objects), drawing = drawing.clone(), outputVideo = std::move(outputVideo)]() mutable {
-        //            std::cout << HEADER "start new thread, nb object to detect = " << objects.size() << std::endl;
+        //            std::cout << HEADER "[CAPTURE] start new thread, nb object to detect = " << objects.size() << std::endl;
 
         //        std::thread t([=, objects = std::move(objects), &net, drawing = std::move(drawing)]() mutable {
 
-        //            std::cout << HEADER "nb thread = " << threads.size() << std::endl;
+        //            std::cout << HEADER "[CAPTURE] nb thread = " << threads.size() << std::endl;
         //            std::this_thread::sleep_for(std::chrono::seconds(120 * threads.size()));
 
 #ifdef DETECTION
@@ -1085,25 +1092,25 @@ int main(int argc, char** argv)
         char detectDurationBuf[10];
         sprintf(detectDurationBuf, "%.2f", detectDuration);
         std::string detectDurationStr(detectDurationBuf);
-        putText(drawing, "detection duration : " + detectDurationStr, cv::Point(0, line),
+        putText(drawing, "detection : " + detectDurationStr, cv::Point(0, line),
             cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
-        putText(drawing, "detection duration : " + detectDurationStr, cv::Point(0, line),
+        putText(drawing, "detection : " + detectDurationStr, cv::Point(0, line),
             cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(255, 255, 255), 1);
         line += 30;
 
-        std::cout << HEADER "object detected : " << nbRealObjects << std::endl;
-        std::cout << HEADER "human detected : " << nbHuman << std::endl;
-        std::cout << HEADER "detect duration : " << detectDuration << std::endl;
+        std::cout << HEADER "[CAPTURE] object detected : " << nbRealObjects << std::endl;
+        std::cout << HEADER "[CAPTURE] human detected : " << nbHuman << std::endl;
+        std::cout << HEADER "[CAPTURE] detect duration : " << detectDuration << std::endl;
 
         if (nbRealObjects > 0) {
             cmd = "touch " + newMotionDir + "/objectDetected.var";
-            std::cout << HEADER << cmd << std::endl;
+            std::cout << HEADER << "[CAPTURE] " << cmd << std::endl;
             system(cmd.c_str());
         }
 
         if (nbHuman > 0) {
             cmd = "touch " + newMotionDir + "/humanDetected.var";
-            std::cout << HEADER << cmd << std::endl;
+            std::cout << HEADER << "[CAPTURE] " << cmd << std::endl;
             system(cmd.c_str());
             if (hasScript) {
                 //                imwrite("alert.jpg", drawing);
@@ -1142,13 +1149,13 @@ int main(int argc, char** argv)
         std::string cmd;
         if (iFrame > NB_CAP_FOCUS_BRIGHTNESS) {
             cmd = "touch " + newMotionDir + "/focusBrightnessDone.var";
-            std::cout << HEADER << cmd << std::endl;
+            std::cout << HEADER << "[CAPTURE] " << cmd << std::endl;
             system(cmd.c_str());
         }
 
         if (iFrame > NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST) {
             cmd = "touch " + newMotionDir + "/learningModelDone.var";
-            std::cout << HEADER << cmd << std::endl;
+            std::cout << HEADER << "[CAPTURE] " << cmd << std::endl;
             system(cmd.c_str());
         }
 
@@ -1159,13 +1166,13 @@ int main(int argc, char** argv)
                 cmd = "rsync -arv -e 'ssh -p " + std::to_string(port) + "' " + motionRootDir + " " + remoteDir;
             }
             //            std::thread t([cmd]() {
-            std::cout << HEADER << "start " << cmd << std::endl;
+            std::cout << HEADER << "[CAPTURE] rsync start " << cmd << std::endl;
             //#ifdef PC
             system((cmd).c_str());
             //#else
             //                system((cmd + " &").c_str());
             //#endif
-            std::cout << HEADER << "end " << cmd << std::endl;
+            std::cout << HEADER << "[CAPTURE] rsync end " << cmd << std::endl;
             //            });
         }
         //            return 0;
@@ -1181,9 +1188,9 @@ int main(int argc, char** argv)
         cv::destroyAllWindows();
 #endif
 
-        std::cout << HEADER "video duration : " << videoDuration << std::endl;
-        std::cout << HEADER "nb capture : " << iFrame << std::endl;
-        std::cout << HEADER "recording fps : " << videoFps
+        std::cout << HEADER "[CAPTURE] video duration : " << videoDuration << std::endl;
+        std::cout << HEADER "[CAPTURE] nb capture : " << iFrame << std::endl;
+        std::cout << HEADER "[CAPTURE] recording fps : " << videoFps
                   << std::endl;
 
 #ifdef PC

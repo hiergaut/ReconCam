@@ -42,11 +42,11 @@
 //#define WIDTH 2592
 //#define HEIGHT 1944
 
-//#define WIDTH 1640
-//#define HEIGHT 1232
+#define WIDTH 1640
+#define HEIGHT 1232
 
-#define WIDTH 1296
-#define HEIGHT 972
+//#define WIDTH 1296
+//#define HEIGHT 972
 
 //#define WIDTH 640
 //#define HEIGHT 480

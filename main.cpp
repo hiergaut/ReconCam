@@ -39,11 +39,11 @@
 
 #define MAX_MOVEMENTS 10
 
-#define WIDTH 640
-#define HEIGHT 480
+//#define WIDTH 640
+//#define HEIGHT 480
 
-//#define WIDTH 1920
-//#define HEIGHT 1080
+#define WIDTH 1920
+#define HEIGHT 1080
 
 #ifdef PC
 #define FPS 30
@@ -292,8 +292,8 @@ int main(int argc, char** argv)
                 }
 
                 std::cout << HEADER "[TIMELAPSE] set camera settings" << std::endl;
-//                vCap.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
-//                vCap.set(cv::CAP_PROP_FRAME_HEIGHT, HEIGHT);
+                vCap.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
+                vCap.set(cv::CAP_PROP_FRAME_HEIGHT, HEIGHT);
 
                 //                std::cout << HEADER "[TIMELAPSE] focus brightness" << std::endl;
                 //                for (int i = 0; i < NB_CAP_FOCUS_BRIGHTNESS + 100 || inputFrame.empty(); ++i) {
@@ -413,9 +413,9 @@ int main(int argc, char** argv)
         system(cmd.c_str());
 
         vCap.open(stream);
-//        vCap.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
-//        vCap.set(cv::CAP_PROP_FRAME_HEIGHT, HEIGHT);
-        //                        vCap.set(cv::CAP_PROP_FPS, 10);
+        vCap.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
+        vCap.set(cv::CAP_PROP_FRAME_HEIGHT, HEIGHT);
+        vCap.set(cv::CAP_PROP_FPS, 30);
         // vCap.open(CAP_V4L2);
         if (!vCap.isOpened()) {
             std::cout << HEADER "[CAPTURE] device not found" << std::endl;
@@ -426,7 +426,7 @@ int main(int argc, char** argv)
             std::cout << HEADER "[CAPTURE] input frame empty" << std::endl;
             vCap.release();
             return 1;
-//            continue;
+            //            continue;
         }
 
         //        std::string outputVideoFile = newMotionDir + "/video.webm";
@@ -1126,7 +1126,6 @@ int main(int argc, char** argv)
         }
 
 #endif
-
 
         if (iFrame != 0) {
 #ifdef DETECTION

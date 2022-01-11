@@ -307,9 +307,16 @@ int main(int argc, char** argv)
                 vCap >> inputFrame;
                 //                assert(!inputFrame.empty());
                 int cpt = 0;
-                while (inputFrame.empty() && cpt < 100) {
+                while (inputFrame.empty() && cpt < 10) {
+                    vCap.release();
                     std::cout << HEADER "[TIMELAPSE] input frame " << cpt << " is empty" << std::endl;
                     std::this_thread::sleep_for(std::chrono::milliseconds(100)); // wait rsync
+
+                    vCap.open(stream);
+                    if (!vCap.isOpened()) {
+                        std::cout << HEADER "device not found";
+                        return 10;
+                    }
                     vCap >> inputFrame;
                     ++cpt;
                 }

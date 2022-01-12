@@ -305,9 +305,23 @@ int main(int argc, char** argv)
                 //                for (int i = 0; i < NB_CAP_FOCUS_BRIGHTNESS + 100 || inputFrame.empty(); ++i) {
                 //                    std::cout << "-" << std::flush;
                 vCap >> inputFrame;
-                assert(!inputFrame.empty());
+                //                assert(!inputFrame.empty());
+                int cpt = 0;
+                while (inputFrame.empty() && cpt < 10) {
+                    vCap.release();
+                    std::cout << HEADER "[TIMELAPSE] input frame " << cpt << " is empty" << std::endl;
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100)); // wait rsync
+
+                    vCap.open(stream);
+                    if (!vCap.isOpened()) {
+                        std::cout << HEADER "device not found";
+                        return 10;
+                    }
+                    vCap >> inputFrame;
+                    ++cpt;
+                }
                 if (inputFrame.empty()) {
-                    std::cout << HEADER "[TIMELAPSE] inputFrame is empty" << std::endl;
+                    std::cout << HEADER "[TIMELAPSE] all input frames are empty" << std::endl;
                     vCap.release();
                     return 9;
                 }

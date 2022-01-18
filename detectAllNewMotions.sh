@@ -10,7 +10,7 @@ while true; do
 		if [ ! -e $dir/detection.mp4 ]; then
 			if [ -e $dir/record.mp4 ]; then
 				echo "##########################################################"
-				./a.out -stream="$dir/record.mp4" --script=sendMailAlert.sh
+				./a.out -stream="$dir/record.mp4" --script=./sendMailAlert.sh
 			fi
 			touch $dir/detection.mp4
 		fi

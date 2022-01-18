@@ -5,11 +5,11 @@
 
     <?php
 
-    // if (0 != filesize("log.txt")) {
-    //     echo ("<object width=\"1700\" height=\"100\" type=\"text/plain\" data=\"log.txt\" border=\"0\" >
-    //     </object>
-    //     <br>");
-    // }
+	if (0 != filesize("log.txt")) {
+		echo ("<object width=\"1700\" height=\"100\" type=\"text/plain\" data=\"log.txt\" border=\"0\" >
+		</object>
+		<br>");
+	}
 
     // echo file_get_contents('log.txt');
 

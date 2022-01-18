@@ -28,7 +28,6 @@ LIBRARIES = -pthread `pkg-config --cflags opencv4` `pkg-config --libs opencv4`
 .PHONY: all clean
 
 all: $(EXEC)
-	# @echo $(CFLAGS)
 
 $(EXEC): $(OBJ)
 	$(CXX) -o $@ $^ $(LIBRARIES)

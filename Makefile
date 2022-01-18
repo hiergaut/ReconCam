@@ -15,8 +15,8 @@ OBJ := $(patsubst %.cpp,%.o,$(SRC))
 # CFLAGS = -g3 -gdwarf-3 -DDEBUG
 # else
 # CFLAGS= -Ofast -DNDEBUG -DPROJECT_DIR="" -DTINY_YOLO
-CFLAGS= -Ofast -DNDEBUG -DPROJECT_DIR=""
-# CFLAGS= -Ofast -DNDEBUG -DPROJECT_DIR="" -DDETECTION
+	# CFLAGS+= -Ofast -DNDEBUG -DPROJECT_DIR="" -DDETECTION
+CFLAGS= -Ofast -DNDEBUG -DPROJECT_DIR="" $(USER_CFLAGS)
 
 # endif
 
@@ -28,6 +28,7 @@ LIBRARIES = -pthread `pkg-config --cflags opencv4` `pkg-config --libs opencv4`
 .PHONY: all clean
 
 all: $(EXEC)
+	# @echo $(CFLAGS)
 
 $(EXEC): $(OBJ)
 	$(CXX) -o $@ $^ $(LIBRARIES)

@@ -74,6 +74,8 @@ std::vector<cv::String> getOutputsNames(const cv::dnn::Net& net);
 void detect(cv::dnn::Net& net, Capture& capture);
 #endif
 
+void openCamera(cv::VideoCapture& vCap, const std::string& stream, cv::Mat& inputFrame);
+
 // ------------------------------- MAIN ---------------------------------------
 
 int main(int argc, char** argv)
@@ -163,13 +165,13 @@ int main(int argc, char** argv)
     }
 #endif
 
-    bool hasRemoteDir = !remoteDir.empty();
-    std::string motionRootDir;
-    if (hasRemoteDir) {
-        motionRootDir = "/tmp/motion/";
-    } else {
-        motionRootDir = "motion/";
-    }
+    const bool hasRemoteDir = !remoteDir.empty();
+    const std::string motionRootDir = "motion/";
+//    if (hasRemoteDir) {
+//        motionRootDir = "/tmp/motion/";
+//    } else {
+//        motionRootDir = "motion/";
+//    }
 #ifdef DETECTION
     if (!recordDetection) {
 #endif
@@ -181,7 +183,7 @@ int main(int argc, char** argv)
 
     cv::VideoCapture vCap;
 
-    cv::Mat inputFrame, mask;
+//    cv::Mat inputFrame, mask;
 #ifdef DETECTION
     cv::Mat drawing;
 #endif
@@ -289,41 +291,12 @@ int main(int argc, char** argv)
             if (timelapseDuration > TIMELAPSE_INTERVAL) {
                 std::cout << std::endl;
                 std::cout << HEADER "[TIMELAPSE] open stream" << std::endl;
-                vCap.open(stream);
-                //
-                // vCap.open(CAP_V4L2);
+
+                cv::Mat timelapseFrame;
+                openCamera(vCap, stream, timelapseFrame);
                 if (!vCap.isOpened()) {
-                    std::cout << HEADER "device not found";
-                    return 1;
-                }
-
-                std::cout << HEADER "[TIMELAPSE] set camera settings" << std::endl;
-                vCap.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
-                vCap.set(cv::CAP_PROP_FRAME_HEIGHT, HEIGHT);
-
-                //                std::cout << HEADER "[TIMELAPSE] focus brightness" << std::endl;
-                //                for (int i = 0; i < NB_CAP_FOCUS_BRIGHTNESS + 100 || inputFrame.empty(); ++i) {
-                //                    std::cout << "-" << std::flush;
-                vCap >> inputFrame;
-                //                assert(!inputFrame.empty());
-                int cpt = 0;
-                while (inputFrame.empty() && cpt < 10) {
-                    vCap.release();
-                    std::cout << HEADER "[TIMELAPSE] input frame " << cpt << " is empty" << std::endl;
-                    std::this_thread::sleep_for(std::chrono::milliseconds(100)); // wait rsync
-
-                    vCap.open(stream);
-                    if (!vCap.isOpened()) {
-                        std::cout << HEADER "device not found";
-                        return 10;
-                    }
-                    vCap >> inputFrame;
-                    ++cpt;
-                }
-                if (inputFrame.empty()) {
-                    std::cout << HEADER "[TIMELAPSE] all input frames are empty" << std::endl;
-                    vCap.release();
-                    return 9;
+                    std::cout << HEADER "[TIMELAPSE] device '" << stream << "' not found" << std::endl;
+                    return 10;
                 }
                 //                }
                 //                std::cout << std::endl;
@@ -333,23 +306,23 @@ int main(int argc, char** argv)
 
                 std::cout << HEADER "[TIMELAPSE] flip frame" << std::endl;
                 if (flip180) {
-                    flip(inputFrame, inputFrame, -1);
+                    flip(timelapseFrame, timelapseFrame, -1);
                 }
 
                 std::string timelapseStartTime = getCurTime();
 
                 int line = 30;
 
-                putText(inputFrame, deviceId,
+                putText(timelapseFrame, deviceId,
                     cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
-                putText(inputFrame, deviceId,
+                putText(timelapseFrame, deviceId,
                     cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1,
                     cv::Scalar(255, 255, 255));
                 line += 30;
 
-                putText(inputFrame, timelapseStartTime,
+                putText(timelapseFrame, timelapseStartTime,
                     cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 0, 0), 5);
-                putText(inputFrame, timelapseStartTime,
+                putText(timelapseFrame, timelapseStartTime,
                     cv::Point(0, line), cv::FONT_HERSHEY_DUPLEX, 1,
                     cv::Scalar(255, 255, 255));
 
@@ -359,8 +332,8 @@ int main(int argc, char** argv)
                 system(cmd.c_str());
 
                 std::string saveLapse = timelapseDir + "/" + timelapseStartTime + ".jpg";
-                imwrite(saveLapse, inputFrame);
-                imwrite(timelapseDir + "/latest.jpeg", inputFrame);
+                imwrite(saveLapse, timelapseFrame);
+                imwrite(timelapseDir + "/latest.jpeg", timelapseFrame);
                 std::cout << HEADER "[TIMELAPSE] save lapse '" << saveLapse << "'"
                           << std::endl;
 
@@ -432,23 +405,12 @@ int main(int argc, char** argv)
         cmd = "mkdir -p " + newMotionDir;
         system(cmd.c_str());
 
-        vCap.open(stream);
-        vCap.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
-        vCap.set(cv::CAP_PROP_FRAME_HEIGHT, HEIGHT);
-        vCap.set(cv::CAP_PROP_FPS, 30);
-        // vCap.open(CAP_V4L2);
+        cv::Mat inputFrame;
+        openCamera(vCap, stream, inputFrame);
         if (!vCap.isOpened()) {
-            std::cout << HEADER "[CAPTURE] device not found" << std::endl;
-            return 1;
+            std::cout << HEADER "[CAPTURE] device '" << stream << "' not found" << std::endl;
+            return 9;
         }
-        vCap >> inputFrame;
-        if (inputFrame.empty()) {
-            std::cout << HEADER "[CAPTURE] input frame empty" << std::endl;
-            vCap.release();
-            return 1;
-            //            continue;
-        }
-
         //        std::string outputVideoFile = newMotionDir + "/video.webm";
         //        cv::VideoWriter outputVideo = cv::VideoWriter(
         //            outputVideoFile, cv::VideoWriter::fourcc('V', 'P', '8', '0'), FPS,
@@ -563,6 +525,7 @@ int main(int argc, char** argv)
                 imshow("mask", gray);
 #endif
                 //                model->apply(inputFrame, mask);
+                cv::Mat mask;
                 model->apply(gray, mask);
 //                model->apply(inputFrame, mask);
 #ifdef PC
@@ -1161,7 +1124,6 @@ int main(int argc, char** argv)
         }
 #endif
 
-
         // std::cout << "save video '" << outputVideoFile << "'" << std::endl;
 
         // std::cout << "save trace file '" << newMotionDir + "/trace.jpg'"
@@ -1356,3 +1318,40 @@ void detect(cv::dnn::Net& net, Capture& capture)
     capture.detectDuration = detectDuration;
 }
 #endif
+
+void openCamera(cv::VideoCapture& vCap, const std::string& stream, cv::Mat& inputFrame)
+{
+    vCap.open(stream);
+    vCap.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
+    vCap.set(cv::CAP_PROP_FRAME_HEIGHT, HEIGHT);
+    vCap.set(cv::CAP_PROP_FPS, 30);
+    // vCap.open(CAP_V4L2);
+    if (!vCap.isOpened()) {
+        std::cout << HEADER "[OPEN CAMERA] device '" << stream << "' not found" << std::endl;
+        //            return 1;
+        return;
+    }
+
+    //    cv::Mat inputFrame;
+    vCap >> inputFrame;
+    //                assert(!inputFrame.empty());
+    int cpt = 0;
+    while (inputFrame.empty() && cpt < 10) {
+        vCap.release();
+        std::cout << HEADER "[OPEN CAMERA] input frame " << cpt << " is empty" << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // wait rsync
+
+        vCap.open(stream);
+        if (!vCap.isOpened()) {
+            std::cout << HEADER "[OPEN CAMERA] device '" << stream << "' not found" << std::endl;
+            return;
+        }
+        vCap >> inputFrame;
+        ++cpt;
+    }
+    if (inputFrame.empty()) {
+        std::cout << HEADER "[OPEN CAMERA] all input frames are empty" << std::endl;
+        vCap.release();
+        return;
+    }
+}

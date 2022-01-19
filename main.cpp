@@ -1128,6 +1128,21 @@ int main(int argc, char** argv)
             system(cmd.c_str());
         }
 
+#endif
+
+        if (iFrame != 0) {
+#ifdef DETECTION
+            outputVideo << drawing;
+            imwrite(newMotionDir + "/trace.jpg", drawing);
+#else
+            imwrite(newMotionDir + "/record.jpg", drawing);
+#endif
+        }
+#ifdef DETECTION
+        outputVideo.release();
+#endif
+
+#ifdef DETECTION
         if (nbHuman > 0) {
             cmd = "touch " + newMotionDir + "/humanDetected.var";
             std::cout << HEADER << "[CAPTURE] " << cmd << std::endl;
@@ -1144,20 +1159,8 @@ int main(int argc, char** argv)
                           << std::endl;
             }
         }
-
 #endif
 
-        if (iFrame != 0) {
-#ifdef DETECTION
-            outputVideo << drawing;
-            imwrite(newMotionDir + "/trace.jpg", drawing);
-#else
-            imwrite(newMotionDir + "/record.jpg", drawing);
-#endif
-        }
-#ifdef DETECTION
-        outputVideo.release();
-#endif
 
         // std::cout << "save video '" << outputVideoFile << "'" << std::endl;
 

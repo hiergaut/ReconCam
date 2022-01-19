@@ -1,7 +1,7 @@
 #! /bin/bash
 
-for dir in $(find motion -atime 2 -mindepth 4 -type d | sort); do
-	rm -vf $dir
+for dir in $(find motion -atime 7 -mindepth 4 -type d | sort); do
+	rm -rvf $dir
 done
 
 while true; do
@@ -10,7 +10,7 @@ while true; do
 		if [ ! -e $dir/detection.mp4 ]; then
 			if [ -e $dir/record.mp4 ]; then
 				echo "##########################################################"
-				./a.out -stream="$dir/record.mp4"
+				./a.out -stream="$dir/record.mp4" --script=./sendMailAlert.sh
 			fi
 			touch $dir/detection.mp4
 		fi

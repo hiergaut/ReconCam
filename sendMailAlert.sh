@@ -6,7 +6,7 @@
 motionDir="motion/$1"
 echo "ReconCam alert: motionDir='$motionDir'"
 
-# mpack -s "ReconCam alert: $1" $motionDir/trace.jpg gauthierbouyjou@aol.com
+mpack -s "ReconCam alert: $1" $motionDir/trace.jpg gauthierbouyjou@aol.com
 # mpack -s "ReconCam alert: $1" $motionDir/video.webm gauthierbouyjou@aol.com
 
 # echo $1

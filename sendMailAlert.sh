@@ -5,13 +5,17 @@
 motionDir="motion/$1"
 echo "ReconCam alert: motionDir='$motionDir'"
 
-mails=$(cat mail.txt)
+if [ -e "sendMailEnable.txt" ]; then
 
-if [ -z "$mails" ]; then
-	echo "no mail found"
-	exit 1
+	mails=$(cat mails.txt)
+
+	if [ -z "$mails" ]; then
+		echo "no mail found"
+		exit 1
+	fi
+
+	mpack -s "ReconCam alert: $1" $motionDir/trace.jpg "$mails"
+else
+	echo "sendMail is disable"
+
 fi
-
-mpack -s "ReconCam alert: $1" $motionDir/trace.jpg $mails
-
-# echo $1

@@ -1,8 +1,5 @@
 #! /bin/bash
 
-for dir in $(find motion -atime 7 -mindepth 4 -type d | sort); do
-	rm -rvf $dir
-done
 
 while true; do
 

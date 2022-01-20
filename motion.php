@@ -1,7 +1,34 @@
 <!DOCTYPE html>
-<html>
-	<body>
+<html lang="en-US">
 
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=0.5">
+		<link rel="stylesheet" href="css/style.css">
+
+		<script src="/javascript/jquery/jquery.js"></script>
+		<script src="js/script.js"></script>
+	</head>
+
+
+
+	<div>
+	<!-- Rounded switch -->
+	SendMail enable
+	<label class="switch">
+	  <input id="checkBoxMail" type="checkbox" onclick="checkBoxMailClicked()" 
+<?php
+	if (file_exists("sendMailEnable.txt")) {
+		echo ("checked");
+	}
+?>
+>
+	  <span class="slider round"></span>
+	</label>
+	</div>
+
+
+	<body>
 
     <?php
 

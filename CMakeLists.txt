@@ -18,6 +18,8 @@ find_package(Threads REQUIRED)
 target_link_libraries( ${PROJECT_NAME} ${OpenCV_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
 add_compile_definitions(PC)
+#add_compile_definitions(DETECTION)
+
 add_definitions(-DPROJECT_DIR=\"${CMAKE_SOURCE_DIR}/\")
 
 

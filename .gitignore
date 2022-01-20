@@ -53,3 +53,5 @@ alert.mp3
 CMakeLists.txt.user
 
 yolo/yolov3.weights
+mails.txt
+sendMailEnable.txt

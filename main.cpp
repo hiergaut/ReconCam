@@ -343,9 +343,9 @@ int main(int argc, char** argv)
 
                 if (hasRemoteDir) {
                     if (port == -1) {
-                        cmd += " && rsync -rv " + motionRootDir + " " + remoteDir;
+                        cmd += " && rsync -arv " + motionRootDir + " " + remoteDir;
                     } else {
-                        cmd += " && rsync -rv -e 'ssh -p " + std::to_string(port) + "' " + motionRootDir + " " + remoteDir;
+                        cmd += " && rsync -arv -e 'ssh -p " + std::to_string(port) + "' " + motionRootDir + " " + remoteDir;
                     }
                     //                    std::thread t([cmd]() {
                     //                        std::cout << HEADER "[TIMELAPSE] " << cmd << std::endl;
@@ -1145,9 +1145,9 @@ int main(int argc, char** argv)
 
         if (hasRemoteDir) {
             if (port == -1) {
-                cmd = "rsync -rv " + motionRootDir + " " + remoteDir;
+                cmd = "rsync -arv " + motionRootDir + " " + remoteDir;
             } else {
-                cmd = "rsync -rv -e 'ssh -p " + std::to_string(port) + "' " + motionRootDir + " " + remoteDir;
+                cmd = "rsync -arv -e 'ssh -p " + std::to_string(port) + "' " + motionRootDir + " " + remoteDir;
             }
             //            std::thread t([cmd]() {
             std::cout << HEADER << "[CAPTURE] rsync start " << cmd << std::endl;

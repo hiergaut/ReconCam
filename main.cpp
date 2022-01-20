@@ -338,7 +338,6 @@ int main(int argc, char** argv)
                           << std::endl;
 
                 cmd = "convert " + timelapseDir + "/*.jpg " + timelapseDir + "/timelapse.gif";
-                std::cout << HEADER "[TIMELAPSE] " << cmd << std::endl;
                 //                system(cmd.c_str());
 
                 if (hasRemoteDir) {
@@ -353,6 +352,7 @@ int main(int argc, char** argv)
                     //                        return 0;
                     //                    });
                 }
+                std::cout << HEADER "[TIMELAPSE] '" << cmd << "'" << std::endl;
                 system(("(" + cmd + ") &").c_str());
 
                 // timelapseStart = timelapseEnd = std::chrono::high_resolution_clock::now();
@@ -1150,7 +1150,7 @@ int main(int argc, char** argv)
                 cmd = "rsync -arv -e 'ssh -p " + std::to_string(port) + "' " + motionRootDir + " " + remoteDir;
             }
             //            std::thread t([cmd]() {
-            std::cout << HEADER << "[CAPTURE] rsync start " << cmd << std::endl;
+            std::cout << HEADER << "[CAPTURE] rsync start '" << cmd << "'" << std::endl;
             //#ifdef PC
             system((cmd).c_str());
             //#else

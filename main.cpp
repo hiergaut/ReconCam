@@ -337,7 +337,7 @@ int main(int argc, char** argv)
                 std::cout << HEADER "[TIMELAPSE] save lapse '" << saveLapse << "'"
                           << std::endl;
 
-                cmd = "convert " + timelapseDir + "/*.jpg " + timelapseDir + "/timelapse.gif";
+                cmd = "convert -delay 3.3 -resize 320x240 " + timelapseDir + "/*.jpg " + timelapseDir + "/timelapse.gif";
                 //                system(cmd.c_str());
 
                 if (hasRemoteDir) {

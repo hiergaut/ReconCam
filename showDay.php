@@ -144,11 +144,19 @@
 								//     </a>
 								//     ";
 
-								echo "
-									<a href=\"$dir/$file/detection.mp4\" >
-										<img src=\"$dir/$file/trace.jpg\" width=320 height=240 />
-									</a>
-									";
+								if (file_exists("$dir/$file/detection.mp4")) {
+									echo "
+										<a href=\"$dir/$file/detection.mp4\" >
+											<img src=\"$dir/$file/trace.jpg\" width=320 height=240 />
+										</a>
+										";
+								} else {
+									echo "
+										<a href=\"$dir/$file/record.mp4\" >
+											<img src=\"$dir/$file/record.jpg\" width=320 height=240 />
+										</a>
+										";
+								}
 
 								// echo "
 								//     <video width=\"640\" height=\"480\" controls>

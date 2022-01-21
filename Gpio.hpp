@@ -14,7 +14,7 @@ int gpioGetValue(int gpio)
     std::string gpioValueFile = gpioDir + "gpio" + std::to_string(gpio) + "/value";
     std::ifstream getValueGpio(gpioValueFile.c_str());
     if (!getValueGpio.is_open()) {
-        std::cout << "unable to get value gpio" << std::endl;
+        std::cout << "[gpioGetValue] unable to get value gpio" << std::endl;
         perror(gpioValueFile.c_str());
         exit(3);
     }
@@ -42,7 +42,7 @@ void gpioSetValue(int gpio, int value)
     // usleep(100000);
 }
 
-void initGpio(int gpio, std::string direction)
+void initGpio(int gpio, const std::string userDirection)
 {
     std::string gpioExportDir = gpioDir + "export";
     std::ofstream exportGpio(gpioExportDir.c_str());
@@ -53,28 +53,29 @@ void initGpio(int gpio, std::string direction)
     }
     exportGpio << gpio;
     exportGpio.close();
-    usleep(1000000);
+    usleep(2'000'000);
 
     std::string gpioNumDir = gpioDir + "gpio" + std::to_string(gpio) + "/";
     std::string gpioNumDirectionDir = gpioNumDir + "direction";
     std::ifstream directionGpioIn(gpioNumDirectionDir.c_str());
     if (!directionGpioIn.is_open()) {
-        std::cout << "direction file not exist" << std::endl;
+        std::cout << "[initGpio] direction file not exist" << std::endl;
         perror(gpioNumDirectionDir.c_str());
         exit(2);
     }
-    std::string directionFile = "";
-    directionGpioIn >> direction;
+
+    std::string curDirection = "";
+    directionGpioIn >> curDirection;
     directionGpioIn.close();
 
-    if (direction != directionFile) {
-        std::ofstream directionGpio(gpioNumDirectionDir.c_str());
+    if (userDirection != curDirection) {
+        std::ofstream directionGpio(gpioNumDirectionDir.c_str(), std::ios::trunc);
+        directionGpio << userDirection;
         if (!directionGpio.is_open()) {
-            std::cout << "unable to set direction gpio (" << directionFile << " -> " << direction << ")" << std::endl;
+            std::cout << "[initGpio] unable to set direction gpio (" << curDirection << " -> " << userDirection << ")" << std::endl;
             perror(gpioNumDirectionDir.c_str());
             exit(2);
         }
-        directionGpio << direction;
         directionGpio.close();
         usleep(1000000);
     }

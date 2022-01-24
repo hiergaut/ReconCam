@@ -3,7 +3,7 @@
 
 while true; do
 
-	for dir in $(find motion -mindepth 4 -type d); do
+	for dir in $(find motion -mindepth 4 -maxdepth 4 -type d); do
 		if [ ! -e $dir/detection.mp4 ]; then
 			if [ -e $dir/record.mp4 ]; then
 				echo "##########################################################"

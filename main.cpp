@@ -115,17 +115,18 @@ int main(int argc, char** argv)
     }
     sensorGpioNum = parser.get<int>("sensor");
     //    sensorAdditional = parser.get<int>("and");
-    int device = parser.get<int>("device");
+    const int device = parser.get<int>("device");
     std::string stream = parser.get<std::string>("stream");
-    std::string remoteDir = parser.get<std::string>("repository");
-    int port = parser.get<int>("port");
-    bool flip180 = parser.get<bool>("flip");
-    int lightGpio = parser.get<int>("light");
-    std::string script = parser.get<std::string>("script");
+    const std::string remoteDir = parser.get<std::string>("repository");
+	std::cout << "remoteDir = '" << remoteDir << "'" << std::endl;
+    const int port = parser.get<int>("port");
+    const bool flip180 = parser.get<bool>("flip");
+    const int lightGpio = parser.get<int>("light");
+    const std::string script = parser.get<std::string>("script");
 #ifdef DETECTION
-    bool hasScript = !script.empty();
+    const bool hasScript = !script.empty();
 #endif
-    bool hasStream = !stream.empty();
+    const bool hasStream = !stream.empty();
     if (!parser.check()) {
         parser.printMessage();
         parser.printErrors();

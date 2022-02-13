@@ -293,6 +293,10 @@ int main(int argc, char** argv)
                 std::cout << std::endl;
                 std::cout << HEADER "[TIMELAPSE] open stream" << std::endl;
 
+				if (lightGpio != -1) {
+					gpioSetValue(lightGpio, 1);
+				}
+
                 cv::Mat timelapseFrame;
                 openCamera(vCap, stream, timelapseFrame);
                 if (!vCap.isOpened()) {
@@ -304,6 +308,10 @@ int main(int argc, char** argv)
 
                 std::cout << HEADER "[TIMELAPSE] vCap.release()" << std::endl;
                 vCap.release();
+
+				if (lightGpio != -1) {
+					gpioSetValue(lightGpio, 0);
+				}
 
                 std::cout << HEADER "[TIMELAPSE] flip frame" << std::endl;
                 if (flip180) {

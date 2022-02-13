@@ -388,7 +388,8 @@ int main(int argc, char** argv)
 // }
 #endif
 
-        if (lightGpio != -1 && isNight()) {
+        // if (lightGpio != -1 && isNight()) {
+        if (lightGpio != -1) {
             gpioSetValue(lightGpio, 1);
         }
 

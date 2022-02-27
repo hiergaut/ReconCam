@@ -238,16 +238,17 @@
 
 
 
-	if(isset($_GET['year']) and isset($_GET['month']) and isset($_GET['day'])) {
+	if(isset($_GET['year']) and isset($_GET['month']) and isset($_GET['day']) and isset($_GET['lite'])) {
 		$year=(string)$_GET['year'];
 		$month=(string)$_GET['month'];
 		$day=(string)$_GET['day'];
+		$lite=(string)$_GET['lite'];
 		echo "
 <!DOCTYPE html>
 <html>
 <body>
 ";
-		showDay($year, $month, $day);
+		showDay($year, $month, $day, $lite);
 		echo "
 </body>
 </html>";

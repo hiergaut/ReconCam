@@ -14,7 +14,7 @@
         if (fnmatch("[0-9]*", $day)) {                                                                                 
 	    
 			echo "
-			<a href=\"showDay.php?year=$year&month=$month&day=$day\" >
+			<a href=\"showDay.php?year=$year&month=$month&day=$day&lite=0\" >
 				$day
 			</a>
 			";

@@ -30,8 +30,8 @@
 #define TIMELAPSE_INTERVAL 600 // 10 min
 #endif
 
-#define NB_CAP_LEARNING_MODEL_FIRST 2
-#define NB_CAP_FOCUS_BRIGHTNESS 0
+#define NB_CAP_FOCUS_BRIGHTNESS 2
+#define NB_CAP_LEARNING_MODEL_FIRST 10
 
 #define NEW_OBJECT_MIN_DENSITY 10
 #define MAX_ERROR_DIST_FOR_NEW_POS_OBJECT 100
@@ -104,6 +104,7 @@ int main(int argc, char** argv)
         "{d device      | 0         | /dev/video<device>}"
         "{stream        |           | camera/video src}"
         "{f flip        | false     | rotate image 180}"
+        "{fd fullDetect | false     | detection with motion}"
         "{r repository  |           | save motion to specific repo}"
         "{p port        | -1        | remote port repository}"
         "{script        |           | launch script on recognize human}"
@@ -114,13 +115,15 @@ int main(int argc, char** argv)
         return 0;
     }
     sensorGpioNum = parser.get<int>("sensor");
+    //    const bool noSensor = sensorGpioNum == -1;
     //    sensorAdditional = parser.get<int>("and");
     const int device = parser.get<int>("device");
     std::string stream = parser.get<std::string>("stream");
     const std::string remoteDir = parser.get<std::string>("repository");
-	std::cout << "remoteDir = '" << remoteDir << "'" << std::endl;
+    std::cout << "remoteDir = '" << remoteDir << "'" << std::endl;
     const int port = parser.get<int>("port");
     const bool flip180 = parser.get<bool>("flip");
+    //    const bool fullDetect = parser.get<bool>("fullDetect");
     const int lightGpio = parser.get<int>("light");
     const std::string script = parser.get<std::string>("script");
 #ifdef DETECTION
@@ -281,7 +284,7 @@ int main(int argc, char** argv)
                   << TIMELAPSE_INTERVAL - timelapseDuration << " sec " << std::endl;
 
         // if no movement, wait for timelapse photo
-        while (!hasMovement() && !hasStream) {
+        while ((!hasMovement() && !hasStream) || timelapseDuration >= TIMELAPSE_INTERVAL) {
 
             //            std::cout << colorHash(std::this_thread::get_id()) << "." << "\033[0m" << std::flush;
             std::cout << "." << std::flush;
@@ -289,13 +292,13 @@ int main(int argc, char** argv)
 
             timelapseEnd = std::chrono::high_resolution_clock::now();
             timelapseDuration = std::chrono::duration_cast<std::chrono::milliseconds>(timelapseEnd - timelapseStart).count() / 1000.0f - timelapseCounter * TIMELAPSE_INTERVAL;
-            if (timelapseDuration > TIMELAPSE_INTERVAL) {
+            if (timelapseDuration >= TIMELAPSE_INTERVAL) {
                 std::cout << std::endl;
                 std::cout << HEADER "[TIMELAPSE] open stream" << std::endl;
 
-				if (lightGpio != -1) {
-					gpioSetValue(lightGpio, 1);
-				}
+                if (lightGpio != -1) {
+                    gpioSetValue(lightGpio, 1);
+                }
 
                 cv::Mat timelapseFrame;
                 openCamera(vCap, stream, timelapseFrame);
@@ -309,9 +312,9 @@ int main(int argc, char** argv)
                 std::cout << HEADER "[TIMELAPSE] vCap.release()" << std::endl;
                 vCap.release();
 
-				if (lightGpio != -1) {
-					gpioSetValue(lightGpio, 0);
-				}
+                if (lightGpio != -1) {
+                    gpioSetValue(lightGpio, 0);
+                }
 
                 std::cout << HEADER "[TIMELAPSE] flip frame" << std::endl;
                 if (flip180) {
@@ -395,6 +398,91 @@ int main(int argc, char** argv)
 //    cv::moveWindow("blobs", 1920 + 640, 1080 + 480);
 // }
 #endif
+        cv::Mat inputFrame;
+        openCamera(vCap, stream, inputFrame);
+        if (!vCap.isOpened()) {
+            std::cout << HEADER "[CAPTURE] device '" << stream << "' not found" << std::endl;
+            return 9;
+        }
+        bool streamFinished = false;
+        vCap >> inputFrame;
+        if (inputFrame.empty()) {
+            std::cout << HEADER "[CAPTURE] stream finished" << std::endl;
+            streamFinished = true;
+            break;
+        }
+        if (flip180) {
+            flip(inputFrame, inputFrame, -1);
+        }
+        auto model = cv::createBackgroundSubtractorMOG2();
+        int nMovement = 0;
+        int iFrame = 0;
+
+        // wait for movement in background model
+        while (nMovement == 0) {
+            vCap >> inputFrame;
+            if (inputFrame.empty()) {
+                std::cout << HEADER "[CAPTURE] stream finished" << std::endl;
+                streamFinished = true;
+                break;
+            }
+            if (flip180) {
+                flip(inputFrame, inputFrame, -1);
+            }
+
+            if (iFrame < NB_CAP_FOCUS_BRIGHTNESS) {
+                // do nothing
+                std::cout << "focus brightness" << std::endl;
+#ifdef PC
+                rectangle(inputFrame, cv::Rect(640 - 50, 0, 50, 50), cv::Scalar(0, 0, 255), -1);
+#endif
+            } else {
+
+                cv::Mat gray;
+                cv::cvtColor(inputFrame, gray, cv::COLOR_BGR2GRAY);
+                //                                equalizeHist(gray, gray);
+                cv::GaussianBlur(gray, gray, cv::Size(21, 21), 0);
+//                cv::GaussianBlur(gray, gray, cv::Size(15, 15), 0);
+#ifdef PC
+                imshow("mask", gray);
+#endif
+                //                model->apply(inputFrame, mask);
+                cv::Mat mask;
+                model->apply(gray, mask);
+//                model->apply(inputFrame, mask);
+#ifdef PC
+                imshow("drawing", mask);
+#endif
+
+                if (iFrame < NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST) {
+                    // do nothing
+                    std::cout << "learning model" << std::endl;
+#ifdef PC
+                    rectangle(inputFrame, cv::Rect(640 - 50, 0, 50, 50), cv::Scalar(255, 0, 0), -1);
+#endif
+
+                } else {
+
+                    //                    nMovement = cv::countNonZero(mask);
+                    //                    nMovement = isBlack(mask);
+                    unsigned char* p = mask.data;
+                    bool isBlack = true;
+                    for (int i = 0; i < mask.cols * mask.rows; ++i) {
+                        if (p[i] != 0) {
+                            isBlack = false;
+                            break;
+                        }
+                    }
+                    nMovement = !isBlack;
+                }
+            }
+#ifdef PC
+            imshow("mask3", inputFrame);
+            cv::waitKey(1);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+#endif
+            ++iFrame;
+        } // while nMovement == 0
 
         // if (lightGpio != -1 && isNight()) {
         if (lightGpio != -1) {
@@ -415,12 +503,6 @@ int main(int argc, char** argv)
         cmd = "mkdir -p " + newMotionDir;
         system(cmd.c_str());
 
-        cv::Mat inputFrame;
-        openCamera(vCap, stream, inputFrame);
-        if (!vCap.isOpened()) {
-            std::cout << HEADER "[CAPTURE] device '" << stream << "' not found" << std::endl;
-            return 9;
-        }
         //        std::string outputVideoFile = newMotionDir + "/video.webm";
         //        cv::VideoWriter outputVideo = cv::VideoWriter(
         //            outputVideoFile, cv::VideoWriter::fourcc('V', 'P', '8', '0'), FPS,
@@ -458,7 +540,6 @@ int main(int argc, char** argv)
         }
 #endif
 
-        auto model = cv::createBackgroundSubtractorMOG2();
         // auto model = createBackgroundSubtractorKNN();
         // auto model = createBackgroundSubtractorGMG();
 
@@ -472,9 +553,7 @@ int main(int argc, char** argv)
         assert(objects.size() == 0);
 #endif
 
-        bool streamFinished = false;
-        int iFrame = 0;
-        int nMovement = 1;
+        iFrame = 0;
 
         int line;
 #ifdef DETECTION
@@ -487,9 +566,11 @@ int main(int argc, char** argv)
         // ----------------------- WHILE HAS MOVEMENT
 #ifdef PC
         //        while ((hasMovement() || nMovement > 0) && !quit) {
-        while (nMovement > 0 || hasMovement() || hasStream) {
+        //        while (nMovement > 0 || hasMovement() || hasStream) {
+        while (nMovement > 0 || hasStream) {
 #else
-        while (nMovement > 0 || hasMovement() || hasStream) {
+        //        while (nMovement > 0 || hasMovement() || hasStream) {
+        while (nMovement > 0 || hasStream) {
 #endif
 
 #ifdef DETECTION
@@ -941,6 +1022,7 @@ int main(int argc, char** argv)
                     quit = true;
                     //                    break;
                 }
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
 #endif
             ++iFrame;

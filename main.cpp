@@ -31,7 +31,7 @@
 #endif
 
 #define NB_CAP_FOCUS_BRIGHTNESS 2
-#define NB_CAP_LEARNING_MODEL_FIRST 10
+#define NB_CAP_LEARNING_MODEL_FIRST 5
 
 #define NEW_OBJECT_MIN_DENSITY 10
 #define MAX_ERROR_DIST_FOR_NEW_POS_OBJECT 100
@@ -418,6 +418,7 @@ int main(int argc, char** argv)
         int nMovement = 0;
         int iFrame = 0;
 
+#ifndef DETECTION
         // wait for movement in background model
         while (nMovement == 0) {
             vCap >> inputFrame;
@@ -474,6 +475,8 @@ int main(int argc, char** argv)
                         }
                     }
                     nMovement = !isBlack;
+                    if (! nMovement)
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 }
             }
 #ifdef PC
@@ -488,6 +491,7 @@ int main(int argc, char** argv)
         if (lightGpio != -1) {
             gpioSetValue(lightGpio, 1);
         }
+#endif
 
 #ifdef DETECTION
         if (!recordDetection) {

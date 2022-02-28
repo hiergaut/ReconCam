@@ -83,7 +83,7 @@ void initGpio(int gpio, const std::string userDirection)
 
 bool hasMovement()
 {
-    bool ret = false;
+    bool ret = true;
 
     if (sensorGpioNum != -1) {
         ret = gpioGetValue(sensorGpioNum) == 1;

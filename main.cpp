@@ -284,7 +284,7 @@ int main(int argc, char** argv)
                   << TIMELAPSE_INTERVAL - timelapseDuration << " sec " << std::endl;
 
         // if no movement, wait for timelapse photo
-        while ((!hasMovement() && !hasStream) || timelapseDuration >= TIMELAPSE_INTERVAL) {
+        while ((!hasMovement() || timelapseDuration >= TIMELAPSE_INTERVAL) && ! hasStream) {
 
             //            std::cout << colorHash(std::this_thread::get_id()) << "." << "\033[0m" << std::flush;
             std::cout << "." << std::flush;

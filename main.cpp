@@ -433,7 +433,7 @@ int main(int argc, char** argv)
 
             if (iFrame < NB_CAP_FOCUS_BRIGHTNESS) {
                 // do nothing
-                std::cout << "b";
+                std::cout << "b" << std::flush;
 #ifdef PC
                 rectangle(inputFrame, cv::Rect(640 - 50, 0, 50, 50), cv::Scalar(0, 0, 255), -1);
 #endif
@@ -457,7 +457,7 @@ int main(int argc, char** argv)
 
                 if (iFrame < NB_CAP_FOCUS_BRIGHTNESS + NB_CAP_LEARNING_MODEL_FIRST) {
                     // do nothing
-                    std::cout << "l";
+                    std::cout << "l" << std::flush;
 #ifdef PC
                     rectangle(inputFrame, cv::Rect(640 - 50, 0, 50, 50), cv::Scalar(255, 0, 0), -1);
 #endif
@@ -477,7 +477,7 @@ int main(int argc, char** argv)
                     nMovement = !isBlack;
                     if (!nMovement)
                         std::this_thread::sleep_for(std::chrono::milliseconds(500));
-                    std::cout << "w";
+                    std::cout << "w" << std::flush;
                 }
             }
 #ifdef PC

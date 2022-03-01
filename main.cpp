@@ -650,11 +650,11 @@ int main(int argc, char** argv)
                     for (int i = 0; i < mask.cols * mask.rows; ++i) {
                         if (p[i] != 0) {
                             ++counterNonBlack;
-                            if (counterNonBlack > NON_BLACK_IMG_THRESHOLD)
+                            if (counterNonBlack > 0)
                                 break;
                         }
                     }
-                    nMovement = counterNonBlack > NON_BLACK_IMG_THRESHOLD;
+                    nMovement = counterNonBlack > 0;
 #else
 
                     // ------------------- BOUNDING MOVMENT ---------------------------

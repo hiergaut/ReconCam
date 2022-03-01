@@ -37,6 +37,8 @@
 #define MAX_ERROR_DIST_FOR_NEW_POS_OBJECT 100
 #define MIN_MOV_YEARS_TO_SAVE_OBJECT 5
 
+#define NON_BLACK_IMG_THRESHOLD 100
+
 #define MAX_MOVEMENTS 10
 
 //#define WIDTH 2592
@@ -284,7 +286,7 @@ int main(int argc, char** argv)
                   << TIMELAPSE_INTERVAL - timelapseDuration << " sec " << std::endl;
 
         // if no movement, wait for timelapse photo
-        while ((!hasMovement() || timelapseDuration >= TIMELAPSE_INTERVAL) && ! hasStream) {
+        while ((!hasMovement() || timelapseDuration >= TIMELAPSE_INTERVAL) && !hasStream) {
 
             //            std::cout << colorHash(std::this_thread::get_id()) << "." << "\033[0m" << std::flush;
             std::cout << "." << std::flush;
@@ -469,14 +471,15 @@ int main(int argc, char** argv)
                     //                    nMovement = cv::countNonZero(mask);
                     //                    nMovement = isBlack(mask);
                     unsigned char* p = mask.data;
-                    bool isBlack = true;
+                    int counterNonBlack = 0;
                     for (int i = 0; i < mask.cols * mask.rows; ++i) {
                         if (p[i] != 0) {
-                            isBlack = false;
-                            break;
+                            ++counterNonBlack;
+                            if (counterNonBlack > NON_BLACK_IMG_THRESHOLD)
+                                break;
                         }
                     }
-                    nMovement = !isBlack;
+                    nMovement = counterNonBlack > NON_BLACK_IMG_THRESHOLD;
                     if (!nMovement)
                         std::this_thread::sleep_for(std::chrono::milliseconds(500));
                     std::cout << "w" << std::flush;
@@ -643,14 +646,15 @@ int main(int argc, char** argv)
                     //                    nMovement = cv::countNonZero(mask);
                     //                    nMovement = isBlack(mask);
                     unsigned char* p = mask.data;
-                    bool isBlack = true;
+                    int counterNonBlack = 0;
                     for (int i = 0; i < mask.cols * mask.rows; ++i) {
                         if (p[i] != 0) {
-                            isBlack = false;
-                            break;
+                            ++counterNonBlack;
+                            if (counterNonBlack > NON_BLACK_IMG_THRESHOLD)
+                                break;
                         }
                     }
-                    nMovement = !isBlack;
+                    nMovement = counterNonBlack > NON_BLACK_IMG_THRESHOLD;
 #else
 
                     // ------------------- BOUNDING MOVMENT ---------------------------

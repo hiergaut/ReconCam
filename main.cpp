@@ -418,6 +418,8 @@ int main(int argc, char** argv)
         int nMovement = 0;
         int iFrame = 0;
 
+        const cv::Size filterSize(25, 25);
+
 #ifndef DETECTION
         // wait for movement in background model
         while (nMovement == 0) {
@@ -442,7 +444,7 @@ int main(int argc, char** argv)
                 cv::Mat gray;
                 cv::cvtColor(inputFrame, gray, cv::COLOR_BGR2GRAY);
                 //                                equalizeHist(gray, gray);
-                cv::GaussianBlur(gray, gray, cv::Size(21, 21), 0);
+                cv::GaussianBlur(gray, gray, filterSize, 0);
 //                cv::GaussianBlur(gray, gray, cv::Size(15, 15), 0);
 #ifdef PC
                 imshow("mask", gray);
@@ -616,7 +618,7 @@ int main(int argc, char** argv)
                 cv::Mat gray;
                 cv::cvtColor(inputFrame, gray, cv::COLOR_BGR2GRAY);
                 //                                equalizeHist(gray, gray);
-                cv::GaussianBlur(gray, gray, cv::Size(21, 21), 0);
+                cv::GaussianBlur(gray, gray, filterSize, 0);
 //                cv::GaussianBlur(gray, gray, cv::Size(15, 15), 0);
 #ifdef PC
                 imshow("mask", gray);

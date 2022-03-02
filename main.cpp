@@ -37,7 +37,7 @@
 #define MAX_ERROR_DIST_FOR_NEW_POS_OBJECT 100
 #define MIN_MOV_YEARS_TO_SAVE_OBJECT 5
 
-#define NON_BLACK_IMG_THRESHOLD 100
+#define NON_BLACK_IMG_THRESHOLD 500
 
 #define MAX_MOVEMENTS 10
 
@@ -481,7 +481,7 @@ int main(int argc, char** argv)
                     }
                     nMovement = counterNonBlack > NON_BLACK_IMG_THRESHOLD;
                     if (!nMovement)
-                        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                        std::this_thread::sleep_for(std::chrono::milliseconds(250));
                     std::cout << "w" << std::flush;
                 }
             }
@@ -650,11 +650,11 @@ int main(int argc, char** argv)
                     for (int i = 0; i < mask.cols * mask.rows; ++i) {
                         if (p[i] != 0) {
                             ++counterNonBlack;
-                            if (counterNonBlack > NON_BLACK_IMG_THRESHOLD)
+                            if (counterNonBlack > 0)
                                 break;
                         }
                     }
-                    nMovement = counterNonBlack > NON_BLACK_IMG_THRESHOLD;
+                    nMovement = counterNonBlack > 0;
 #else
 
                     // ------------------- BOUNDING MOVMENT ---------------------------

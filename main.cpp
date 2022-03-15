@@ -424,7 +424,7 @@ int main(int argc, char** argv)
 
 #ifndef DETECTION
         // wait for movement in background model
-        while (nMovement == 0) {
+        while (nMovement == 0 && hasMovement()) {
             vCap >> inputFrame;
             if (inputFrame.empty()) {
                 std::cout << HEADER "[CAPTURE] stream finished" << std::endl;

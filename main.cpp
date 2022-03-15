@@ -501,15 +501,16 @@ int main(int argc, char** argv)
 #endif
             ++iFrame;
         } // while nMovement == 0
+        std::cout << std::endl;
 
         if (nMovement == 0) {
             if (lightGpio != -1) {
                 gpioSetValue(lightGpio, 0);
             }
+            std::cout << "fake detection, no movement" << std::endl;
             continue;
         }
 
-        std::cout << std::endl;
 #endif
 
 #ifdef DETECTION

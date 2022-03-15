@@ -435,7 +435,8 @@ int main(int argc, char** argv)
         // if (lightGpio != -1 && isNight()) {
 
         // wait for movement in background model
-        while (nMovement == 0 && hasMovement()) {
+        while (nMovement == 0 && iFrame < 100) {
+//        while (nMovement == 0 && hasMovement()) {
             vCap >> inputFrame;
             if (inputFrame.empty()) {
                 std::cout << HEADER "[CAPTURE] stream finished" << std::endl;

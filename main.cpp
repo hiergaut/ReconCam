@@ -408,6 +408,7 @@ int main(int argc, char** argv)
         }
 
         cv::Mat inputFrame;
+        std::vector<cv::Mat> inputFrames;
         openCamera(vCap, stream, inputFrame);
         if (!vCap.isOpened()) {
             std::cout << HEADER "[CAPTURE] device '" << stream << "' not found" << std::endl;
@@ -423,6 +424,7 @@ int main(int argc, char** argv)
         if (flip180) {
             flip(inputFrame, inputFrame, -1);
         }
+        inputFrames.emplace_back(std::move(inputFrame));
         auto model = cv::createBackgroundSubtractorMOG2();
         int nMovement = 0;
         int iFrame = 0;
@@ -443,6 +445,7 @@ int main(int argc, char** argv)
             if (flip180) {
                 flip(inputFrame, inputFrame, -1);
             }
+            //            inputFrames.push_back(inputFrame.clone());
 
             if (iFrame < NB_CAP_FOCUS_BRIGHTNESS) {
                 // do nothing
@@ -450,6 +453,7 @@ int main(int argc, char** argv)
 #ifdef PC
                 rectangle(inputFrame, cv::Rect(640 - 50, 0, 50, 50), cv::Scalar(0, 0, 255), -1);
 #endif
+                //                inputFrames.emplace_back(std::move(inputFrame));
             } else {
 
                 cv::Mat gray;
@@ -474,6 +478,7 @@ int main(int argc, char** argv)
 #ifdef PC
                     rectangle(inputFrame, cv::Rect(640 - 50, 0, 50, 50), cv::Scalar(255, 0, 0), -1);
 #endif
+//                    inputFrames.emplace_back(std::move(inputFrame));
 
                 } else {
 
@@ -499,6 +504,7 @@ int main(int argc, char** argv)
             cv::waitKey(1);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 #endif
+            inputFrames.emplace_back(std::move(inputFrame));
             ++iFrame;
         } // while nMovement == 0
         std::cout << std::endl;
@@ -563,6 +569,10 @@ int main(int argc, char** argv)
 #ifdef DETECTION
         }
 #endif
+
+        for (const auto & inputFrame : inputFrames) {
+            outputVideoRec << inputFrame;
+        }
 
         // auto model = createBackgroundSubtractorKNN();
         // auto model = createBackgroundSubtractorGMG();

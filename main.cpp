@@ -436,7 +436,7 @@ int main(int argc, char** argv)
 
         // wait for movement in background model
         while (nMovement == 0 && iFrame < 100) {
-//        while (nMovement == 0 && hasMovement()) {
+            //        while (nMovement == 0 && hasMovement()) {
             vCap >> inputFrame;
             if (inputFrame.empty()) {
                 std::cout << HEADER "[CAPTURE] stream finished" << std::endl;
@@ -479,7 +479,7 @@ int main(int argc, char** argv)
 #ifdef PC
                     rectangle(inputFrame, cv::Rect(640 - 50, 0, 50, 50), cv::Scalar(255, 0, 0), -1);
 #endif
-//                    inputFrames.emplace_back(std::move(inputFrame));
+                    //                    inputFrames.emplace_back(std::move(inputFrame));
 
                 } else {
 
@@ -496,7 +496,8 @@ int main(int argc, char** argv)
                     }
                     nMovement = counterNonBlack > NON_BLACK_IMG_THRESHOLD;
                     if (!nMovement)
-                        std::this_thread::sleep_for(std::chrono::milliseconds(250));
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                    //                        std::this_thread::sleep_for(std::chrono::milliseconds(250));
                     std::cout << "w" << std::flush;
                 }
             }
@@ -571,7 +572,7 @@ int main(int argc, char** argv)
         }
 #endif
 
-        for (const auto & inputFrame : inputFrames) {
+        for (const auto& inputFrame : inputFrames) {
             outputVideoRec << inputFrame;
         }
 

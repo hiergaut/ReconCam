@@ -308,7 +308,7 @@ int main(int argc, char** argv)
                     std::cout << HEADER "[TIMELAPSE] device '" << stream << "' not found" << std::endl;
                     return 10;
                 }
-                for (int i =0; i <100; ++i) {
+                for (int i = 0; i < 100; ++i) {
                     vCap >> timelapseFrame;
                 }
                 //                }
@@ -429,12 +429,11 @@ int main(int argc, char** argv)
 
         const cv::Size filterSize(25, 25);
 
-
 #ifndef DETECTION
         // if (lightGpio != -1 && isNight()) {
 
         // wait for movement in background model
-        while (nMovement == 0) {
+        while (nMovement == 0 && hasMovement()) {
             vCap >> inputFrame;
             if (inputFrame.empty()) {
                 std::cout << HEADER "[CAPTURE] stream finished" << std::endl;
@@ -502,6 +501,13 @@ int main(int argc, char** argv)
 #endif
             ++iFrame;
         } // while nMovement == 0
+
+        if (nMovement == 0) {
+            if (lightGpio != -1) {
+                gpioSetValue(lightGpio, 0);
+            }
+            continue;
+        }
 
         std::cout << std::endl;
 #endif

@@ -30,8 +30,8 @@
 #define TIMELAPSE_INTERVAL 600 // 10 min
 #endif
 
-#define NB_CAP_FOCUS_BRIGHTNESS 2
-#define NB_CAP_LEARNING_MODEL_FIRST 5
+#define NB_CAP_FOCUS_BRIGHTNESS 1
+#define NB_CAP_LEARNING_MODEL_FIRST 2
 
 #define NEW_OBJECT_MIN_DENSITY 10
 #define MAX_ERROR_DIST_FOR_NEW_POS_OBJECT 100
@@ -308,6 +308,9 @@ int main(int argc, char** argv)
                     std::cout << HEADER "[TIMELAPSE] device '" << stream << "' not found" << std::endl;
                     return 10;
                 }
+                for (int i = 0; i < 100; ++i) {
+                    vCap >> timelapseFrame;
+                }
                 //                }
                 //                std::cout << std::endl;
 
@@ -400,7 +403,12 @@ int main(int argc, char** argv)
 //    cv::moveWindow("blobs", 1920 + 640, 1080 + 480);
 // }
 #endif
+        if (lightGpio != -1) {
+            gpioSetValue(lightGpio, 1);
+        }
+
         cv::Mat inputFrame;
+        std::vector<cv::Mat> inputFrames;
         openCamera(vCap, stream, inputFrame);
         if (!vCap.isOpened()) {
             std::cout << HEADER "[CAPTURE] device '" << stream << "' not found" << std::endl;
@@ -416,6 +424,7 @@ int main(int argc, char** argv)
         if (flip180) {
             flip(inputFrame, inputFrame, -1);
         }
+        inputFrames.emplace_back(std::move(inputFrame));
         auto model = cv::createBackgroundSubtractorMOG2();
         int nMovement = 0;
         int iFrame = 0;
@@ -423,8 +432,11 @@ int main(int argc, char** argv)
         const cv::Size filterSize(25, 25);
 
 #ifndef DETECTION
+        // if (lightGpio != -1 && isNight()) {
+
         // wait for movement in background model
-        while (nMovement == 0) {
+        while (nMovement == 0 && iFrame < 100) {
+            //        while (nMovement == 0 && hasMovement()) {
             vCap >> inputFrame;
             if (inputFrame.empty()) {
                 std::cout << HEADER "[CAPTURE] stream finished" << std::endl;
@@ -434,6 +446,7 @@ int main(int argc, char** argv)
             if (flip180) {
                 flip(inputFrame, inputFrame, -1);
             }
+            //            inputFrames.push_back(inputFrame.clone());
 
             if (iFrame < NB_CAP_FOCUS_BRIGHTNESS) {
                 // do nothing
@@ -441,6 +454,7 @@ int main(int argc, char** argv)
 #ifdef PC
                 rectangle(inputFrame, cv::Rect(640 - 50, 0, 50, 50), cv::Scalar(0, 0, 255), -1);
 #endif
+                //                inputFrames.emplace_back(std::move(inputFrame));
             } else {
 
                 cv::Mat gray;
@@ -465,6 +479,7 @@ int main(int argc, char** argv)
 #ifdef PC
                     rectangle(inputFrame, cv::Rect(640 - 50, 0, 50, 50), cv::Scalar(255, 0, 0), -1);
 #endif
+                    //                    inputFrames.emplace_back(std::move(inputFrame));
 
                 } else {
 
@@ -481,7 +496,8 @@ int main(int argc, char** argv)
                     }
                     nMovement = counterNonBlack > NON_BLACK_IMG_THRESHOLD;
                     if (!nMovement)
-                        std::this_thread::sleep_for(std::chrono::milliseconds(250));
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                    //                        std::this_thread::sleep_for(std::chrono::milliseconds(250));
                     std::cout << "w" << std::flush;
                 }
             }
@@ -490,14 +506,19 @@ int main(int argc, char** argv)
             cv::waitKey(1);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 #endif
+            inputFrames.emplace_back(std::move(inputFrame));
             ++iFrame;
         } // while nMovement == 0
-
-        // if (lightGpio != -1 && isNight()) {
-        if (lightGpio != -1) {
-            gpioSetValue(lightGpio, 1);
-        }
         std::cout << std::endl;
+
+        if (nMovement == 0) {
+            if (lightGpio != -1) {
+                gpioSetValue(lightGpio, 0);
+            }
+            std::cout << "fake detection, no movement" << std::endl;
+            continue;
+        }
+
 #endif
 
 #ifdef DETECTION
@@ -550,6 +571,10 @@ int main(int argc, char** argv)
 #ifdef DETECTION
         }
 #endif
+
+        for (const auto& inputFrame : inputFrames) {
+            outputVideoRec << inputFrame;
+        }
 
         // auto model = createBackgroundSubtractorKNN();
         // auto model = createBackgroundSubtractorGMG();

@@ -50,8 +50,11 @@
 //#define WIDTH 1296
 //#define HEIGHT 972
 
-#define WIDTH 640
-#define HEIGHT 480
+//#define WIDTH 640
+//#define HEIGHT 480
+
+const int outputFrameWidth = 640;
+const int outputFrameHeight = 480;
 
 #ifdef PC
 #define FPS 30
@@ -194,22 +197,24 @@ int main(int argc, char** argv)
     cv::Mat drawing;
 #endif
 
-    int width = -1;
-    int height = -1;
+    int inputFrameWidth = -1;
+    int inputFrameHeight = -1;
 
     std::cout << HEADER "check camera/stream" << std::endl;
-//    if (vCap.open(stream, cv::CAP_V4L)) {
-//    if (vCap.open(stream, cv::CAP_FFMPEG)) {
-    if (vCap.open(stream)) {
-        vCap.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
-        vCap.set(cv::CAP_PROP_FRAME_HEIGHT, HEIGHT);
 
-        if ((int)vCap.get(cv::CAP_PROP_FRAME_WIDTH) != WIDTH
-            || (int)vCap.get(cv::CAP_PROP_FRAME_HEIGHT) != HEIGHT)
+    //    if (vCap.open(stream, cv::CAP_V4L)) {
+    //    if (vCap.open(stream, cv::CAP_FFMPEG)) {
+    if (vCap.open(stream)) {
+
+        vCap.set(cv::CAP_PROP_FRAME_WIDTH, outputFrameWidth);
+        vCap.set(cv::CAP_PROP_FRAME_HEIGHT, outputFrameHeight);
+
+        if ((int)vCap.get(cv::CAP_PROP_FRAME_WIDTH) != outputFrameWidth
+            || (int)vCap.get(cv::CAP_PROP_FRAME_HEIGHT) != outputFrameHeight)
             std::cout << HEADER "Warning! Can not adjust video capture properties!" << std::endl;
 
-        width = vCap.get(cv::CAP_PROP_FRAME_WIDTH);
-        height = vCap.get(cv::CAP_PROP_FRAME_HEIGHT);
+        inputFrameWidth = vCap.get(cv::CAP_PROP_FRAME_WIDTH);
+        inputFrameHeight = vCap.get(cv::CAP_PROP_FRAME_HEIGHT);
 
         cv::Mat meter_image;
         if (vCap.read(meter_image)) {
@@ -227,7 +232,8 @@ int main(int argc, char** argv)
         return -2; // can not open video capture device
     }
 
-    const cv::Size sizeScreen(width, height);
+    const cv::Size inputFrameSize(inputFrameWidth, inputFrameHeight);
+    const cv::Size outputFrameSize(outputFrameWidth, outputFrameHeight);
 
     if (sensorGpioNum != -1) {
         initGpio(sensorGpioNum, "in");
@@ -423,6 +429,7 @@ int main(int argc, char** argv)
             streamFinished = true;
             break;
         }
+        cv::resize(inputFrame, inputFrame, outputFrameSize);
         if (flip180) {
             flip(inputFrame, inputFrame, -1);
         }
@@ -445,6 +452,7 @@ int main(int argc, char** argv)
                 streamFinished = true;
                 break;
             }
+            cv::resize(inputFrame, inputFrame, outputFrameSize);
             if (flip180) {
                 flip(inputFrame, inputFrame, -1);
             }
@@ -499,6 +507,7 @@ int main(int argc, char** argv)
                     nMovement = counterNonBlack > NON_BLACK_IMG_THRESHOLD;
                     if (!nMovement)
                         std::this_thread::sleep_for(std::chrono::milliseconds(100));
+//                        std::this_thread::sleep_for(std::chrono::milliseconds(int(100 * inputFrameWidth / 640.0)));
                     //                        std::this_thread::sleep_for(std::chrono::milliseconds(250));
                     std::cout << "w" << std::flush;
                 }
@@ -540,7 +549,7 @@ int main(int argc, char** argv)
         //        std::string outputVideoFile = newMotionDir + "/video.webm";
         //        cv::VideoWriter outputVideo = cv::VideoWriter(
         //            outputVideoFile, cv::VideoWriter::fourcc('V', 'P', '8', '0'), FPS,
-        //            sizeScreen, true);
+        //            outputFrameSize, true);
 
 #ifdef DETECTION
         std::string outputVideoFile = newMotionDir + "/detection.mp4";
@@ -549,7 +558,7 @@ int main(int argc, char** argv)
         cv::VideoWriter outputVideo = cv::VideoWriter(
             //            outputVideoFile, cv::VideoWriter::fourcc('M', 'P', '4', 'V'), FPS,
             outputVideoFile, cv::VideoWriter::fourcc('H', '2', '6', '4'), FPS,
-            sizeScreen, true);
+            outputFrameSize, true);
         if (!outputVideo.isOpened()) {
             //        if (!outputVideo.isOpened()) {
             std::cout << HEADER "[CAPTURE] failed to open mp4 video" << std::endl;
@@ -565,7 +574,7 @@ int main(int argc, char** argv)
             outputVideoRec = cv::VideoWriter(
                 outputVideoFileRec, cv::VideoWriter::fourcc('H', '2', '6', '4'), FPS,
                 //                outputVideoFileRec, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), FPS,
-                sizeScreen, true);
+                outputFrameSize, true);
             if (!outputVideoRec.isOpened()) {
                 std::cout << HEADER "[CAPTURE] failed to open avi video" << std::endl;
                 return 7;
@@ -620,6 +629,7 @@ int main(int argc, char** argv)
                 streamFinished = true;
                 break;
             }
+            cv::resize(inputFrame, inputFrame, outputFrameSize);
             if (flip180) {
                 flip(inputFrame, inputFrame, -1);
             }
@@ -1453,8 +1463,8 @@ void detect(cv::dnn::Net& net, Capture& capture)
 void openCamera(cv::VideoCapture& vCap, const std::string& stream, cv::Mat& inputFrame)
 {
     vCap.open(stream);
-    vCap.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
-    vCap.set(cv::CAP_PROP_FRAME_HEIGHT, HEIGHT);
+    vCap.set(cv::CAP_PROP_FRAME_WIDTH, outputFrameWidth);
+    vCap.set(cv::CAP_PROP_FRAME_HEIGHT, outputFrameHeight);
     vCap.set(cv::CAP_PROP_FPS, 30);
     // vCap.open(CAP_V4L2);
     if (!vCap.isOpened()) {

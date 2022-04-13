@@ -328,6 +328,7 @@ int main(int argc, char** argv)
                 if (lightGpio != -1) {
                     gpioSetValue(lightGpio, 0);
                 }
+                cv::resize(timelapseFrame, timelapseFrame, outputFrameSize);
 
                 std::cout << HEADER "[TIMELAPSE] flip frame" << std::endl;
                 if (flip180) {
@@ -507,7 +508,7 @@ int main(int argc, char** argv)
                     nMovement = counterNonBlack > NON_BLACK_IMG_THRESHOLD;
                     if (!nMovement)
                         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-//                        std::this_thread::sleep_for(std::chrono::milliseconds(int(100 * inputFrameWidth / 640.0)));
+                    //                        std::this_thread::sleep_for(std::chrono::milliseconds(int(100 * inputFrameWidth / 640.0)));
                     //                        std::this_thread::sleep_for(std::chrono::milliseconds(250));
                     std::cout << "w" << std::flush;
                 }

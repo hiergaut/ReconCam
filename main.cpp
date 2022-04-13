@@ -199,7 +199,8 @@ int main(int argc, char** argv)
 
     std::cout << HEADER "check camera/stream" << std::endl;
 //    if (vCap.open(stream, cv::CAP_V4L)) {
-    if (vCap.open(stream, cv::CAP_FFMPEG)) {
+//    if (vCap.open(stream, cv::CAP_FFMPEG)) {
+    if (vCap.open(stream)) {
         vCap.set(cv::CAP_PROP_FRAME_WIDTH, WIDTH);
         vCap.set(cv::CAP_PROP_FRAME_HEIGHT, HEIGHT);
 

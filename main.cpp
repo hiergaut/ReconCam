@@ -53,8 +53,8 @@
 //#define WIDTH 640
 //#define HEIGHT 480
 
-const int outputFrameWidth = 640;
-const int outputFrameHeight = 480;
+const int outputFrameWidth = 640 * 2;
+const int outputFrameHeight = 480 * 2;
 
 #ifdef PC
 #define FPS 30
